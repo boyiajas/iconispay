@@ -1,0 +1,267 @@
+
+body, html {
+    margin: 0;
+    padding: 0;
+   
+    font-family: Arial, sans-serif;
+}
+
+.card{
+    background-color: #fafafa;
+    border-radius: 5px; /* Adjust the radius as needed */
+    max-width: 1355px; /* Adjust width as needed */
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1); /* Optional: Add shadow for better card effect */
+    z-index: 1;
+}
+
+.card .card-header {
+    background-color: #0097b2bf; /*#0097b2; */
+    border-bottom: 1px solid #eaeaea;
+    color: #fff;
+  }
+
+h4{
+    font-weight: bold;
+    font-size: 24px;
+    font-family: sans-serif
+}
+
+h5{
+    font-weight: bold;
+    font-size: 16px;
+    font-family: sans-serif
+}
+
+
+/* Style for the banner image */
+
+.container {
+    
+    max-width: 1400px;
+    margin: 0 auto;
+}
+
+h1 {
+    font-size: 36px;
+    color: #333;
+    font-weight: bold;
+}
+
+p {
+    font-size: 16px;
+    color:#333;
+    font-family: sans-serif;
+}
+.icon-section {
+    display: flex;
+    justify-content: right; /* Align the content to the right */
+    flex-wrap: wrap;
+    margin-top: 40px;
+}
+
+.icon-box {
+    background-color: #f9f9f9;
+    border-radius: 20px;
+    padding: 20px;
+    text-align: center;
+    width: 200px;
+    margin: 5px;
+    box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.1);
+    justify-content: right;
+}
+
+.icon-box img {
+    width: 80px;
+    height: 80px;
+     /* Make images rounded */
+}
+
+.icon-box h3 {
+    font-size: 20px;
+    margin-top: 15px;
+    color: #333;
+}
+
+.icon-box p {
+    font-size: 14px;
+    color: #777;
+}
+
+/* Grid layout for two columns */
+.icon-section {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr); /* Create two equal columns */
+    
+    justify-content:right ; /* Align the grid to the right */
+}
+.about-section {
+    display: flex;
+    align-items: flex-start;
+    margin-top: 20px;
+}
+
+.about-content {
+    flex: 1;
+    
+}
+
+.about-image img{
+    width: 150px; /* Adjust size as needed */
+    height: auto; /* Maintain aspect ratio */
+    border-radius: 15px; /* Rounded edges */
+    object-fit: cover;
+}
+
+.rounded-image {
+    width: 230px; /* Adjust the size as needed */
+    height: 150px; /* Keeps the aspect ratio of the image */
+    border-radius: 15px; /* Rounds the corners, adjust the value as needed */
+    object-fit: cover; /* Ensures the image covers the area without distortion */
+}
+
+.row {
+    margin-bottom: 20px;
+}
+@media (max-width: 768px) {
+    .icon-section {
+        grid-template-columns: 1fr; /* Stack icons in one column on smaller screens */
+        justify-content: center; /* Center align on smaller screens */
+    }
+}
+/* contact us page style ends here */
+
+
+/* footer style start here*/
+
+footer {
+    color: #fff;
+    text-align: center;
+    font-family: Arial, sans-serif;
+}
+
+.footer-container {
+    padding: 20px;
+    background-color: #0097b2;
+    display: flex;
+    justify-content: space-around;
+    align-items: stretch; /* Ensures all sections have the same height */
+    flex-wrap: wrap;
+}
+
+.footer-section {
+    text-align: center;
+    padding: 0 20px;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.footer-section h3 {
+    margin-bottom: 15px;
+    font-size: 18px;
+   /*  text-transform: uppercase; */
+}
+
+.footer-section ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    flex-grow: 1; /* Makes the ul take up available space */
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+.footer-section ul li {
+    margin-bottom: 10px;
+}
+
+.footer-section ul li a {
+    color: #fff; /*#5ce1e6; */
+    text-decoration: none;
+    font-size: 14px;
+}
+
+.footer-section ul li a:hover {
+    text-decoration: underline;
+}
+
+.footer-divider {
+    width: 1px;
+    height: auto; /* The divider will now adjust to the height of the container */
+    background-color: #ffffff;
+    margin: 0 20px;
+}
+
+.social-icons {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-grow: 1; /* Ensures the social icons take up available space */
+}
+
+.social-icons a {
+    margin: 0 10px;
+    display: inline-block;
+}
+
+.social-icons img {
+    width: 30px;
+    height: 30px;
+}
+
+.footer-bottom {
+    padding: 10px;
+    font-size: 14px;
+    background-color: #5ce1e6;
+}
+
+.footer-bottom p {
+    font-size: 14px !important;
+}
+
+.footer-bottom p {
+    margin: 0;
+   
+}
+
+.social-icons a{
+    color: #fff;
+    font-size: 45px;
+}
+
+/* Home page styling  */
+.search-section {
+    text-align: center;
+    padding: 20px;
+}
+
+.search-bar {
+    width: 85%;
+    padding: 10px;
+    font-size: 16px;
+    border: 2px solid #00AFC1;
+    border-radius: 5px;
+    margin-top: 150px;
+}
+
+.search-button {
+    background-color: #5ce1e6;
+   /*  color: white;
+    width: max-content;
+    padding: 10px 20px;
+    border: none;
+    border-radius: 5px;
+    font-size: 16px;
+    margin-left: 10px;
+    cursor: pointer;
+    font-weight: bold; */
+}
+
+.events-text h2 {
+    font-size: 24px;
+    color: white;
+    font-weight: bold;
+    text-align: center;
+}

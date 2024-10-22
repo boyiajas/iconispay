@@ -1,0 +1,40 @@
+a{
+    text-decoration: none;
+
+}
+
+.txt-xs{
+    font-size: 13px;
+    color: #666;
+}
+
+/** white button **/
+
+.btn-white{
+    background-color: #fff;
+}
+
+.btn-default-default{
+    border: solid 1px #ccc;
+}
+.btn-white:hover{
+    color: rgb(0, 151, 157);
+    background-color: #fafafa;
+}
+
+.bg-green{
+    color: green;
+}
+
+.bg-blue{
+    color: #0097b2bf;
+}
+
+.bg-info{
+    background-color: #0097b2bf !important;
+}
+
+.card{
+     border: solid 1px #eee !important; 
+    border-top: none !important;
+}

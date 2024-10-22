@@ -1,0 +1,522 @@
+<template>
+    <div class="container mt-4">
+        <h4 class="section-title">Legal Associates Firm Setup</h4>
+        <!-- Tab Navigation -->
+        <ul class="nav nav-tabs mb-0" id="setupTab" role="tablist">
+            <li class="nav-item" role="presentation">
+                <a class="nav-link active" id="users-tab" data-bs-toggle="tab" href="#users" role="tab" aria-controls="users" aria-selected="true">Users</a>
+            </li>
+            <li class="nav-item" role="presentation">
+                <a class="nav-link" id="beneficiary-accounts-tab" data-bs-toggle="tab" href="#beneficiary-accounts" role="tab" aria-controls="beneficiary-accounts" aria-selected="false" @click="initializeBeneficiaryAccounts">Beneficiary Accounts</a>
+            </li>
+            <li class="nav-item" role="presentation">
+                <a class="nav-link" id="firm-accounts-tab" data-bs-toggle="tab" href="#firm-accounts" role="tab" aria-controls="firm-accounts" aria-selected="false" @click="initializeFirmAccounts">Firm Accounts</a>
+            </li>
+            <li class="nav-item" role="presentation">
+                <a class="nav-link" id="audit-trail-tab" data-bs-toggle="tab" href="#audit-trail" role="tab" aria-controls="audit-trail" aria-selected="false">Audit Trail</a>
+            </li>
+            <li class="nav-item" role="presentation">
+                <a class="nav-link" id="deactivated-users-tab" data-bs-toggle="tab" href="#deactivated-users" role="tab" aria-controls="deactivated-users" aria-selected="false" @click="loadDeactivatedUsers">Deactivated Users</a>
+            </li>
+        </ul>
+
+        <!-- Tab Content -->
+        <div class="tab-content" id="setupTabContent">
+
+            <!-- Firm Accounts Tab -->
+            <div class="tab-pane fade wrap" id="firm-accounts" role="tabpanel" aria-labelledby="firm-accounts-tab" width="100%">
+                <div class="card mb-4">
+                    <div class="card-header d-flex justify-content-between">
+                        <h5>Source Accounts</h5>
+                        <router-link to="/firmaccount/new" class="btn btn-white btn-sm">+ New Source Account</router-link>
+                    </div>
+                    <div class="card-body">
+                        <table id="source-accounts-table" class="table table-bordered table-striped display nowrap" style="width:100%">
+                            <thead>
+                                <tr>
+                                    <th>Display</th>
+                                    <th>Category</th>
+                                    <th>Account Holder</th>
+                                    <th width="10%">Account</th>
+                                    <th>Institution</th>
+                                    <th width="9%">Aggregated</th>
+                                    <th width="9%">Authorised</th>
+                                    <th width="9%">Mandated</th>
+                                    <th width="12%">Actions</th>
+                                </tr>
+                            </thead>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            
+
+            <!-- Users Tab -->
+            <div class="tab-pane fade show active" id="users" role="tabpanel" aria-labelledby="users-tab">
+                <div class="card mb-4">
+                    <div class="card-header d-flex justify-content-between">
+                        <h5>Users List</h5>
+                        <button class="btn btn-white btn-sm" @click="addUser">+ New User</button>
+                    </div>
+                    <div class="card-body">
+                        <table id="users-list-table" class="table table-bordered table-striped display nowrap" style="width:100%">
+                            <thead>
+                                <tr>
+                                    <th>Username</th>
+                                    <th>Full Name</th>
+                                    <th>Email</th>
+                                    <th>Role</th>
+                                    <th>Last Seen</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Beneficiary Accounts Tab -->
+            <div class="tab-pane fade" id="beneficiary-accounts" role="tabpanel" aria-labelledby="beneficiary-accounts-tab">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between">
+                        <h5>Beneficiary Accounts</h5>
+                        <router-link to="/beneficiary/new" class="btn btn-white btn-sm">+ New Beneficiary Account</router-link>
+                    </div>
+                    <div class="card-body">
+                        <table id="beneficiary-accounts-table" class="table table-bordered table-striped display nowrap" style="width:100%">
+                            <thead>
+                                <tr>
+                                    <th>Display</th>
+                                    <th>Category</th>
+                                    <th>Account Holder</th>
+                                    <th width="10%">Account</th>
+                                    <th width="15%">Institution</th>
+                                    <th width="10%">Authorised</th>
+                                    <th width="12%">Actions</th>
+                                </tr>
+                            </thead>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Audit Trail Tab -->
+            <div class="tab-pane fade show" id="audit-trail" role="tabpanel" aria-labelledby="audit-trail-tab">
+                <!-- Audit Trail Content -->
+                <div class="card">
+                    <div class="card-header">
+                        <h5>Audit Trail</h5>
+                    </div>
+                    <div class="card-body">
+                        <!-- Date Range Filter -->
+                        <div class="row mb-3">
+                            <div class="col-md-3">
+                                <label for="fromDate">From:</label>
+                                <input type="date" v-model="filter.fromDate" class="form-control" id="fromDate" required>
+                            </div>
+                            <div class="col-md-3">
+                                <label for="toDate">To:</label>
+                                <input type="date" v-model="filter.toDate" class="form-control" id="toDate" required>
+                            </div>
+                            <div class="col-md-3 d-flex align-items-end">
+                                <button type="button" class="btn btn-primary" @click="filterAuditTrail">Go</button>
+                            </div>
+                        </div>
+
+                        <!-- Audit Trail Table -->
+                        <div>
+                            <table class="table table-bordered table-striped">
+                                <thead>
+                                    <tr>
+                                        <th>User Name</th>
+                                        <th>Action</th>
+                                        <th>Details</th>
+                                        <th>Date</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <tr v-for="audit in auditTrails" :key="audit.id">
+                                        <td>{{ audit.user_name }}</td>
+                                        <td>{{ audit.action }}</td>
+                                        <td>{{ audit.details }}</td>
+                                        <td>{{ new Date(audit.created_at).toLocaleString() }}</td>
+                                    </tr>
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Deactivated Users Tab -->
+            <div class="tab-pane fade" id="deactivated-users" role="tabpanel" aria-labelledby="deactivated-users-tab">
+                <div class="card mb-4">
+                    <div class="card-header d-flex justify-content-between">
+                        <h5>Deactivated Users List</h5>
+                        <button class="btn btn-white btn-sm" @click="addUser">+ New User</button>
+                    </div>
+                    <div class="card-body">
+                        <table id="deactivated-users-table" class="table table-bordered table-striped display nowrap" style="width:100%">
+                            <thead>
+                                <tr>
+                                    <th>Username</th>
+                                    <th>Full Name</th>
+                                    <th>Email</th>
+                                    <th>Role</th>
+                                    <th>Last Seen</th>
+                                    <th>Actions</th>
+                                </tr>
+                            </thead>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- New User Modal -->
+        <div class="modal fade" id="newUserModal" tabindex="-1" aria-labelledby="newUserModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="newUserModalLabel">Create a new user account</h5>
+                        <button type="button" class="btn-close" @click="closeModal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form @submit.prevent="saveUser">
+                            <div class="form-group mb-3">
+                                <label for="email">Email:</label>
+                                <input type="email" v-model="newUser.email" class="form-control" id="email" placeholder="Enter email used for user communication" required>
+                            </div>
+                            <div class="form-group mb-3">
+                                <label for="username">Username:</label>
+                                <input type="text" v-model="newUser.username" class="form-control" id="username" placeholder="Enter unique username (defaults to email)">
+                            </div>
+                            <div class="form-group mb-3">
+                                <label for="full_name">Full Name:</label>
+                                <input type="text" v-model="newUser.full_name" class="form-control" id="full_name" placeholder="Enter full name" required>
+                            </div>
+                            <div class="form-group mb-3">
+                                <label for="cell_number">Cell Number:</label>
+                                <input type="text" v-model="newUser.cell_number" class="form-control" id="cell_number" placeholder="Enter cell phone number">
+                            </div>
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="checkbox" v-model="newUser.is_admin" id="is_admin">
+                                <label class="form-check-label" for="is_admin">Is Administrator</label>
+                            </div>
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="checkbox" v-model="newUser.authoriser_role" id="authoriser_role">
+                                <label class="form-check-label" for="authoriser_role">Request Authoriser Role</label>
+                            </div>
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="checkbox" v-model="newUser.bookkeeper_role" id="bookkeeper_role">
+                                <label class="form-check-label" for="bookkeeper_role">Request Bookkeeper Role</label>
+                            </div>
+                            <button type="submit" class="btn btn-primary mt-3">Save</button>
+                            <button type="button" class="btn btn-secondary mt-3" data-bs-dismiss="modal">Cancel</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</template>
+
+<script>
+import axios from 'axios';
+import $ from 'jquery';
+import 'datatables.net';
+import 'datatables.net-bs5';
+
+export default {
+    data() {
+        return {
+            activeTab: 0,
+            usersTable: [],
+            sourceAccountsTable: [],
+            beneficiaryAccounts: [],
+            auditTrails: [],
+            deactivatedUsersTable: [],
+            newUser: {
+                email: '',
+                username: '',
+                full_name: '',
+                cell_number: '',
+                is_admin: false,
+                authoriser_role: false,
+                bookkeeper_role: false
+            }, 
+            filter: {
+                fromDate: '', // Start date for filtering
+                toDate: '',   // End date for filtering
+            },
+            modalInstance: null // Store the modal instance
+        };
+    },
+    mounted() {
+        this.loadUsers();
+    },
+    methods: {
+        loadUsers() {
+            
+            if ($.fn.dataTable.isDataTable('#users-list-table')) {
+                $('#users-list-table').DataTable().destroy(); // Destroy existing instance if already initialized
+            }
+
+            this.usersTable = $('#users-list-table').DataTable({
+                processing: true,
+                serverSide: true,
+                ajax: {
+                    url: '/api/users',
+                    type: 'GET',
+                    dataSrc: 'data' // Assumes the API response has a `data` field
+                },
+                columns: [
+                    { data: 'email' },
+                    { data: 'name' },
+                    { data: 'email' },
+                    { data: 'role' },
+                    { data: 'last_login' },
+                    {
+                        data: null,
+                        render: function (data) {
+                            return `
+                                <button class="btn btn-outline-info btn-sm me-2"><i class="fas fa-edit"></i></button>
+                                <button class="btn btn-outline-danger btn-sm"><i class="fas fa-trash"></i></button>
+                            `;
+                        }
+                    }
+                ],
+                responsive: true,
+                paging: true,
+                pageLength: 10,
+                lengthMenu: [ [10, 25, 50, 100], [10, 25, 50, 100] ],
+                searching: true,
+                autoWidth: true
+            });
+        },
+        // Save new user to the database
+        saveUser() {
+            axios.post('/api/users', this.newUser)
+                .then(response => {
+                    this.users.push(response.data);
+                    //this.modalInstance = new bootstrap.Modal(document.getElementById('newUserModal'));
+                    this.modalInstance.hide();
+                    this.resetNewUser();
+                })
+                .catch(error => {
+                    console.error('Error saving user:', error);
+                });
+        },
+        
+        // Load all audit trails or filtered audit trails based on date range
+        loadAuditTrails() {
+            const params = {
+                fromDate: this.filter.fromDate,
+                toDate: this.filter.toDate
+            };
+
+            axios.get('/api/audit-trails', { params }).then(response => {
+                this.auditTrails = response.data;
+            }).catch(error => {
+                console.error('Error loading audit trails:', error);
+            });
+        },
+
+        // Filter audit trails based on date range
+        filterAuditTrail() {
+            this.loadAuditTrails(); // Call the load method with updated filters
+        },
+        loadDeactivatedUsers() {
+
+            if ($.fn.dataTable.isDataTable('#deactivated-users-table')) {
+                $('#deactivated-users-table').DataTable().destroy(); // Destroy existing instance if already initialized
+            }
+
+            this.deactivatedUsersTable = $('#deactivated-users-table').DataTable({
+                processing: true,
+                serverSide: true,
+                ajax: {
+                    url: '/api/deactivated-users',
+                    type: 'GET',
+                    dataSrc: 'data' // Assumes the API response has a `data` field
+                },
+                columns: [
+                    { data: 'email' },
+                    { data: 'name' },
+                    { data: 'email' },
+                    { data: 'role' },
+                    { data: 'last_login' },
+                    {
+                        data: null,
+                        render: function (data) {
+                            return `
+                                <button class="btn btn-outline-info btn-sm me-2"><i class="fas fa-edit"></i></button>
+                                <button class="btn btn-outline-danger btn-sm"><i class="fas fa-lock"></i></button>
+                            `;
+                        }
+                    }
+                ],
+                responsive: true,
+                paging: true,
+                pageLength: 10,
+                lengthMenu: [ [10, 25, 50, 100], [10, 25, 50, 100] ],
+                searching: true,
+                autoWidth: true
+            });
+        },
+        addUser() {
+            this.modalInstance = new bootstrap.Modal(document.getElementById('newUserModal'));
+            this.modalInstance.show();
+        },
+        closeModal() {
+            //const newUserModal = bootstrap.Modal.getInstance(document.getElementById('newUserModal'));
+            if (this.modalInstance) {
+                this.modalInstance.hide();
+            }
+        },
+        editUser(user) {
+            alert(`Edit user ${user.username}`);
+        },
+        // Reset new user form fields
+        resetNewUser() {
+            this.newUser = {
+                email: '',
+                username: '',
+                full_name: '',
+                cell_number: '',
+                is_admin: false,
+                authoriser_role: false,
+                bookkeeper_role: false
+            };
+        },
+        editFirmAccount(account) {
+            alert(`Edit firm account ${account.account_name}`);
+        },
+        reactivateUser(user) {
+            alert(`Reactivate user ${user.username}`);
+        },
+         // Initialize the Source Accounts DataTable
+         initializeFirmAccounts() {
+            if ($.fn.dataTable.isDataTable('#source-accounts-table')) {
+                $('#source-accounts-table').DataTable().destroy(); // Destroy existing instance if already initialized
+            }
+
+            this.sourceAccountsTable = $('#source-accounts-table').DataTable({
+                processing: true,
+                serverSide: true,
+                ajax: {
+                    url: '/api/firm-accounts',
+                    type: 'GET',
+                    dataSrc: 'data' // Assumes the API response has a `data` field
+                },
+                columns: [
+                    { data: 'display' },
+                    { data: 'category.name' },
+                    { data: 'account_holder' },
+                    { data: 'account_number' },
+                    { data: 'institution.name' },
+                    { data: 'aggregated', render: data => data ? '<i class="fas fa-check text-success"></i>' : '' },
+                    { data: 'authorised', render: data => data ? '<i class="fas fa-check text-success"></i>' : '' },
+                    { data: 'mandated', render: data => data ? '<i class="fas fa-check text-success"></i>' : '' },
+                    {
+                        data: null,
+                        render: function (data) {
+                            return `
+                                <button class="btn btn-outline-info btn-sm"><i class="fas fa-search"></i></button>
+                                <button class="btn btn-outline-secondary btn-sm" @click="editFirmAccount(account)"><i class="fas fa-edit"></i></button>
+                                <button class="btn btn-outline-danger btn-sm"><i class="fas fa-trash"></i></button>
+                            `;
+                        }
+                    }
+                ],
+                createdRow: function(row, data, dataIndex) {
+                    // Apply style to all <td> elements
+                    $('td', row).css('word-wrap', 'break-word').css('white-space', 'normal');
+                },
+                responsive: true,
+                paging: true,
+                pageLength: 10,
+                lengthMenu: [ [10, 25, 50, 100], [10, 25, 50, 100] ],
+                searching: true,
+                autoWidth: true,
+                wrap: true,
+            });
+        },
+       // Initialize the Beneficiary Accounts DataTable
+       initializeBeneficiaryAccounts() {
+            if ($.fn.dataTable.isDataTable('#beneficiary-accounts-table')) {
+                $('#beneficiary-accounts-table').DataTable().destroy(); // Destroy existing instance if already initialized
+            }
+
+            this.beneficiaryAccountsTable = $('#beneficiary-accounts-table').DataTable({
+                processing: true,
+                serverSide: true,
+                ajax: {
+                    url: '/api/beneficiary-accounts',
+                    type: 'GET',
+                    dataSrc: 'data' // Assumes the API response has a `data` field
+                },
+                columns: [
+                    { data: 'display_text' },
+                    { data: 'category.name' },
+                    { data: 'company_name' },
+                    { data: 'account_number' },
+                    { data: 'institution.name' },
+                    { data: 'authorised', render: data => data ? '<i class="fas fa-check text-success"></i>' : '' },
+                    {
+                        data: null,
+                        render: function (data) {
+                            return `
+                                <button class="btn btn-outline-info btn-sm"><i class="fas fa-search"></i></button>
+                                <button class="btn btn-outline-secondary btn-sm" @click="editFirmAccount(account)"><i class="fas fa-edit"></i></button>
+                                <button class="btn btn-outline-danger btn-sm"><i class="fas fa-trash"></i></button>
+                            `;
+                        }
+                    }
+                ],
+                createdRow: function(row, data, dataIndex) {
+                    // Apply style to all <td> elements
+                    $('td', row).css('word-wrap', 'break-word').css('white-space', 'normal');
+                },
+                responsive: true,
+                paging: true,
+                pageLength: 10,
+                lengthMenu: [ [10, 25, 50, 100], [10, 25, 50, 100] ],
+                searching: true,
+                autoWidth: true,
+                wrap: true,
+            });
+        },
+        // Method to load both accounts when Firm Accounts tab is clicked
+        loadAccounts() {
+            this.initializeSourceAccounts();
+            this.initializeBeneficiaryAccounts();
+        }
+    }
+};
+</script>
+
+<style scoped>
+.section-title {
+    font-weight: bold;
+    margin-bottom: 20px;
+}
+.card-header h5 {
+    font-size: 18px;
+    font-weight: bold;
+}
+.table thead th {
+    background-color: #f8f9fa;
+    /* text-align: center; */
+}
+
+.table {
+    table-layout: fixed;
+    text-overflow: ellipsis; 
+}
+
+
+tbody tr td {
+    text-wrap: wrap !important;
+}
+</style>
