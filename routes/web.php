@@ -3,8 +3,10 @@
 use App\Http\Controllers\AccountTypeController;
 use App\Http\Controllers\AuditTrailController;
 use App\Http\Controllers\Auth\LoginController;
+use App\Http\Controllers\AvsController;
 use App\Http\Controllers\BeneficiaryAccountController;
 use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\DepositController;
 use App\Http\Controllers\DocumentController;
 use App\Http\Controllers\FirmAccountController;
 use App\Http\Controllers\HomeController;
@@ -15,6 +17,7 @@ use App\Http\Controllers\RequisitionController;
 use App\Http\Controllers\StatusController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
+
 
 
 
@@ -64,11 +67,14 @@ Route::prefix('api')->group(function(){
     Route::resource('matters', MatterController::class);
     Route::resource('documents', DocumentController::class);
     Route::resource('payments', PaymentController::class);
+    Route::resource('deposits', DepositController::class);
 
     Route::get('/category/beneficiaries/{category_id}', [CategoryController::class, 'getBeneficiariesByCategory']);
     Route::resource('categories', CategoryController::class);
     Route::resource('accounttypes', AccountTypeController::class);
     Route::get('/requisitions/{id}/documents', [DocumentController::class, 'getDocuments']);
+
+    Route::post('/avs/verify', [AvsController::class, 'verify']);
 
 });
 

@@ -205,7 +205,25 @@
                             <ul class="list-group list-group-flush">
                                 <li class="list-group-item">
                                     <div>Deposits</div>
-                                    <div class="txt-xs">No deposits have been added</div>
+
+                                    <!-- Loop through deposits if they exist -->
+                                        <div v-if="selectedSourceAccount.deposits && selectedSourceAccount.deposits.length > 0" class="deposit-section row ml-0 mt-1">
+                                            <div v-for="deposit in selectedSourceAccount.deposits" :key="deposit.id" class="col-md-12 row mb-2">
+                                                <div class="col-md-3">
+                                                    <span><i class="fa fa-check mr-2"></i></span>Deposit
+                                                </div>
+                                                <div class="col-md-6">
+                                                    <!-- Display the user's name who made the deposit -->
+                                                    <div>Marked as received by {{ deposit.user ? deposit.user.name : 'Unknown User' }} on {{ deposit.created_at }}</div>
+                                                </div>
+                                                <div class="col-md-3">
+                                                    R{{ deposit.amount }}
+                                                </div>
+                                            </div>
+                                        </div>
+
+                                        <!-- Display a message if no deposits are found -->
+                                        <div v-else class="txt-xs">No deposits have been added</div>
                                 </li>
                                 <li class="list-group-item">
                                     <div class="mt-3 mb-1">Payments</div>
@@ -439,7 +457,7 @@
                         <div class="modal-footer mb-0">
                             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" @click="closeModal">Cancel</button>
                             <button type="submit" class="btn btn-info">Save</button>
-                            <button type="button" class="btn btn-info" @click="createAndNew">Save & New</button>
+                            <button type="button" class="btn btn-info" @click="createAndNewDeposit">Save & New</button>
                         </div>
                     </form>
                 </div>
@@ -688,7 +706,9 @@ export default {
                 description: '',
                 amount: '',
                 funded: false,
-                deposit_date: null
+                deposit_date: null,
+                requisition_id: this.requisitionId,
+                firm_account_id: this.selectedSourceAccount,
             },
             categories: [],  // Will be populated with categories from the API
             accountTypes: [], //will be populated with account types from the API
@@ -903,7 +923,7 @@ export default {
                 .then(response => {
                     this.selectedSourceAccount = response.data;  // Store the fetched details
                     this.showSourceAccountDetails = true;  // Show the details section
-
+                    console.log(this.selectedSourceAccount.deposits);
                     // Update the requisition with the selected source account ID
                     //this.updateRequisitionSourceAccount(sourceAccountId);
                 })
@@ -1079,21 +1099,25 @@ export default {
         },
 
         // Handle form submission and stay on the modal for adding a new deposit
-        createAndNew() {
+        createAndNewDeposit() {
             this.submitForm(true);
         },
 
         // Submit the deposit form via Axios
         submitForm(stayInModal = false) {
+            
+            this.depositForm.requisition_id = this.requisitionId;
+            this.depositForm.firm_account_id = this.selectedSourceAccount.id;
+            //console.log(this.depositForm);
             axios.post('/api/deposits', this.depositForm)
                 .then(response => {
                     console.log('Deposit created successfully:', response.data);
 
                     // Close the modal if "Save" was clicked
-                    if (!stayInModal) {
+                   // if (!stayInModal) {
                         
                         this.depositModalInstance.hide();
-                    }
+                    //}
 
                     // Reset the form after submission
                     this.resetForm();

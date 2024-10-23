@@ -41,4 +41,9 @@ class FirmAccount extends Model
     {
         return $this->belongsTo(AccountType::class, 'account_type_id');
     }
+
+    public function deposits()
+    {
+        return $this->hasMany(Deposit::class);
+    }
 }
