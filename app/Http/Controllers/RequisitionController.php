@@ -42,7 +42,7 @@ class RequisitionController extends Controller
                 if ($requisition->is_authorized) {
                     $progress .= '<span class="badge bg-success me-2">Authorized</span>';
                 }
-                if ($requisition->is_funded) {
+                if ($requisition->funding_status) {
                     $progress .= '<span class="badge bg-success">Funded</span>';
                 }
                 // If no progress status is set, return a default value
@@ -212,7 +212,7 @@ class RequisitionController extends Controller
                 if ($requisition->is_authorized) {
                     $progress .= '<span class="badge bg-success me-2">Authorized</span>';
                 }
-                if ($requisition->is_funded) {
+                if ($requisition->funding_status) {
                     $progress .= '<span class="badge bg-success">Funded</span>';
                 }
                 // If no progress status is set, return a default value

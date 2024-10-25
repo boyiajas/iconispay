@@ -9,7 +9,7 @@ class Institution extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['name', 'short_name'];
+    protected $fillable = ['name', 'short_name', 'branch_code'];
 
     /**
      * Relationship with the BeneficiaryAccount model.

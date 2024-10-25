@@ -1,6 +1,6 @@
 <template>
     <div class="mt-4">
-        <h4 class="section-title">Home  <router-link to="/requisition/new" class="btn btn-info btn-sm ml-4">+ New Requisition</router-link></h4>
+        <h4 class="section-title">Home  <router-link to="/requisition/new" class="btn btn-primary btn-sm ml-4">+ New Requisition</router-link></h4>
         <!-- Status Cards for Matters -->
         <div class="card mb-4">
             <div class="card-header">

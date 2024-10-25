@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Deposit;
+use App\Models\Requisition;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
@@ -46,6 +47,14 @@ class DepositController extends Controller
          // If funded is true, set deposit_date to null
         $depositDate = $request->input('funded') ? null : $request->input('deposit_date');
 
+        //here we want to update the requisition funding status
+        $requisition = Requisition::find($request->input('requisition_id'));
+        if($requisition){
+            $requisition->update([
+                'funding_status' => 1, // true should be a boolean, not a string
+            ]);
+        }
+
         // Create the deposit record and associate it with the authenticated user
         $deposit = Deposit::create([
             'description' => $request->input('description'),
@@ -57,7 +66,10 @@ class DepositController extends Controller
             'user_id' => auth()->id(),  // Save the authenticated user's ID
         ]);
 
-        return response()->json($deposit, 201); // Success
+       // Eager load the user relationship and return the deposit with user data
+        $deposit->load('user');
+
+        return response()->json($deposit, 201); // Return the created deposit with user data
     }
 
     /**
@@ -81,7 +93,28 @@ class DepositController extends Controller
      */
     public function update(Request $request, Deposit $deposit)
     {
-        //
+        $validated = $request->validate([
+            'description' => 'required|string|max:255',
+            'amount' => 'required|numeric|min:0',
+            'funded' => 'boolean',  // Ensure funded is a boolean
+            'deposit_date' => 'nullable|date|after_or_equal:today' // deposit_date should be a valid date or nullable
+        ]);
+
+        // Handle the logic based on whether the deposit is funded or not
+        if ($request->funded) {
+            // If the deposit is funded, set deposit_date to null
+            $validated['deposit_date'] = null;
+        } else {
+            // If the deposit is not funded, use the provided deposit_date
+            $validated['deposit_date'] = $request->deposit_date;
+        }
+
+        $deposit->update($validated);
+
+        // Eager load the user relationship and return the deposit with user data
+        $deposit->load('user');
+
+        return response()->json($deposit);
     }
 
     /**
@@ -89,6 +122,20 @@ class DepositController extends Controller
      */
     public function destroy(Deposit $deposit)
     {
-        //
+        // Get the requisition associated with the deposit
+        $requisition = $deposit->requisition;
+
+        // Check if this is the last deposit for the requisition
+        $remainingDeposits = $requisition->deposits()->count();
+
+        if ($remainingDeposits === 1) {
+            // If this is the last deposit, set funding_status to null
+            $requisition->update(['funding_status' => null]);
+        }
+
+        // Delete the deposit
+        $deposit->delete();
+
+        return response()->json($requisition, 201);
     }
 }

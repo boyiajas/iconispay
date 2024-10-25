@@ -15,6 +15,7 @@ return new class extends Migration
             $table->id();
             $table->string('name');
             $table->string('short_name')->nullable();
+            $table->string('branch_code')->nullable();
             $table->timestamps();
         });
     }

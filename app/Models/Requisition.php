@@ -55,4 +55,17 @@ class Requisition extends Model
     {
         return $this->belongsTo(Status::class, 'status_id');
     }
+
+     /**
+     * The requisition can have many deposits.
+     */
+    public function deposits()
+    {
+        return $this->hasMany(Deposit::class);
+    }
+
+    public function payments()
+    {
+        return $this->hasMany(Payment::class);
+    }
 }

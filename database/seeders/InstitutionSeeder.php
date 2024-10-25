@@ -14,16 +14,16 @@ class InstitutionSeeder extends Seeder
     public function run(): void
     {
         $institutions = [
-            ['name' => 'ABSA Bank', 'short_name' => 'ABSA'],
+            ['name' => 'ABSA Bank', 'short_name' => 'ABSA', 'branch_code' => '632005'],
             ['name' => 'African Bank', 'short_name' => 'African'],
-            ['name' => 'First National Bank', 'short_name' => 'FNB'],
-            ['name' => 'Standard Bank', 'short_name' => 'Standard'],
-            ['name' => 'Nedbank', 'short_name' => 'Nedbank'],
-            ['name' => 'Capitec Bank', 'short_name' => 'Capitec'],
-            ['name' => 'Capitec Business', 'short_name' => 'Capitec Business'],
-            ['name' => 'Discovery Bank', 'short_name' => 'Discovery'],
-            ['name' => 'Investec Bank', 'short_name' => 'Investec'],
-            ['name' => 'Tyme Bank', 'short_name' => 'Tyme'],
+            ['name' => 'First National Bank', 'short_name' => 'FNB', 'branch_code' => '250655'],
+            ['name' => 'Standard Bank', 'short_name' => 'Standard', 'branch_code' => '051001'],
+            ['name' => 'Nedbank', 'short_name' => 'Nedbank', 'branch_code' => '198765'],
+            ['name' => 'Capitec Bank', 'short_name' => 'Capitec', 'branch_code' => '470010'],
+            ['name' => 'Capitec Business', 'short_name' => 'Capitec Business', 'branch_code' => '450105'],
+            ['name' => 'Discovery Bank', 'short_name' => 'Discovery', 'branch_code' => '679000'],
+            ['name' => 'Investec Bank', 'short_name' => 'Investec', 'branch_code' => '580105'],
+            ['name' => 'Tyme Bank', 'short_name' => 'Tyme', 'branch_code' => '678910'],
         ];
 
         foreach ($institutions as $institution) {

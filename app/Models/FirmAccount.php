@@ -46,4 +46,9 @@ class FirmAccount extends Model
     {
         return $this->hasMany(Deposit::class);
     }
+
+    public function payments()
+    {
+        return $this->hasMany(Payment::class);
+    }
 }
