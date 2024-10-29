@@ -6,7 +6,7 @@
      <script>
         window.Laravel = <?php echo json_encode([
             'csrfToken' => csrf_token(),
-            'user' => Auth::user(), // Pass authenticated user data
+            'user' => Auth::check() ? Auth::user()->load('roles', 'permissions') : null,
         ]); ?>
     </script>
 

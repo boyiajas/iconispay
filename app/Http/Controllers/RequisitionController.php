@@ -3,9 +3,10 @@
 namespace App\Http\Controllers;
 
 use App\Models\Requisition;
-use Illuminate\Http\Request;
-use DataTables;
 use Auth;
+use Carbon\Carbon;
+use DataTables;
+use Illuminate\Http\Request;
 
 class RequisitionController extends Controller
 {
@@ -40,13 +41,17 @@ class RequisitionController extends Controller
             ->addColumn('progress', function ($requisition) {
                 $progress = '';
                 if ($requisition->is_authorized) {
-                    $progress .= '<span class="badge bg-success me-2">Authorized</span>';
+                    $progress .= '<span class="badge bg-success me-1">Authorized</span>';
+                }else{
+                    $progress .= '<span class="badge bg-default me-1 disabled">Authorized</span>';
                 }
                 if ($requisition->funding_status) {
                     $progress .= '<span class="badge bg-success">Funded</span>';
+                }else{
+                    $progress .= '<span class="badge bg-default">Funded</span>';
                 }
                 // If no progress status is set, return a default value
-                return $progress ?: '<span class="badge bg-secondary">No Progress</span>';
+                return $progress ?: '<span class="badge bg-default">No Progress</span>';
             })
             /* ->addColumn('progress', function ($requisition) {
                 $progress = '';
@@ -144,20 +149,97 @@ class RequisitionController extends Controller
         ]);
     }
 
+    public function approve(Requisition $requisition)
+    {
+        // Update the requisition with the new values
+        $requisition->update([
+            'authorization_status' => 1,                  // Set authorization status to approved
+            'status_id' => 5,                             // Update status ID
+            'authorized_user_id' => auth()->id(),         // Set the current user as the authorizer
+            'authorized_at' => Carbon::now(),            // Set the current time for authorization
+            'locked' => 1 
+        ]);
+
+        $requisition->calculateTransactionValue();
+
+        return response()->json([
+            'message' => 'Requisition approved successfully',
+            'data' => $requisition
+        ]);
+    }
+
     public function getIncompleteRequisitions(Request $request)
     {
         // Get the currently authenticated user ID
-        $userId = Auth::id();
+        $user = Auth::user();
+        $incompleteStatusId = 2;
+        $incompleteCount = 0;
+        
 
-        // Query the requisitions where created_by matches the user ID and status is incomplete
-        // Assuming status_id '1' represents 'incomplete'
-        $incompleteCount = Requisition::where('created_by', $userId)
-                                      ->where('status_id', 2) // Replace '1' with your actual incomplete status ID
-                                      ->count();
-
+         // Check if the user has an 'admin' or 'authorizer' role
+        if ($user->hasRole('admin') || $user->hasRole('authoriser')) {
+            // If the user is an admin or authorizer, get all incomplete requisitions
+            $incompleteCount = Requisition::where('status_id', $incompleteStatusId)->count();
+        } else {
+            // Otherwise, get incomplete requisitions created by the user
+            $incompleteCount = Requisition::where('created_by', $user->id)
+                                        ->where('status_id', $incompleteStatusId)
+                                        ->count();
+        }
+        
         // Return the count as a JSON response
         return response()->json([
             'count' => $incompleteCount,
+        ]);
+    }
+
+    public function getAwaitingAuthorization(Request $request)
+    {
+        // Get the currently authenticated user ID
+        $user = Auth::user();
+        $awaitingAuthorizationStatusId = 3;
+        $awaitingAuthorizationCount = 0;
+        
+
+         // Check if the user has an 'admin' or 'authorizer' role
+        if ($user->hasRole('admin') || $user->hasRole('authoriser')) {
+            // If the user is an admin or authorizer, get all incomplete requisitions
+            $awaitingAuthorizationCount = Requisition::where('status_id', $awaitingAuthorizationStatusId)->count();
+        } else {
+            // Otherwise, get incomplete requisitions created by the user
+            $awaitingAuthorizationCount = Requisition::where('created_by', $user->id)
+                                        ->where('status_id', $awaitingAuthorizationStatusId)
+                                        ->count();
+        }
+       
+        // Return the count as a JSON response
+        return response()->json([
+            'count' => $awaitingAuthorizationCount,
+        ]);
+    }
+    
+    public function getReadyForPayment(Request $request)
+    {
+        // Get the currently authenticated user ID
+        $user = Auth::user();
+        $readyForPaymentStatusId = 5;
+        $readyForPaymentCount = 0;
+        
+
+         // Check if the user has an 'admin' or 'authorizer' role
+        if ($user->hasRole('admin') || $user->hasRole('authoriser')) {
+            // If the user is an admin or authorizer, get all incomplete requisitions
+            $readyForPaymentCount = Requisition::where('status_id', $readyForPaymentStatusId)->count();
+        } else {
+            // Otherwise, get incomplete requisitions created by the user
+            $readyForPaymentCount = Requisition::where('created_by', $user->id)
+                                        ->where('status_id', $readyForPaymentStatusId)
+                                        ->count();
+        }
+       
+        // Return the count as a JSON response
+        return response()->json([
+            'count' => $readyForPaymentCount,
         ]);
     }
 
@@ -174,11 +256,21 @@ class RequisitionController extends Controller
             'Settlement Failed' => 8,
         ];
 
-        // Get the logged-in user ID
-        $userId = Auth::id();
+        // Get the currently authenticated user ID
+        $user = Auth::user();
+        $awaitingAuthorizationStatusId = 3;
+        $incompleteCount = 0;
+        
+        // Check if the user has an 'admin' or 'authorizer' role
+        if ($user->hasRole('admin') || $user->hasRole('authoriser')) {
+            // Fetch the requisitions matching the status and created by the logged-in user
+            $query = Requisition::with('user');
+        } else {
+            // Fetch the requisitions matching the status and created by the logged-in user
+            $query = Requisition::with('user')->where('created_by', $user->id);
+        }
     
-        // Fetch the requisitions matching the status and created by the logged-in user
-        $query = Requisition::with('user')->where('created_by', $userId);
+        
 
         // Apply text search filter if provided
         if ($request->filter_text) {
@@ -216,7 +308,7 @@ class RequisitionController extends Controller
                     $progress .= '<span class="badge bg-success">Funded</span>';
                 }
                 // If no progress status is set, return a default value
-                return $progress ?: '<span class="badge bg-secondary">No Progress</span>';
+                return $progress ?: '<span class="badge bg-default">No Progress</span>';
             })
             ->addColumn('user.name', function ($requisition) {
                 return $requisition->user->name;

@@ -19,11 +19,14 @@ class UserController extends Controller
 
         // Use the DataTables facade to format the data
         return DataTables::of($users)
-            ->addColumn('role', function ($user) {
-                // Combine all role names into a single string
-                return $user->roles->pluck('name')->implode(', ');
-            })
-            ->make(true);
+        ->addColumn('role', function ($user) {
+            // Wrap each role name in a Bootstrap badge
+            return $user->roles->map(function ($role) {
+                return '<span class="badge badge-primary btn-primary">' . $role->name . '</span>';
+            })->implode(' ');
+        })
+        ->rawColumns(['role']) // Ensure the HTML for badges is rendered
+        ->make(true);
     }
 
     public function getRecipients()

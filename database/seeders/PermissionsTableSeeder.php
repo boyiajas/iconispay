@@ -46,5 +46,10 @@ class PermissionsTableSeeder extends Seeder
         Permission::create(['name' => 'edit bookkeepers']);
         Permission::create(['name' => 'delete bookkeepers']);
 
+        Permission::create(['name' => 'view requisition']);
+        Permission::create(['name' => 'create requisition']);
+        Permission::create(['name' => 'edit requisition']);
+        Permission::create(['name' => 'delete requisition']);
+
     }
 }

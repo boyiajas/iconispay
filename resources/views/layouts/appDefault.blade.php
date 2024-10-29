@@ -20,10 +20,9 @@
     <link href="https://fonts.bunny.net/css?family=Nunito" rel="stylesheet">
     <title>Lexis Pay Dashboard</title>
     <link rel="stylesheet" href="{{URL::to('assets/css/bootstrap.min.css')}}">
-    <link rel="stylesheet" href="{{URL::to('assets/plugins/fontawesome/css/fontawesome.min.css')}}">
-    <link rel="stylesheet" type="text/css" href="{{URL::to('assets/plugins/fontawesome/css/all.min.css')}}">
+   
     <link rel="stylesheet" href="{{URL::to('assets/css/feathericon.min.css')}}">
-    <link rel="stylesheet" href="{{URL::to('assets/plugins/morris/morris.css')}}">
+    
     <link rel="stylesheet" href="{{URL::to('assets/css/style.css')}}">
     <link rel="stylesheet" href="{{ URL::to('assets/css/toastr.min.css') }}">
     <script src="{{ URL::to('assets/js/toastr_jquery.min.js') }}"></script>
@@ -122,7 +121,12 @@
         <!-- Main Content -->
         @yield('content')
     </div>
-    
+    <script>
+        
+        $(function () {
+            $('[data-toggle="popover"]').popover()
+        })
+    </script>
     
     <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.2/dist/umd/popper.min.js"></script>

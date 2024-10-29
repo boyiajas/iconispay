@@ -46,3 +46,7 @@ a{
      border: solid 1px #eee !important; 
     border-top: none !important;
 }
+
+.bg-default{
+    background: #ccc !important;
+}

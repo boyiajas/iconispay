@@ -76,9 +76,9 @@ class LoginController extends Controller
 
             Toastr::success('Login successfully :)','Success');
 
-            if(Auth::user()->hasRole('user')){
+           /*  if(Auth::user()->hasRole('user')){
                 return redirect()->intended('customer/dashboard');
-            }
+            } */
            
             return redirect()->intended('home');
 

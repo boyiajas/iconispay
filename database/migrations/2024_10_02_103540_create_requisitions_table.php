@@ -23,6 +23,9 @@ return new class extends Migration
             $table->decimal('transaction_value', 15, 2)->default(0);  // Value of the transaction
             $table->string('capturing_status')->nullable();  // Status of capturing
             $table->string('authorization_status')->nullable();  // Status of authorization
+            $table->foreignId('authorized_user_id')->nullable();
+            $table->string('authorized_at')->nullable();
+            $table->string('locked')->nullable();
             $table->string('funding_status')->nullable();  // Status of funding
             $table->string('settlement_status')->nullable();  // Status of settlement
             $table->unsignedBigInteger('created_by'); // User who created the matter

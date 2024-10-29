@@ -59,7 +59,12 @@ Route::prefix('api')->group(function(){
 
     // Custom requisition route for incomplete requisitions
     Route::get('/requisitions/incomplete', [RequisitionController::class, 'getIncompleteRequisitions'])->name('api.requisitions.incomplete');
+    Route::get('/requisitions/awaiting-authorization', [RequisitionController::class, 'getAwaitingAuthorization'])->name('api.requisitions.awaiting-authorization');
+    Route::get('/requisitions/ready-for-payment', [RequisitionController::class, 'getReadyForPayment'])->name('api.requisitions.ready-for-payment');
     Route::get('/requisitions/bystatus', [RequisitionController::class, 'getRequisitionsByStatus'])->name('api.requisitions.byStatus');
+    Route::put('/requisitions/{requisition?}/approve', [RequisitionController::class, 'approve']);
+
+    Route::post('/deposits/balance-payment-fund', [DepositController::class, 'balancePaymentFund'])->name('api.deposits.balance-payment-fund');
 
     Route::resource('requisitions', RequisitionController::class);
 
@@ -68,6 +73,7 @@ Route::prefix('api')->group(function(){
     Route::resource('documents', DocumentController::class);
     Route::resource('payments', PaymentController::class);
     Route::resource('deposits', DepositController::class);
+    
 
     Route::get('/category/beneficiaries/{category_id}', [CategoryController::class, 'getBeneficiariesByCategory']);
     Route::resource('categories', CategoryController::class);

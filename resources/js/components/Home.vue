@@ -1,6 +1,12 @@
 <template>
     <div class="mt-4">
-        <h4 class="section-title">Home  <router-link to="/requisition/new" class="btn btn-primary btn-sm ml-4">+ New Requisition</router-link></h4>
+        
+        <h4 class="section-title">Home  
+            <PermissionControl :roles="['admin', 'authoriser', 'user']">
+                    <router-link to="/requisition/new" class="btn btn-primary btn-sm ml-4">+ New Requisition</router-link>
+            </PermissionControl>
+            
+        </h4>
         <!-- Status Cards for Matters -->
         <div class="card mb-4">
             <div class="card-header">
@@ -19,7 +25,9 @@
                             </a>
                             <a href="#" @click.prevent="loadRequisitionsByStatus('Awaiting Authorisation')">
                                 <li class="list-group-item">Awaiting Authorisation 
-                                    <span class="pull-right badge badge-pill badge-secondary">0</span>
+                                    <span :class="['pull-right', 'badge', 'badge-pill', awaitingAuthorizationRequisitions > 0 ? 'badge-danger' : 'badge-secondary']">
+                                        {{ awaitingAuthorizationRequisitions }}
+                                    </span>
                                 </li>
                             </a>
                             <a href="#" @click.prevent="loadRequisitionsByStatus('Awaiting Funding')">
@@ -29,7 +37,9 @@
                             </a>
                             <a href="#" @click.prevent="loadRequisitionsByStatus('Ready for Payment')">
                                 <li class="list-group-item">Ready for Payment 
-                                    <span class="pull-right badge badge-pill badge-secondary">0</span>
+                                    <span :class="['pull-right', 'badge', 'badge-pill', readyForPaymentRequisitions > 0 ? 'badge-danger' : 'badge-secondary']">
+                                        {{ readyForPaymentRequisitions }}
+                                    </span>
                                 </li>
                             </a>
                             <a href="#" @click.prevent="loadRequisitionsByStatus('Pending Payment Confirmation')">
@@ -66,20 +76,56 @@
 
 <script>
 import axios from 'axios';
+import PermissionControl from './permission/PermissionControl.vue';  // Import the Can component
 
 export default {
+    components: {
+        PermissionControl
+    },
+    props: {
+        user: {
+            type: Object,
+            required: true
+        }
+    },
     data() {
         return {
             incompleteRequisitions: 0, // Store the count of incomplete requisitions
+            awaitingAuthorizationRequisitions: 0,
+            readyForPaymentRequisitions: 0,
         };
     },
     methods: {
         // Method to load the incomplete requisitions
         loadIncompleteRequisitions() {
+            //console.log(this.user);
             axios.get('/api/requisitions/incomplete')
             .then(response => {
                 // Assuming the response contains the count of incomplete requisitions
                 this.incompleteRequisitions = response.data.count;
+            })
+            .catch(error => {
+                console.error("There was an error fetching the requisition data: ", error);
+            });
+        },
+         // Method to load the Awaiting Authorization requisitions
+         loadAwaitingAuthorizationRequisitions() {
+            axios.get('/api/requisitions/awaiting-authorization')
+            .then(response => {
+                // Assuming the response contains the count of incomplete requisitions
+                this.awaitingAuthorizationRequisitions = response.data.count;
+                //console.log(response.data);
+            })
+            .catch(error => {
+                console.error("There was an error fetching the requisition data: ", error);
+            });
+        },
+        loadReadyForPaymentRequisitions(){
+            axios.get('/api/requisitions/ready-for-payment')
+            .then(response => {
+                // Assuming the response contains the count of incomplete requisitions
+                this.readyForPaymentRequisitions = response.data.count;
+                //console.log(response.data);
             })
             .catch(error => {
                 console.error("There was an error fetching the requisition data: ", error);
@@ -93,6 +139,8 @@ export default {
     mounted() {
         // Load incomplete requisitions when the component is mounted
         this.loadIncompleteRequisitions();
+        this.loadAwaitingAuthorizationRequisitions();
+        this.loadReadyForPaymentRequisitions();
     }
 };
 </script>

@@ -37,7 +37,8 @@ class RolePermissionSeeder extends Seeder
         // Photographer Role
         $userRole = Role::findByName('user');
         $userRole->givePermissionTo([
-            'create payments'
+            'create payments',
+            'create requisition'
         ]);
 
         $user = \App\Models\User::factory()->create([
@@ -63,6 +64,7 @@ class RolePermissionSeeder extends Seeder
             'password' => bcrypt('gospel123')
         ]);
         $user->assignRole($bookkeeperRole);
+        $user->assignRole($userRole);
 
         $user = \App\Models\User::factory()->create([
             'name' => 'Thobilo Humility',

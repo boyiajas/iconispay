@@ -13,9 +13,11 @@
                 <div class="navbar-links-row">
                     <router-link to="/home" class="mr-3">Home</router-link>
                     <router-link to="/matters" class="mr-3">Matters</router-link>
-                    <router-link to="/matters" class="mr-3">Accounts</router-link>
-                    <router-link to="/matters" class="mr-3">Reports</router-link>
-                    <router-link to="/setup" class="mr-3">Setup</router-link>
+                    <PermissionControl :roles="['admin', 'authoriser']">
+                        <router-link to="/matters" class="mr-3">Accounts</router-link>
+                        <router-link to="/matters" class="mr-3">Reports</router-link>
+                        <router-link to="/setup" class="mr-3">Setup</router-link>
+                    </PermissionControl>
                     <!-- Use a regular link for Contact since it's a Laravel route -->
                     <a href="{{ route('contact') }}" class="mr-3">Contact</a>
                 </div>
@@ -24,14 +26,18 @@
 
         <!-- This is where the Vue Router will render components -->
         <div class="container mt-4">
-            <router-view> </router-view>
+            <router-view :user="user"> </router-view>
         </div>
     </div>
 </template>
 
 <script>
+import PermissionControl from './permission/PermissionControl.vue';  // Import the Can component
 export default {
     name: 'App',
+    components: {
+        PermissionControl
+    },
     data() {
         return {
             // Access the user data from the global `window` object
@@ -40,9 +46,9 @@ export default {
     },
     created() {
         // Redirect to the home route if no specific route is matched
-        if (this.$route.path === '/') {
+       /*  if (this.$route.path === '/') {
             this.$router.push({ name: 'home' });
-        }
+        } */
     }
 };
 </script>

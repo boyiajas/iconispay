@@ -20,6 +20,9 @@ class Requisition extends Model
         'transaction_value',
         'capturing_status',
         'authorization_status',
+        'authorized_user_id',
+        'authorized_at',
+        'locked',
         'funding_status',
         'settlement_status',
         'created_by',
@@ -67,5 +70,14 @@ class Requisition extends Model
     public function payments()
     {
         return $this->hasMany(Payment::class);
+    }
+
+    public function calculateTransactionValue()
+    {
+        $totalPayments = $this->payments()->sum('amount');
+        $this->transaction_value = $totalPayments;
+        $this->save();
+
+        return $this->transaction_value;
     }
 }
