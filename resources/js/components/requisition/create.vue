@@ -56,6 +56,7 @@
 
 <script>
 import axios from 'axios';
+import { useToast } from 'vue-toastification';
 
 export default {
     data() {
@@ -68,6 +69,11 @@ export default {
             }
         };
     },
+    setup() {
+        // Initialize toast
+        const toast = useToast();
+        return { toast };
+    },
     methods: {
         // Submit the requisition form
         submitRequisition() {
@@ -78,6 +84,10 @@ export default {
                     const requisitionId = response.data.id;
                     //const matterId = response.data.matter_id;
 
+                    // Show success toast
+                    this.toast.success('Requisition created successfully!', {
+                        title: 'Success'
+                    });
                     // Redirect to the Details page for the newly created requisition
                     /* this.$router.push({ name: 'requisitionDetails', params: { matterId, requisitionId } }); */
                     this.$router.push({ name: 'detailsrequisition', params: { requisitionId } });
@@ -85,6 +95,11 @@ export default {
                 })
                 .catch(error => {
                     console.error('Error submitting requisition:', error);
+
+                    // Show error toast
+                    this.toast.error('Failed to create requisition. Please try again.', {
+                        title: 'Error'
+                    });
                 });
         },
 

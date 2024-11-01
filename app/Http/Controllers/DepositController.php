@@ -171,9 +171,19 @@ class DepositController extends Controller
 
         if ($remainingDeposits === 1) {
             // If this is the last deposit, set funding_status to null
-            $requisition->update(['funding_status' => null]);
+            $requisition->update([
+                'funding_status' => null,
+                'capturing_status' => null,
+                'status_id' => 2,
+                'locked' => null
+            ]);
+        }else{
+            $requisition->update([
+                'capturing_status' => null,
+                'status_id' => 2,
+                'locked' => null
+            ]);
         }
-
         // Delete the deposit
         $deposit->delete();
 

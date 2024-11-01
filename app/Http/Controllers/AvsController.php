@@ -57,10 +57,11 @@ class AvsController extends Controller
         $beneficiaryAccount->holder_name_match = $avsResult['holder_name_match'];
         $beneficiaryAccount->holder_initials_match = $avsResult['holder_initials_match'];
         $beneficiaryAccount->registration_number_match = $avsResult['registration_number_match'];
+        $beneficiaryAccount->avs_verified_at = now();
         $beneficiaryAccount->save();
 
         // Return the AVS result as a response
-        return response()->json(['avs_result' => $avsResult]);
+        return response()->json($beneficiaryAccount);
     }
 
     private function simulateAvs($request, $beneficiaryAccount)

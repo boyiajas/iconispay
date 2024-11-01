@@ -3,7 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\BeneficiaryAccount;
+use App\Models\Payment;
 use DataTables;
+use Exception;
 use Illuminate\Http\Request;
 
 class BeneficiaryAccountController extends Controller
@@ -19,7 +21,20 @@ class BeneficiaryAccountController extends Controller
 
     public function show(BeneficiaryAccount $beneficiaryAccount)
     {
+        
+        try {
+            // Return the requisition with any required relationships, such as the user who created it
+            return response()->json($beneficiaryAccount->load('authorizedBy','institution'));
+        } catch (\Exception $e) {
+            // Log the error message
+            \Log::error('Error getting requisition: ' . $e->getMessage());
 
+            // Return an error response to the client
+            return response()->json([
+                'message' => 'An error occurred while getting requisition.',
+                'error' => $e->getMessage() // Optional: for debugging, remove in production
+            ], 500);
+        }
     }
 
     public function store(Request $request)
@@ -50,7 +65,7 @@ class BeneficiaryAccountController extends Controller
         try {
             // Query beneficiaries based on the account number or account holder name
             $beneficiaries = BeneficiaryAccount::where('account_number', 'LIKE', "%{$query}%")
-            ->orWhere('company_name', 'LIKE', "%{$query}%")->with('institution','category','accounttype')
+            ->orWhere('company_name', 'LIKE', "%{$query}%")->with('institution','category','accounttype','payments')
             ->take(10)  // Limit to 10 results
             //->get(['account_number', 'company_name', 'display_text', 'id', 'institution_id']);  // Only return relevant fields
             ->get();
@@ -67,5 +82,14 @@ class BeneficiaryAccountController extends Controller
             // Return an error response if no results are found
             return response()->json(['message' => $e->getMessage()], 202);
         }
+    }
+
+    public function destroy(BeneficiaryAccount $beneficiaryAccount)
+    {
+        // Delete all payments associated with this beneficiary account
+        Payment::whereBeneficiaryAccountId($beneficiaryAccount->id)->delete();
+
+        $beneficiaryAccount->delete();
+        return response()->json(['message' => 'Beneficiary Account deleted successfully.']);
     }
 }

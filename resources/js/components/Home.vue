@@ -18,43 +18,43 @@
                         <ul class="list-group list-group-flush">
                             <a href="#" @click.prevent="loadRequisitionsByStatus('Incomplete')">
                                 <li class="list-group-item">Incomplete 
-                                    <span :class="['pull-right', 'badge', 'badge-pill', incompleteRequisitions > 0 ? 'badge-danger' : 'badge-secondary']">
+                                    <span :class="['pull-right', 'badge', 'badge-pill', incompleteRequisitions > 0 ? 'badge-danger' : 'bg-default']">
                                         {{ incompleteRequisitions }}
                                     </span>
                                 </li>
                             </a>
                             <a href="#" @click.prevent="loadRequisitionsByStatus('Awaiting Authorisation')">
                                 <li class="list-group-item">Awaiting Authorisation 
-                                    <span :class="['pull-right', 'badge', 'badge-pill', awaitingAuthorizationRequisitions > 0 ? 'badge-danger' : 'badge-secondary']">
+                                    <span :class="['pull-right', 'badge', 'badge-pill', awaitingAuthorizationRequisitions > 0 ? 'badge-danger' : 'bg-default']">
                                         {{ awaitingAuthorizationRequisitions }}
                                     </span>
                                 </li>
                             </a>
                             <a href="#" @click.prevent="loadRequisitionsByStatus('Awaiting Funding')">
                                 <li class="list-group-item">Awaiting Funding 
-                                    <span class="pull-right badge badge-pill badge-secondary">0</span>
+                                    <span class="pull-right badge badge-pill bg-default">0</span>
                                 </li>
                             </a>
                             <a href="#" @click.prevent="loadRequisitionsByStatus('Ready for Payment')">
                                 <li class="list-group-item">Ready for Payment 
-                                    <span :class="['pull-right', 'badge', 'badge-pill', readyForPaymentRequisitions > 0 ? 'badge-danger' : 'badge-secondary']">
+                                    <span :class="['pull-right', 'badge', 'badge-pill', readyForPaymentRequisitions > 0 ? 'badge-danger' : 'bg-default']">
                                         {{ readyForPaymentRequisitions }}
                                     </span>
                                 </li>
                             </a>
                             <a href="#" @click.prevent="loadRequisitionsByStatus('Pending Payment Confirmation')">
                                 <li class="list-group-item">Pending Payment Confirmation
-                                    <span class="pull-right badge badge-pill badge-secondary">0</span>
+                                    <span class="pull-right badge badge-pill bg-default">0</span>
                                 </li>
                             </a>
                             <a href="#" @click.prevent="loadRequisitionsByStatus('Settled Today')">
                                 <li class="list-group-item">Settled Today 
-                                    <span class="pull-right badge badge-pill badge-secondary">0</span>
+                                    <span class="pull-right badge badge-pill bg-default">0</span>
                                 </li>
                             </a>
                             <a href="#" @click.prevent="loadRequisitionsByStatus('Settlement Failed')">
                                 <li class="list-group-item">Settlement Failed 
-                                    <span class="pull-right badge badge-pill badge-danger">1</span>
+                                    <span class="pull-right badge badge-pill bg-default">0</span>
                                 </li>
                             </a>
                         </ul>

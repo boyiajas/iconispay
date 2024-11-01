@@ -25,10 +25,10 @@
                             </span>
                             <span v-else-if="requisition.status_id === 2">
 
-                                <span class="" v-if="selectedSourceAccount && selectedSourceAccount.deposits && selectedSourceAccount.deposits.length > 0">
+                                <span class="" v-if="requisition && requisition.deposits && requisition.deposits.length > 0 && !requisition.payments">
                                     <i class="fa fa-info-circle text-warning"></i> Not balanced
                                 </span>
-                                <span class="" v-else-if="selectedSourceAccount && selectedSourceAccount.payments && selectedSourceAccount.payments.length > 0">
+                                <span class="" v-else-if="requisition && requisition.payments && requisition.payments.length > 0">
                                     <i class="fa fa-info-circle text-warning"></i> Not balanced <br/>
                                     <div class="btn btn-white btn-default-default btn-sm mt-0 mb-1" data-toggle="tooltip" data-placement="bottom" title="Balance the matter by adding a default source / deposit entry" @click="balancePaymentFund"><i class="fas fa-balance-scale"></i> Balance</div>
                                 </span>
@@ -46,11 +46,14 @@
                         <i class="fa fa-check-circle bg-green" aria-hidden="true"></i>
                     </div> -->
                     <div class="col-md-3" v-if="requisition.status_id == 2">
-                        <span class="badge bg-info" v-if="selectedSourceAccount && selectedSourceAccount.deposits && selectedSourceAccount.deposits.length > 0">
-                            {{selectedSourceAccount.deposits.length}} / {{selectedSourceAccount.deposits.length}}
+                        <span class="badge bg-info" v-if="requisition && requisition.deposits && requisition.deposits.length > 0 && requisition.payments && requisition.payments.length > 0">
+                            {{requisition.deposits.length + requisition.payments.length}} / {{requisition.deposits.length + requisition.payments.length}}
                         </span>
-                        <span class="badge bg-info" v-else-if="selectedSourceAccount && selectedSourceAccount.payments && selectedSourceAccount.payments.length > 0">
-                            {{selectedSourceAccount.payments.length}} / {{selectedSourceAccount.payments.length}}
+                        <span class="badge bg-info" v-else-if="requisition && requisition.deposits && requisition.deposits.length > 0">
+                            {{requisition.deposits.length}} / {{requisition.deposits.length}}
+                        </span>
+                        <span class="badge bg-info" v-else-if="requisition && requisition.payments && requisition.payments.length > 0">
+                            {{requisition.payments.length}} / {{requisition.payments.length}}
                         </span>
                         <span class="badge bg-info" v-else>0 / 0</span>
                     </div>
@@ -81,8 +84,8 @@
                         <p v-else class="status-value mb-0 mt-3">{{ authorizationStatus }}</p>
                     </div>
                     <div class="col-md-3" v-if="requisition.status_id == 3">
-                        <span class="badge bg-info" v-if="selectedSourceAccount && selectedSourceAccount.payments && selectedSourceAccount.payments.length > 0">
-                            0 / {{selectedSourceAccount.payments.length}}
+                        <span class="badge bg-info" v-if="requisition && requisition.payments && requisition.payments.length > 0">
+                            0 / {{requisition.payments.length}}
                         </span>
                         <span class="badge bg-info" v-else>0 / 0</span>                                
                     </div>
@@ -96,9 +99,9 @@
                 <div class="status-card row pt-2">
                     <div class="col-md-9">
                         <h6 class="fw-bold">Funding</h6>
-                        <p class="status-value mb-0 mt-3" v-if="selectedSourceAccount">
-                            <span v-if="selectedSourceAccount.deposits && selectedSourceAccount.deposits.length > 0">
-                                {{ requisition.funding_status ? 'Completed on '+formatDate(selectedSourceAccount.deposits[selectedSourceAccount.deposits.length - 1].created_at) : fundingStatus }}
+                        <p class="status-value mb-0 mt-3" v-if="requisition">
+                            <span v-if="requisition.deposits && requisition.deposits.length > 0">
+                                {{ requisition.funding_status ? 'Completed on '+formatDate(requisition.deposits[requisition.deposits.length - 1].created_at) : fundingStatus }}
                             </span>
                             
                         </p>
@@ -125,7 +128,7 @@
             </div>
         </div>
         <div v-if="requisition.status_id == 3"><a class="pull-right btn btn-white btn-default-default btn-sm"><i class="fa fa-lock"></i> Lock</a></div>
-        <div v-else-if="requisition.status_id == 5" style="display:flow-root;background-color: #eee;padding:3px;border-radius: 5px;border-left: solid 5px orange;padding-left: 10px;">
+        <div v-else-if="requisition.status_id == 5" style="display:flow-root;background-color: #eee;padding:3px;border-radius: 5px;border-left: solid 5px orange;padding-left: 10px;margin-bottom: 10px;margin-top: -10px;">
             <span><i class="fa fa-lock"></i><b> This matter is locked.</b> It is pending payment</span>
             <a class="pull-right btn btn-white btn-primary btn-sm"><i class="fa fa-lock-open"></i> Unlock</a>
         </div>
@@ -255,7 +258,7 @@
                                 <span>
                                     <strong>{{ selectedSourceAccount.display }} - {{ selectedSourceAccount.account_number }}</strong>
                                     <span class="ml-2"><i>Bank:  {{ selectedSourceAccount.institution.name}} - ({{ selectedSourceAccount.branch_code }})</i></span>
-                                    <span class="ml-2" id="editChoosedSourceAccount" @click="openSourceAccountModal"><i class="fas fa-edit"></i></span>
+                                    <span class="ml-2" id="editChoosedSourceAccount" title="Edit or delete the payment group" data-bs-toggle="popover" data-bs-placement="top"  @click="openSourceAccountModal"><i class="fas fa-edit"></i></span>
                                 </span>
                             </div>
                             <div class="pull-right">
@@ -270,15 +273,15 @@
                                     <div>Deposits</div>
 
                                     <!-- Loop through deposits if they exist -->
-                                        <div v-if="selectedSourceAccount && selectedSourceAccount.deposits && selectedSourceAccount.deposits.length > 0" class="deposit-section row ml-0 mt-1">
-                                            <div v-for="deposit in selectedSourceAccount.deposits" :key="deposit.id" class="col-md-12 row mb-2 lighthover">
+                                        <div v-if="requisition && requisition.deposits && requisition.deposits.length > 0" class="deposit-section row ml-0 mt-1">
+                                            <div v-for="deposit in requisition.deposits" :key="deposit.id" class="col-md-12 row mb-2 lighthover">
                                                 <div class="col-md-3">
                                                     <span>
                                                         <i class="fa fa-check mr-2 text-success"></i></span>{{ deposit.description }}
                                                 </div>
                                                 <div class="col-md-6">
                                                     <!-- Display the user's name who made the deposit -->
-                                                    <div class="bg-light p-1 rounded">Marked as received by {{ deposit.user ? deposit.user.name : 'Unknown User' }} on {{ formatDate(deposit.created_at) }}</div>
+                                                    <div class="bg-light p-1 rounded" style="background-color: #e0ffe0 !important;border: solid 1px #a5f2a5;">Marked as received by {{ deposit.user ? deposit.user.name : 'Unknown User' }} on {{ formatDate(deposit.created_at) }}</div>
                                                 </div>
                                                 <div class="col-md-3 pl-4">
                                                     R{{ parseFloat(deposit.amount).toFixed(2) }}
@@ -307,8 +310,8 @@
                                 </li>
                                 <li class="list-group-item">
                                     <!-- Loop through deposits if they exist -->
-                                    <div v-if="selectedSourceAccount && selectedSourceAccount.payments && selectedSourceAccount.payments.length > 0" class="deposit-section row ml-0 mt-1 mb-0">
-                                        <div v-for="payment in selectedSourceAccount.payments" :key="payment.id" class="col-md-12 row mb-2 lighthover">
+                                    <div v-if="requisition && requisition.payments && requisition.payments.length > 0" class="deposit-section row ml-0 mt-1 mb-0">
+                                        <div v-for="payment in requisition.payments" :key="payment.id" class="col-md-12 row mb-2 lighthover">
                                             <div class="col-md-3">
                                                 <span v-if="!payment.verified">
                                                     <i class="fa fa-square mr-2 mt-1 text-success" ref="popoverIcon" 
@@ -318,25 +321,33 @@
                                                     data-bs-content="Account details complete, No AVS verification done"></i>
                                                 </span>
                                                 {{ payment.description }}
-                                                
                                             </div>
                                             <div class="col-md-3">
-                                               <div> <b>{{ (payment.account_holder_type  === 'natural') ?  payment.initials +" "+  payment.surname : payment.company_name }}</b></div>
-                                               <div> {{ payment.institution ?  payment.institution.short_name : null }} ({{ payment.branch_code }}) - {{ payment.account_number }}</div>
+                                                <div>
+                                                    <b>{{ payment.beneficiary_account?.account_holder_type === 'natural' 
+                                                        ? payment.beneficiary_account.initials + " " + payment.beneficiary_account.surname 
+                                                        : payment.beneficiary_account.company_name }}
+                                                    </b>
+                                                </div>
+                                                <div>
+                                                    {{ payment.beneficiary_account?.institution?.short_name }} 
+                                                    ({{ payment.beneficiary_account?.branch_code }}) - 
+                                                    {{ payment.beneficiary_account?.account_number }}
+                                                </div>
                                             </div>
                                             <div class="col-md-4">
                                                 <div><span class="text-secondary">My Ref:</span> {{ payment.my_reference }}</div>
                                                 <div><span class="text-secondary">Recipient Ref:</span> {{ payment.recipient_reference }}</div>
-                                                
                                             </div>
                                             <div class="col-md-2 pl-4" style="display:flex;justify-content:flex-end;">
-                                                -  R{{ parseFloat(payment.amount).toFixed(2) }}
-
-                                                <span class="pull-right">  &nbsp;&nbsp;<i class="fa fa-edit text-primary" @click="openEditPaymentModal(payment)"></i></span>
+                                                - R{{ parseFloat(payment.amount).toFixed(2) }}
+                                                <span class="pull-right"> &nbsp;&nbsp;
+                                                    <i class="fa fa-edit text-primary" @click="openEditPaymentModal(payment)"></i>
+                                                </span>
                                             </div>
-                                            
+                                            </div>
                                         </div>
-                                    </div>
+
                                     <div v-else class="txt-xs">No Payments have been added</div>
                                 
                                     <div class="row ml-0">
@@ -345,11 +356,11 @@
                                         </div>
                                         <div class="col-md-6">
                                             <div><br/><br/></div>
-                                            <div class="pull-right" v-if="!selectedSourceAccount.deposits  && !selectedSourceAccount.deposits.length > 0">Net Balance: </div>
+                                            <div class="pull-right" v-if="!requisition.deposits  && !requisition.deposits.length > 0">Net Balance: </div>
                                         </div>
                                         <div class="col-md-3 row">
 
-                                            <div v-if="selectedSourceAccount.deposits && selectedSourceAccount.deposits.length > 0 && !selectedSourceAccount.payments">
+                                            <div v-if="requisition.deposits && requisition.deposits.length > 0 && !requisition.payments">
                                                 <hr class="mb-1"/>
                                                 <div style="display:flex;justify-content:flex-end;">
 
@@ -359,19 +370,19 @@
                                                 <hr class="mb-0 mt-1"/>
                                             </div>
                                            
-                                            <div v-if="selectedSourceAccount.payments && selectedSourceAccount.payments.length > 0">
+                                            <div v-if="requisition.deposits && requisition.deposits.length > 0 || requisition.payments && requisition.payments.length > 0" class="pl-0">
                                                 <hr class="mb-1"/>
                                                 <div 
-                                                     :style="{ display: 'flex', flexDirection: 'row', justifyContent: selectedSourceAccount.deposits && selectedSourceAccount.deposits.length > 0 ? 'space-between' : 'flex-end' }"
+                                                     :style="{ display: 'flex', flexDirection: 'row', justifyContent: requisition.deposits && requisition.deposits.length > 0 ? 'space-between' : 'flex-end' }"
                                                     class="mr-4"
                                                 >
 
-                                                    <div  v-if="selectedSourceAccount.deposits  && selectedSourceAccount.deposits.length > 0">R{{ totalDepositAmount }} </div>   <div>-  R{{ totalPaymentAmount }}</div>
+                                                    <div  v-if="requisition.deposits  && requisition.deposits.length > 0">&nbsp; R{{ totalDepositAmount }} </div>   <div v-if="requisition.payments && requisition.payments.length > 0">-  R{{ totalPaymentAmount }}</div>
                                                     
                                                 </div>
                                                 <hr class="mb-0 mt-1"/>
-                                                <span class="pull-right mr-4" v-if="selectedSourceAccount.deposits  && selectedSourceAccount.deposits.length > 0">R {{ netBalance }}</span>
-                                                <div v-if="requisition.status_id < 3" class="btn btn-white btn-default-default btn-sm mt-1" data-toggle="tooltip" data-placement="bottom" title="Balance the matter by adding a default source / deposit entry" @click="balancePaymentFund"><i class="fas fa-balance-scale"></i> Balance and Fund</div>
+                                                <span class="pull-right mr-4" v-if="requisition.payments  && requisition.payments.length > 0">&nbsp; R {{ netBalance }}</span>
+                                                <div v-if="requisition.payments  && requisition.payments.length > 0  && requisition.status_id === 2" class="btn btn-white btn-default-default btn-sm mt-1" data-toggle="tooltip" data-placement="bottom" title="Balance the matter by adding a default source / deposit entry" @click="balancePaymentFund"><i class="fas fa-balance-scale"></i> Balance and Fund</div>
                                             </div>
                                             
                                         </div>
@@ -412,6 +423,17 @@
                                     </div>
                                 </PermissionControl>
                                 
+                            </div>
+                            <div v-else-if="requisition.status_id == 5">
+                                <div class="approve-box p-2 pull-right" style="border: solid 1px #40b1c5;background: #eafcff;justify-content: flex-start;">
+                                    <div class=""> <i class="fa fa-check mr-2 text-success"></i></div>
+                                    <div class="pl-0 pr-0">
+                                        <h6>{{ requisition.authorized_by.name }}</h6>
+                                        <div class="txt-xs">on {{ requisition.authorized_at }} </div>
+                                        <div class="txt-xs">logged in as {{ requisition.user.email }} </div>
+                                    </div>
+                                    
+                                </div>
                             </div>
                             <div v-else class="txt-xs">Not ready, capture incomplete.</div>
                         </div>
@@ -570,6 +592,38 @@
         </div>
     </div>
 
+     <!-- Upload Document Modal -->
+     <div class="modal fade" id="uploadDocumentModal" tabindex="-1" aria-labelledby="uploadDocumentModalLabel" aria-hidden="true">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="uploadDocumentModalLabel">Upload Document</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" @click="closeModal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-info">
+                        The maximum file size is 10 MB. Only PDFs and images may be uploaded.
+                    </div>
+                    <form @submit.prevent="uploadDocument">
+                        <div class="mb-3">
+                            <label for="description" class="form-label">Description: *</label>
+                            <input type="text" v-model="documentForm.description" class="form-control" id="description" required>
+                        </div>
+                        <div class="mb-3">
+                            <label for="file" class="form-label">Select Document: *</label>
+                            <input type="file" @change="handleFileUpload" class="form-control" id="file" required>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" @click="closeModal">Cancel</button>
+                            <button type="submit" class="btn btn-primary">Upload</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
     <!-- New Deposit Modal -->
     <div class="modal fade" id="newDepositModal" tabindex="-1" aria-labelledby="newDepositModalLabel" aria-hidden="true">
         <div class="modal-dialog">
@@ -681,7 +735,7 @@
                 <div class="modal-body">
                     <form @submit.prevent="createPayment">
                         <!-- Search -->
-                        <div class="row mb-3 position-relative">    
+                        <div class="row mb-2 position-relative">    
                             <div class="input-group">
                                 <input 
                                     class="form-control border-end-0 border" 
@@ -724,7 +778,7 @@
                         </div> -->
                         
                         <!-- Category -->
-                        <div class="mb-3 row">
+                        <div class="mb-2 row">
                             <label for="category" class="form-label col-sm-3">Category: *</label>
                             <div class="col-sm-9">
                                 <select v-model="paymentForm.category" class="form-select" required @change="onCategoryChange">
@@ -748,6 +802,48 @@
                                 </select>
                             </div>
                         </div>
+
+                        <!-- Hidden section for authorised Beneficiary Account details (visible when an authorised beneficiary account is selected) -->
+                        <div v-if="showBeneficiaryDetails && beneficiaryDetails" class="mb-4" style="background: rgb(242, 242, 242);border: 1px solid rgb(221, 221, 221);padding: 6px 6px 6px 12px;font-size: 14px;color: rgb(102, 102, 102);">
+                            <div class="row mb-1">
+                                <div class="col-sm-3">
+                                    <p>Beneficiary Account</p>
+                                </div>
+                                <div class="col-sm-9"></div>
+                            </div>
+                            <div class="row mb-1">
+                                <div class="col-sm-3">
+                                    <h6>Payment Institution:</h6>
+                                </div>
+                                <div class="col-sm-9">
+                                    {{ beneficiaryDetails.institution.short_name }}
+                                </div>
+                            </div>
+                            <div class="row mb-1">
+                                <div class="col-sm-3">
+                                    <h6>Account Details:</h6>
+                                </div>
+                                <div class="col-sm-9">
+                                    {{ beneficiaryDetails.account_number }} ({{ beneficiaryDetails.branch_code }})
+                                </div>
+                            </div>
+                            <div class="row mb-1">
+                                <div class="col-sm-3">
+                                    <h6>Account Holder:</h6>
+                                </div>
+                                <div class="col-sm-9">
+                                    {{ beneficiaryDetails.display_text }}
+                                </div>
+                            </div>
+                            <div class="row mb-1">
+                                <div class="col-sm-3">
+                                    <h6>Authorisations:</h6>
+                                </div>
+                                <div class="col-sm-9">
+                                    {{ beneficiaryDetails.authorisations }} <a href="#">Show more</a>
+                                </div>
+                            </div>
+                        </div>
                         
                         <!-- Hidden section for New Account details (visible when a new account is selected) -->
                         <div v-if="showAccountDetails">
@@ -757,37 +853,55 @@
                                 <label for="account_number" class="form-label col-sm-3">Account No.: *</label>
                                 <div class="col-sm-9">
                                     <input type="text" v-model="paymentForm.account_number" class="form-control" required placeholder="Enter the account number">
+                                    <div class="round mt-1" :style="{background:'#f2f2f2',border:'solid 1px #ddd',padding:'6px',paddingLeft:'12px',fontSize: '14px',color: (paymentForm.payments && paymentForm.payments.length > 0) ? '#097386' : '#666'}" >
+
+                                        <b>Previously Paid:</b> {{paymentForm.previously_paid}}
+                                        <button v-if="paymentForm && paymentForm.payments" class="btn btn-link p-0 float-end" type="button"  @click="toggleCollapsePaymentShow" data-bs-target="#previousPaymentsDropdown" :aria-expanded="showPayments" aria-controls="previousPaymentsDropdown">
+                                            <i :class="showPayments ? 'fa fa-chevron-up' : 'fa fa-chevron-down'"></i>
+                                        </button>
+
+                                        <!-- Collapsible list of previous payments -->
+                                        <div :class="['collapse', { show: showPayments }]" id="previousPaymentsDropdown" v-if="paymentForm && paymentForm.payments">
+                                            <ul class="list-unstyled mt-2">
+                                                <li v-for="payment in paymentForm.payments" :key="payment.id" class="row">
+                                                    <div class="col-md-4"><i class="far fa-check-square bg-green mr-2" aria-hidden="true"></i> {{ formatDate(payment.created_at) }}</div>
+                                                    <div class="col-md-4">R{{ payment.amount }}</div>
+                                                    <div class="col-md-4">{{ payment.description }}</div>                                                    
+                                                </li>
+                                            </ul>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
-                            <div class="mb-3 row">
+                            <div class="mb-0 row">
                                 <label for="account_holder" class="form-label col-sm-3">Account Holder: *</label>
-                                <div class="col-sm-9 row pr-0" v-if="this.paymentForm.account_holder_type == 'natural'">
+                                <div class="col-sm-9 row pr-0 mb-1" v-if="this.paymentForm.account_holder_type == 'natural'">
                                     <div class="col-sm-2 pr-0" id="initials">
                                         <input type="text" v-model="paymentForm.initials" class="form-control" placeholder="Initials" required>
                                     </div>
-                                    <div class="col-sm-10 pr-0">
+                                    <div class="col-sm-10 pr-0 mb-1">
                                         <input type="text" v-model="paymentForm.surname" class="form-control" placeholder="Surname" required>
                                     </div>
                                 </div>
-                                <div class="col-sm-9" v-if="this.paymentForm.account_holder_type == 'juristic'">
+                                <div class="col-sm-9 mb-2" v-if="this.paymentForm.account_holder_type == 'juristic'">
                                     <input type="text" v-model="paymentForm.company_name" class="form-control" placeholder="Enter the name of the Company">
                                 </div>
                                 
                             </div>
                             
-                            <div class="mb-3 row" v-if="this.paymentForm.account_holder_type == 'natural'">
+                            <div class="mb-2 row" v-if="this.paymentForm.account_holder_type == 'natural'">
                                 <label for="id_number" class="form-label col-sm-3">ID No. / Passport No.:</label>
                                 <div class="col-sm-9">
                                     <input type="text" v-model="paymentForm.id_number" class="form-control" placeholder="Enter ID Number or leave blank if not known">
                                 </div>
                             </div>
-                            <div class="mb-3 row" v-if="this.paymentForm.account_holder_type == 'juristic'">
+                            <div class="mb-2 row" v-if="this.paymentForm.account_holder_type == 'juristic'">
                                 <label for="id_number" class="form-label col-sm-3">Registration No.:</label>
                                 <div class="col-sm-9">
                                     <input type="text" v-model="paymentForm.registration_number" class="form-control" placeholder="Enter the registration number or leave blank if not applicable">
                                 </div>
                             </div>
-                            <div class="mb-3 row">
+                            <div class="mb-2 row">
                                 <label for="account_type" class="form-label col-sm-3">Account Type: *</label>
                                 <div class="col-sm-9">
                                     <select v-model="paymentForm.account_type.id" class="form-select" required>
@@ -796,7 +910,7 @@
                                     <!-- <input type="text" v-model="paymentForm.account_type" class="form-control" required> -->
                                 </div>
                             </div>
-                            <div class="mb-3 row">
+                            <div class="mb-2 row">
                                 <label for="institution" class="form-label col-sm-3">Institution: *</label>
                                 <div class="col-sm-9">
                                     <select v-model="paymentForm.institution.id" class="form-select" required @change="onInstitutionChange">
@@ -804,7 +918,7 @@
                                     </select>
                                 </div>
                             </div>
-                            <div class="mb-3 row">
+                            <div class="mb-2 row">
                                 <label for="branch_code" class="form-label col-sm-3">Branch Code: *</label>
                                 <div class="col-sm-9">
                                     <input type="text" v-model="paymentForm.branch_code" class="form-control" required placeholder="Enter the branch code">
@@ -831,25 +945,25 @@
                         <!-- Transaction Information -->
                         <h6 class="mb-1">Transaction Information</h6>
                         <hr class="mt-0"/>
-                        <div class="mb-3 row">
+                        <div class="mb-2 row">
                             <label for="description" class="form-label col-sm-3">Description: *</label>
                             <div class="col-sm-9">
                                 <input type="text" v-model="paymentForm.description" class="form-control" required placeholder="Enter a description for the entry">
                             </div>
                         </div>
-                        <div class="mb-3 row">
+                        <div class="mb-2 row">
                             <label for="amount" class="form-label col-sm-3">Amount: *</label>
                             <div class="col-sm-9">
                                 <input type="number" v-model="paymentForm.amount" class="form-control" required placeholder="Enter the amount available for the transaction">
                             </div>
                         </div>
-                        <div class="mb-3 row">
+                        <div class="mb-2 row">
                             <label for="my_reference" class="form-label col-sm-3">My Reference: *</label>
                             <div class="col-sm-9">
                                 <input type="text" v-model="paymentForm.my_reference" class="form-control" placeholder="Enter a reference for our bank account">
                             </div>
                         </div>
-                        <div class="mb-3 row">
+                        <div class="mb-2 row">
                             <label for="recipient_reference" class="form-label col-sm-3">Recipient Reference:</label>
                             <div class="col-sm-9">
                                 <input type="text" v-model="paymentForm.recipient_reference" class="form-control" placeholder="Enter a reference for the recipient's bank account">
@@ -867,7 +981,7 @@
         </div>
     </div>
 
-     <!-- Create Payment Modal -->
+     <!-- Edit Payment Modal -->
      <div class="modal fade" id="editPaymentModal" tabindex="-1" aria-labelledby="editPaymentModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
@@ -1027,6 +1141,107 @@
         </div>
     </div>
 
+    <!-- AVS Result Modal -->
+    <div class="modal fade" id="avsResultModal" tabindex="-1" aria-labelledby="avsResultModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="avsResultModalLabel">Account Holder Verification {{ avsResult ? avsResult.avs_verified_at : null }}</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" @click="closeModal"></button>
+                </div>
+                <div class="modal-body">
+                    <div v-if="!avsResult && !avsResult.avs_verified_at" class="account-verification-inprocess">
+                        <p class="form-label mt-3 mb-4">The entry was successfully saved</p>
+                        <div class="alert alert-info p-2" role="alert">
+                            <h6><span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Verifying AVS</h6>
+                        </div>
+                        <p class="form-label mt-4 mb-0">This may take up to <b>2 minutes</b>. You may close this dialog and continue working, editing this entry later to see the result</p>
+                    </div>
+                    <div v-else class="account-verification-result">
+                        <p class="form-label mt-3 mb-4">The entry was successfully saved</p>
+                        <div class="alert alert-success p-2 mb-4" role="alert" v-if="avsResult && avsResult.account_found">
+                            <h6>The account holder matched the account details</h6>
+                        </div>
+                        <div class="alert alert-success p-2 mb-4" role="alert" v-else>
+                            <h6>The account holder fields did not match</h6>
+                        </div>
+                        <h5>Account Results 
+                            <span class="pull-right">
+                                <span  class="text-success mr-4"><i class="far fa-check-square bg-green mr-1" aria-hidden="true"></i>Found</span>
+                                <span  class="text-success"><i class="far fa-check-square bg-green mr-1" aria-hidden="true"></i>Open (for 3+ months)</span>
+                            </span>
+                        </h5>
+                        <hr class="mt-0 mb-2">
+                        <div class="row mb-0">
+                                <div class="col-sm-3"><p class="pull-right"><strong>Number:</strong></p></div>
+                                <div class="col-sm-5">{{ avsResult && avsResult.account_number }}</div>
+                                <div class="col-sm-4"></div>
+                        </div>
+                        <div class="row mb-0">
+                                <div class="col-sm-3"><p class="pull-right"><strong>Branch Code:</strong></p></div>
+                                <div class="col-sm-5">{{ avsResult && avsResult.branch_code }}</div>
+                                <div class="col-sm-4"></div>
+                        </div>
+                        <div class="row mb-0">
+                                <div class="col-sm-3"><p class="pull-right"><strong>Account Type:</strong></p></div>
+                                <div class="col-sm-5">{{ avsResult && avsResult.branch_code }}</div>
+                                <div class="col-sm-4"> <span class="text-success" v-if="avsResult && avsResult.account_found"><i class="far fa-check-square bg-green mr-1" aria-hidden="true"></i> Matched</span></div>
+                        </div>
+                        <br/><br/>
+                        <h5>Account Holder Results</h5>
+                        <hr class="mt-0 mb-2">
+                        <div v-if="avsResult && avsResult.account_holder_type == 'natural'">
+                            <div class="row mb-0">
+                                <div class="col-sm-3"><p class="pull-right"><strong>Initials:</strong></p></div>
+                                <div class="col-sm-5">{{ avsResult.initials }}</div>
+                                <div class="col-sm-4"> <span class="text-success" v-if="avsResult && avsResult.holder_matched"><i class="far fa-check-square bg-green mr-1" aria-hidden="true"></i> Matched</span></div>
+                            </div>
+                            <div class="row mb-0">
+                                <div class="col-sm-3"><p class="pull-right"><strong>Name:</strong></p></div>
+                                <div class="col-sm-5">{{ avsResult.surname }}</div>
+                                <div class="col-sm-4"> <span class="text-success" v-if="avsResult && avsResult.holder_matched"><i class="far fa-check-square bg-green mr-1" aria-hidden="true"></i> Matched</span></div>
+                            </div>
+                            <div class="row mb-0">
+                                <div class="col-sm-3"><p class="pull-right"><strong>Id Number:</strong></p></div>
+                                <div class="col-sm-5">{{ avsResult.id_number }}</div>
+                                <div class="col-sm-4"> <span class="text-fade"><i class="far fa-square mr-1 disabled" aria-hidden="true"></i> Not Supplied</span></div>
+                            </div>
+                        </div>
+                        <div v-else>
+                            <div class="row mb-0">
+                                <div class="col-sm-3"><p class="pull-right"><strong>Name:</strong></p></div>
+                                <div class="col-sm-5">{{ avsResult && avsResult.holder_name }}</div>
+                                <div class="col-sm-4"> <span class="text-success" v-if="avsResult && avsResult.holder_matched"><i class="far fa-check-square bg-green mr-1" aria-hidden="true"></i> Matched</span></div>
+                            </div>
+                            <div class="row mb-0">
+                                <div class="col-sm-3"><p class="pull-right"><strong>Registration No.:</strong></p></div>
+                                <div class="col-sm-5"></div>
+                                <div class="col-sm-4"> <span class="text-fade"><i class="far fa-square mr-1 disabled" aria-hidden="true"></i> Not Supplied</span></div>
+                            </div>
+                        </div>
+                       
+                       
+                       <!--  <div class="alert alert-success" v-if="avsResult.match">
+                            The account holder matched the account details
+                        </div> -->
+
+                        
+                       <!--  <p><strong>Number:</strong> {{ avsResult.account_number }} <span v-if="avsResult.found" class="text-success">✔ Found</span> <span v-if="avsResult.open" class="text-success">✔ Open (for 3+ months)</span></p>
+                        <p><strong>Branch Code:</strong> {{ avsResult.branch_code }}</p>
+                        <p><strong>Account Type:</strong> {{ avsResult.account_type }} <span v-if="avsResult.matched" class="text-success">✔ Matched</span></p>
+
+                        <h6>Account Holder Results</h6>
+                        <p><strong>Name:</strong> {{ avsResult.holder_name }} <span v-if="avsResult.holder_matched" class="text-success">✔ Matched</span></p>
+                        <p><strong>Registration No.:</strong> {{ avsResult.registration_no || 'Not Supplied' }}</p> -->
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" @click="closeModal">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
 
 
 </template>
@@ -1038,6 +1253,7 @@ import 'datatables.net';
 import 'datatables.net-bs5';
 import moment from 'moment';
 import PermissionControl from '../permission/PermissionControl.vue';
+import { useToast } from 'vue-toastification';
 
 export default {
     name: 'RequisitionDetails',
@@ -1057,9 +1273,11 @@ export default {
     data() {
         return {
             loading: true,
+            showPayments: false,
             loadingHtml: '<div class="loading-spinner" style="position:fixed;top:50%;left: 50%;transform: translate(-50%, -50%);font-size: 2em;color: #0097b2bf;text-align: center;z-index: 1000;background: rgba(64, 177, 197, 0.05);padding: 40px;border: 5px;"><i class="fa fa-spinner fa-spin"></i> Loading...</div>',
             contentHtml: '',
             requisition: {},  // Initialize as an empty object
+            avsResult: {},  // Store the AVS result data
             documentsTable: null,  // Reference to the DataTable instance for documents
             historyLogs: [],
             capturingStatus: 'Capturing',
@@ -1077,6 +1295,8 @@ export default {
             editDepositModalInstance: null,
             editPaymentModalInstance: null,
             createPaymentModalInstance: null,
+            beneficiaryDetails: null, // Object to hold selected beneficiary details
+            showAwsModelInstance: null,
             documentForm: {
                 description: '',
                 file: null
@@ -1112,7 +1332,9 @@ export default {
             categoryBeneficiaries: [], // List of beneficiaries based on the selected category 
             institutions: [],
             showAccountDetails: false,  // Controls visibility of account details section
+            showBeneficiaryDetails: false,
             showEditAccountDetails: true,
+            showAvsModal: false,  // Control visibility of the AVS Result Modal
             searchQuery: '',
             filteredAccounts: [],  // List to hold matching account suggestions
             showSuggestions: false,  // Control visibility of suggestions dropdown
@@ -1137,6 +1359,8 @@ export default {
                 recipient_reference: '',
                 requisition_id: '',
                 firm_account_id: '',
+                previously_paid: '',
+                payments: '',
             },
             editPaymentForm: {
                 category: '',
@@ -1163,16 +1387,16 @@ export default {
     },
     computed: {
         totalDepositAmount() {
-            if (this.selectedSourceAccount.deposits && this.selectedSourceAccount.deposits.length > 0) {
-                return this.selectedSourceAccount.deposits.reduce((sum, deposit) => {
+            if (this.requisition.deposits && this.requisition.deposits.length > 0) {
+                return this.requisition.deposits.reduce((sum, deposit) => {
                     return parseFloat(parseFloat(sum, 2) + parseFloat(deposit.amount, 2)).toFixed(2);
                 }, 0);
             }
             return 0;  // Return 0 if no deposits
         },
         totalPaymentAmount() {
-            if (this.selectedSourceAccount.payments && this.selectedSourceAccount.payments.length > 0) {
-                return this.selectedSourceAccount.payments.reduce((sum, payment) => {
+            if (this.requisition.payments && this.requisition.payments.length > 0) {
+                return this.requisition.payments.reduce((sum, payment) => {
                     return parseFloat(parseFloat(sum, 2) + parseFloat(payment.amount, 2)).toFixed(2);
                 }, 0);
             }
@@ -1196,6 +1420,11 @@ export default {
         //this.loadHistoryLogs();
         //this.checkStoredSourceAccount(); // Check if there is a stored source account
     },
+    setup() {
+        // Initialize toast
+        const toast = useToast();
+        return { toast };
+    },
     methods: {
         // Load requisition details based on matter ID and requisition ID
         loadRequisitionDetails() {
@@ -1203,6 +1432,7 @@ export default {
             axios.get(`/api/requisitions/${this.requisitionId}`)
                 .then(response => {
                     
+                    console.log(response.data);
                     this.requisition = response.data || {};  // Set requisition data or empty object
                     this.updateStatus();  // Update status based on requisition details
                     this.showPaymentsTabContent();
@@ -1216,14 +1446,36 @@ export default {
                 .catch(error => {
                     console.error('Error loading requisition details:', error);
                     this.contentHtml = '';  // Show loading spinner
+
+                    if(error){
+                        this.toast.error(error.response ? error.response.data : 'No response data', {
+                            title: 'Error'
+                        });
+                    }             
+                    
                 });
+        },
+        toggleCollapsePaymentShow()
+        {
+            const collapseElement = document.getElementById("previousPaymentsDropdown");
+
+            // Toggle the visibility in Vue's data property
+            this.showPayments = !this.showPayments;
+
+            // Directly remove or add the 'show' class based on `showPayments`
+            if (this.showPayments) {
+                collapseElement.classList.add("show");
+            } else {
+                collapseElement.classList.remove("show");
+            }
         },
         approveRequisition(requisitionId) {
             axios.put(`/api/requisitions/${requisitionId}/approve`)
                 .then(response => {
                     console.log("Requisition approved successfully:", response.data);
                     // Optionally update local data or trigger a refresh
-                    this.$emit('requisitionUpdated', response.data);
+                    //this.$emit('requisitionUpdated', response.data);
+                    this.requisition = response.data;
                 })
                 .catch(error => {
                     console.error("Error approving requisition:", error);
@@ -1237,25 +1489,27 @@ export default {
             this.loadCategories();
             this.loadAccountTypes();
             this.loadInstitutions();
+            //console.log(payment);
 
             // Set the edit form data to the selected deposit values
             this.editPaymentForm.id = payment.id;
             this.editPaymentForm.description = payment.description;
             this.editPaymentForm.amount = payment.amount;
-            this.editPaymentForm.verified = payment.verified;
+            this.editPaymentForm.verified = payment.beneficiary_account.verified;
             this.editPaymentForm.my_reference = payment.my_reference;
             this.editPaymentForm.recipient_reference = payment.recipient_reference;
-            this.editPaymentForm.account_number = payment.account_number;
-            this.editPaymentForm.account_holder_type = payment.account_holder_type;
-            this.editPaymentForm.initials = payment.initials;
-            this.editPaymentForm.surname = payment.surname;
-            this.editPaymentForm.company_name = payment.company_name;
-            this.editPaymentForm.id_number = payment.id_number;
-            this.editPaymentForm.registration_number = payment.registration_number;
-            this.editPaymentForm.account_type.id = payment.account_type_id;
-            this.editPaymentForm.institution = payment.institution;
-            this.editPaymentForm.branch_code = payment.branch_code;
+            this.editPaymentForm.account_number = payment.beneficiary_account.account_number;
+            this.editPaymentForm.account_holder_type = payment.beneficiary_account.account_holder_type;
+            this.editPaymentForm.initials = payment.beneficiary_account.initials;
+            this.editPaymentForm.surname = payment.beneficiary_account.surname;
+            this.editPaymentForm.company_name = payment.beneficiary_account.company_name;
+            this.editPaymentForm.id_number = payment.beneficiary_account.id_number;
+            this.editPaymentForm.registration_number = payment.beneficiary_account.registration_number;
+            this.editPaymentForm.account_type.id = payment.beneficiary_account.account_type_id;
+            this.editPaymentForm.institution = payment.beneficiary_account.institution;
+            this.editPaymentForm.branch_code = payment.beneficiary_account.branch_code;
             this.editPaymentForm.category = payment.category_id;
+            //console.log(this.editPaymentForm);
             // Convert funded from 1 or 0 to boolean true/false
             //this.editDepositForm.funded = deposit.funded === 1;
             // Set the deposit date if available, format to 'YYYY-MM-DD' if necessary
@@ -1317,7 +1571,7 @@ export default {
             axios.delete(`/api/deposits/${this.editDepositForm.id}`)
                 .then(response => {
                     // Remove the deposit from the local list
-                    this.selectedSourceAccount.deposits = this.selectedSourceAccount.deposits.filter(deposit => deposit.id !== this.editDepositForm.id);
+                    this.requisition.deposits = this.requisition.deposits.filter(deposit => deposit.id !== this.editDepositForm.id);
 
                     //console.log('Deposit deleted successfully:', response.data);
 
@@ -1343,7 +1597,7 @@ export default {
             axios.delete(`/api/payments/${this.editPaymentForm.id}`)
                 .then(response => {
                     // Remove the deposit from the local list
-                    this.selectedSourceAccount.payments = this.selectedSourceAccount.payments.filter(payment => payment.id !== this.editPaymentForm.id);
+                    this.requisition.payments = this.requisition.payments.filter(payment => payment.id !== this.editPaymentForm.id);
 
                     console.log('Payment deleted successfully:', response.data);
 
@@ -1381,20 +1635,33 @@ export default {
         onAccountChange() {
             if (this.paymentForm.account_holder_type === 'natural') {
                 this.showAccountDetails = true;
+                this.showBeneficiaryDetails = false;
                 this.loadAccountTypes();
                 this.loadInstitutions();
-                this.handleNaturalPersonSelection();
+                //this.handleNaturalPersonSelection();
             } else if (this.paymentForm.account_holder_type === 'juristic') {
                 this.showAccountDetails = true;  // Show the form for Juristic Person too
+                this.showBeneficiaryDetails = false;
                 this.loadAccountTypes();
                 this.loadInstitutions();
-                this.handleJuristicPersonSelection();
+                //this.handleJuristicPersonSelection();
             } else {
                 this.showAccountDetails = false; // Hide for existing beneficiaries
+                this.showBeneficiaryDetails = true;
                 this.loadBeneficiaryDetails(this.paymentForm.account_holder_type);
             }
 
             
+        },
+        loadBeneficiaryDetails(beneficiaryId) {
+            axios.get(`/api/beneficiary-accounts/${beneficiaryId}`)
+                .then(response => {
+                    this.beneficiaryDetails = response.data;
+                    console.log('Beneficiary details loaded successfully:', response.data);
+                })
+                .catch(error => {
+                    console.error('Error loading beneficiary details:', error);
+                });
         },
         getStatusClass(statusId, fundingStatus, selectedSourceAccount) {
             let statusClass = '';
@@ -1413,7 +1680,7 @@ export default {
                 statusClass = 'patialcomplete';
             }
 
-            if (selectedSourceAccount && selectedSourceAccount.payments && selectedSourceAccount.payments.length > 0){
+            if (this.requisition && this.requisition.payments && this.requisition.payments.length > 0){
                 statusClass = 'patialcomplete';
             }
             return statusClass; // Default case if statusId is not matched
@@ -1530,8 +1797,8 @@ export default {
                     this.selectedSourceAccount = response.data;  // Store the fetched details
                     this.showSourceAccountDetails = true;  // Show the details section
                     /* console.log(this.selectedSourceAccount.deposits);*/
-                    console.log("this is payments data");
-                    console.log(this.selectedSourceAccount.payments);
+                    //console.log("this is payments data");
+                    //console.log(this.selectedSourceAccount.payments);
                     // Update the requisition with the selected source account ID
                     //this.updateRequisitionSourceAccount(sourceAccountId);
                 })
@@ -1608,7 +1875,10 @@ export default {
         showPaymentsTabContent() {
             if (this.requisition.firm_account_id) {
                 // If source_account_id is set, fetch and display the details
-                this.fetchSourceAccountDetails(this.requisition.firm_account_id);
+                //this.fetchSourceAccountDetails(this.requisition.firm_account_id);
+                this.selectedSourceAccount = this.requisition.firm_account ? this.requisition.firm_account : null;  // Store the fetched details
+                this.showSourceAccountDetails = true;
+
             } else { console.log('not set sorry');
                 // If no source_account_id, display the Source Accounts DataTable
                 this.showSourceAccountDetails = false;
@@ -1689,6 +1959,9 @@ export default {
             if(this.createPaymentModalInstance){
                 this.createPaymentModalInstance.hide();
             }
+            if(this.showAvsModal){
+                this.showAwsModelInstance.hide();
+            }
         },
         // Save requisition (stub method for future implementation)
         saveRequisition() {
@@ -1725,10 +1998,13 @@ export default {
             //console.log(this.depositForm);
             axios.post('/api/deposits', this.depositForm)
                 .then(response => {
-                    console.log('Deposit created successfully:', response.data);
+                    //console.log('Deposit created successfully:', response.data);
+                    this.toast.success('Deposit created successfully!', {
+                        title: 'Success'
+                    });
 
                     // Add the newly created deposit to the local deposits list
-                    this.selectedSourceAccount.deposits.push(response.data);
+                    this.requisition.deposits.push(response.data);
 
                     if(response.data){
                         // Update the requisition object with the new source_account_id
@@ -1749,6 +2025,11 @@ export default {
                     // this.loadDeposits();
                 })
                 .catch(error => {
+
+
+                    this.toast.error(error.response ? error.response.data : 'No response data', {
+                        title: 'Error creating deposit:'
+                    });
                     console.error('Error creating deposit:', error);
                     if (error.response && error.response.data.errors) {
                         this.errors = error.response.data.errors;  // Show validation errors
@@ -1773,7 +2054,11 @@ export default {
             this.balanceFundDeposit.requisition_id = this.requisitionId;
             this.balanceFundDeposit.firm_account_id = this.selectedSourceAccount.id;
             this.balanceFundDeposit.funded =  true;
-            this.balanceFundDeposit.amount = this.totalPaymentAmount;
+            if(parseFloat(this.totalDepositAmount) < parseFloat(this.totalPaymentAmount)){
+                this.balanceFundDeposit.amount = parseFloat(this.totalPaymentAmount) - parseFloat(this.totalDepositAmount);
+            }else{
+                this.balanceFundDeposit.amount = parseFloat(this.totalDepositAmount) - parseFloat(this.totalPaymentAmount);
+            }
 
             axios.post('/api/deposits/balance-payment-fund', this.balanceFundDeposit)
                 .then(response => {
@@ -1922,24 +2207,38 @@ export default {
         },
         // Handle account selection from dropdown
         selectAccount(account) {
-            
+            console.log(account);
             this.paymentForm.account_number = account.account_number;  // Set selected account number
             this.paymentForm.company_name = account.company_name;  // Optionally set the account holder
-            this.paymentForm.search = `${account.account_number} - ${account.company_name}`;  // Set search query to selected account
+            this.paymentForm.search = `${account.account_number} - ${account.company_name ? account.company_name : account.surname}`;
             this.paymentForm.account_holder_type = account.account_holder_type;
             this.showSuggestions = false;  // Hide dropdown after selection
             this.filteredAccounts = [];
+            this.paymentForm.initials = account.initials;
+            this.paymentForm.surname = account.surname;
+            this.paymentForm.id_number = account.id_number;
+            this.paymentForm.verified = account.verified;
+            this.paymentForm.payments = account.payments;
+
+            if (account.payments.length > 0) {
+                const firstPayment = account.payments[0];
+                this.paymentForm.previously_paid = `${this.formatDate(firstPayment.created_at)} - R${firstPayment.amount}`;
+            } else {
+                this.paymentForm.previously_paid = "No previous payment"; // Fallback if there are no payments
+            }
+            /* this.paymentForm.previously_paid = this.formatDate(account.payments.created_at)+' - R'+account.payments.amount//"22 Oct 24 - R20,000.00"; */
 
             this.loadAccountTypes();
             this.loadInstitutions();
 
             // Update additional fields based on the selected account
-            this.paymentForm.category = account.category;  // Assuming category_id is returned from API
+            this.paymentForm.category = account.category_id;  // Assuming category_id is returned from API
             this.paymentForm.account_type = account.accounttype;  // Assuming account_type is returned from API
             this.paymentForm.institution = account.institution;  // Assuming institution name is returned from API
             this.paymentForm.branch_code = account.branch_code;  // Assuming branch code is returned from API
 
             this.showAccountDetails = true;
+            this.showBeneficiaryDetails = false;
             //console.log(this.paymentForm);
             //this.loadAccountTypes();
             //this.loadInstitutions();
@@ -1972,10 +2271,32 @@ export default {
         submitPaymentForm(stayInModal = false) {
             this.paymentForm.requisition_id = this.requisitionId;
             this.paymentForm.firm_account_id = this.selectedSourceAccount.id;
+            //console.log(this.paymentForm);
+            
+            // Use beneficiary details if an existing beneficiary is selected
+            if (this.paymentForm.account_holder_type && this.beneficiaryDetails) {
+                this.paymentForm.account_number = this.beneficiaryDetails.account_number;
+                this.paymentForm.branch_code = this.beneficiaryDetails.branch_code;
+                this.paymentForm.account_holder = this.beneficiaryDetails.display_text;
+                this.paymentForm.account_type = this.beneficiaryDetails.account_type;
+                this.paymentForm.institution = this.beneficiaryDetails.institution;
+                this.paymentForm.existing_beneficiary = true; // Indicate an existing beneficiary
+
+                this.showBeneficiaryDetails = false;
+            } else {
+                this.paymentForm.existing_beneficiary = false; // Indicate a new beneficiary
+            }
 
             axios.post('/api/payments', this.paymentForm)
                 .then(response => {
-                    console.log('Payment created successfully:', response.data);
+                    //console.log('Payment created successfully:', response.data);
+                     // Show success toast
+                     this.toast.success('Payment created successfully!', {
+                        title: 'Success'
+                    });
+
+                     // Add the newly created deposit to the local deposits list
+                     this.requisition.payments.push(response.data);
 
                     // Close the modal if "Save" was clicked
                     if (!stayInModal) {
@@ -1983,11 +2304,50 @@ export default {
                         this.createPaymentModalInstance.hide();
                     }
                     this.closeModal();
+                    
+                    if(this.paymentForm.verified){
+                        this.performAvsVerification();
+                    }else{
+                        this.resetPaymentForm();
+                    }
+                    
+                })
+                .catch(error => {
+                    //console.error('Error creating payment:', error);
+                    //console.error('Response data:', error.response ? error.response.data : 'No response data');
+                    // Show error toast
+                    this.toast.error(error.response ? error.response.data : 'No response data', {
+                        title: 'Error'
+                    });
+                    
+                    /* if (error.response && error.response.data.errors) {
+                        this.errors = error.response.data.errors;  // Show validation errors
+                        console.error('Error creating payment:', error);
+                    } */
+                }); 
+        },
+
+        // Perform AVS Verification using Axios
+        performAvsVerification() {
+            axios.post('/api/avs/verify', {
+                    account_number: this.paymentForm.account_number,
+                    branch_code: this.paymentForm.branch_code,
+                    account_holder: this.paymentForm.account_holder,
+                    account_holder_type: this.paymentForm.account_holder_type,
+                })
+                .then(response => {
+                    this.avsResult = response.data; console.log("this is the value of avs result " , response.data);
+                    this.showAvsModal = true;
+                    
+                    // Show the AVS Result Modal after verification
+                    this.showAwsModelInstance = new bootstrap.Modal(document.getElementById('avsResultModal'));
+                    this.showAwsModelInstance.show();
                     // Reset the form after submission
                     this.resetPaymentForm();
                 })
                 .catch(error => {
-                    console.error('Error creating payment:', error);
+                    console.error('AVS Verification failed:', error);
+                    alert('AVS Verification failed. Please try again.');
                     if (error.response && error.response.data.errors) {
                         this.errors = error.response.data.errors;  // Show validation errors
                     }

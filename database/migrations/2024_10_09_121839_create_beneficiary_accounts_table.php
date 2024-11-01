@@ -20,14 +20,15 @@ return new class extends Migration
             $table->string('company_name')->nullable(); // Company name, if applicable
             $table->string('initials')->nullable(); // Company name, if applicable
             $table->string('surname')->nullable(); // Company name, if applicable
-            $table->string('registration_number')->nullable(); // Registration number, if applicable
             $table->string('id_number')->nullable(); // ID / Passport number, if applicable
+            $table->string('registration_number')->nullable(); // Registration number, if applicable
             $table->foreignId('account_type_id'); // Type of account
             $table->foreignId('institution_id');
             $table->string('branch_code')->nullable(); // Branch code
             $table->string('my_reference')->nullable(); // My reference for aggregated payments
             $table->string('recipient_reference')->nullable(); // Recipient's reference for aggregated payments
             $table->boolean('authorised')->default(false); // Whether the account is authorised
+            $table->string('avs_verified_at')->nullable();
             
             // Fields for Account Verification Service (AVS)
             $table->boolean('verified')->default(false); // Whether the account has been verified
@@ -42,7 +43,7 @@ return new class extends Migration
             $table->boolean('holder_name_match')->default(false); // Whether the account holder's name matched
             $table->boolean('holder_initials_match')->default(false); // Whether the account holder's name matched
             $table->boolean('registration_number_match')->default(false); // Whether the registration number matched (for juristic entities)
-
+            $table->foreignId('user_id');  // Foreign key to user
 
             $table->timestamps();
         });

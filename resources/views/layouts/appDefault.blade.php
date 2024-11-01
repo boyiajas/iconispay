@@ -26,6 +26,7 @@
     <link rel="stylesheet" href="{{URL::to('assets/css/style.css')}}">
     <link rel="stylesheet" href="{{ URL::to('assets/css/toastr.min.css') }}">
     <script src="{{ URL::to('assets/js/toastr_jquery.min.js') }}"></script>
+    <script src="{{ URL::to('assets/js/bootstrap.min.js') }}"></script>
     <script src="{{ URL::to('assets/js/toastr.min.js') }}"></script>
     <link rel="stylesheet" href="{{URL::to('assets/css/front-end.css')}}">
     <!-- Other styles and links -->
@@ -35,9 +36,9 @@
     <link href="https://cdn.datatables.net/2.1.8/css/dataTables.dataTables.min.css" rel="stylesheet">
 
     <!-- Bootstrap JS and dependencies -->
-    <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
+    <!-- <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.9.2/dist/umd/popper.min.js"></script>
-    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+    <script src="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script> -->
     
 
     @yield('head')
@@ -129,8 +130,8 @@
     </script>
     
     <script src="https://code.jquery.com/jquery-3.5.1.slim.min.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.2/dist/umd/popper.min.js"></script>
-    <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script>
+  <!--   <script src="https://cdn.jsdelivr.net/npm/@popperjs/core@2.5.2/dist/umd/popper.min.js"></script> -->
+   <!--  <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.5.2/js/bootstrap.min.js"></script> -->
     @yield('scripts')
 </body>
 </html>

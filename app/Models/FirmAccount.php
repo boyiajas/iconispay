@@ -51,4 +51,9 @@ class FirmAccount extends Model
     {
         return $this->hasMany(Payment::class);
     }
+
+    public function requisitions()
+    {
+        return $this->hasOne(Requisition::class);
+    }
 }

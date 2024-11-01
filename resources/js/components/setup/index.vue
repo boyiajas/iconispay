@@ -218,6 +218,80 @@
                 </div>
             </div>
         </div>
+
+        <!-- edit firmAccount Modal -->
+        <div class="modal fade" id="editFirmAccountModal" tabindex="-1" aria-labelledby="editFirmAccountLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="editFirmAccountLabel">Edit Firm Account</h5>
+                        <button type="button" class="btn-close" @click="closeModal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form @submit.prevent="updateFirmAccount">
+                            <!-- Display Text Field -->
+                            <div class="form-group mb-3 row">
+                                <label class="form-label col-sm-3" for="displayText">Display Text:</label>
+                                <div class="col-sm-9">
+                                    <input type="text" v-model="firmAccount.displayText" class="form-control" id="displayText" required>
+                                </div>
+                            </div>
+
+                            <!-- Account Category Dropdown -->
+                            <div class="form-group mb-3 row">
+                                <label class="form-label col-sm-3" for="category">Account Category:</label>
+                                <div class="col-sm-9">
+                                    <select v-model="firmAccount.categoryId" class="form-control" id="category" required>
+                                        <option value="">Select a category</option>
+                                        <option v-for="category in categories" :key="category.id" :value="category.id">{{ category.name }}</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <!-- Account Holder and Account Number Fields -->
+                            <div class="form-group mb-3 row">
+                                <label class="form-label col-sm-3" for="accountHolder">Account Holder:</label>
+                                <div class="col-sm-9">
+                                    <input type="text" v-model="firmAccount.accountHolder" class="form-control" id="accountHolder" required>
+                                </div>
+                            </div>
+                            <div class="form-group mb-3 row">
+                                <label class="form-label col-sm-3" for="accountNumber">Account #:</label>
+                                <div class="col-sm-9">
+                                    <input type="text" v-model="firmAccount.accountNumber" class="form-control" id="accountNumber" required>
+                                </div>
+                            </div>
+
+                            <!-- Institution and Branch Code -->
+                            <div class="form-group mb-3 row">
+                                <label class="form-label col-sm-3" for="institution">Institution:</label>
+                                <div class="col-sm-9">
+                                    <select v-model="firmAccount.institutionId" class="form-control" id="institution" required>
+                                        <option value="">Select an institution</option>
+                                        <option v-for="institution in institutions" :key="institution.id" :value="institution.id">{{ institution.name }}</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-group mb-3 row">
+                                <label class="form-label col-sm-3" for="branchCode">Branch Code:</label>
+                                <div class="col-sm-9">
+                                    <input type="text" v-model="firmAccount.branchCode" class="form-control" id="branchCode" required>
+                                </div>
+                            </div>
+
+                            <!-- Save and Delete Buttons -->
+                            <div class="form-group mb-3 row">
+                                <div class="col-sm-9 offset-sm-3">
+                                    <button type="submit" class="btn btn-info">Save Changes</button>
+                                    <button type="button" class="btn btn-danger ml-2" @click="confirmDelete">Delete</button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
     </div>
 </template>
 
@@ -249,7 +323,8 @@ export default {
                 fromDate: '', // Start date for filtering
                 toDate: '',   // End date for filtering
             },
-            modalInstance: null // Store the modal instance
+            modalInstance: null, // Store the modal instance
+            firmAccount: {}, // Store the selected firm account data for editing
         };
     },
     mounted() {
@@ -368,6 +443,43 @@ export default {
             this.modalInstance = new bootstrap.Modal(document.getElementById('newUserModal'));
             this.modalInstance.show();
         },
+         // Show the edit modal with populated data
+        editFirmAccount(id) {
+            axios.get(`/api/firm-accounts/${id}`)
+                .then(response => {
+                    this.firmAccount = response.data;
+                    this.modalInstance = new bootstrap.Modal(document.getElementById('editFirmAccountModal'));
+                    this.modalInstance.show();
+                })
+                .catch(error => console.error('Error fetching firm account:', error));
+        },
+
+        // Update firm account data
+        updateFirmAccount() {
+            axios.put(`/api/firm-accounts/${this.firmAccount.id}`, this.firmAccount)
+                .then(response => {
+                    this.modalInstance.hide();
+                    this.initializeFirmAccounts(); // Reload table data
+                })
+                .catch(error => console.error('Error updating firm account:', error));
+        },
+
+        // Show delete confirmation
+        confirmDelete(id) {
+            if (confirm('Are you sure you want to delete this account?')) {
+                this.deleteBeneficiaryAccount(id);
+            }
+        },
+
+        // Delete firm account
+        deleteBeneficiaryAccount(id) {
+            axios.delete(`/api/beneficiary-accounts/${id}`)
+                .then(response => {
+                    this.modalInstance.hide();
+                    this.initializeFirmAccounts(); // Reload table data
+                })
+                .catch(error => console.error('Error deleting firm account:', error));
+        },
         closeModal() {
             //const newUserModal = bootstrap.Modal.getInstance(document.getElementById('newUserModal'));
             if (this.modalInstance) {
@@ -388,9 +500,6 @@ export default {
                 authoriser_role: false,
                 bookkeeper_role: false
             };
-        },
-        editFirmAccount(account) {
-            alert(`Edit firm account ${account.account_name}`);
         },
         reactivateUser(user) {
             alert(`Reactivate user ${user.username}`);
@@ -420,11 +529,11 @@ export default {
                     { data: 'mandated', render: data => data ? '<i class="fas fa-check text-success"></i>' : '' },
                     {
                         data: null,
-                        render: function (data) {
+                        render: function (data, type, row) {
                             return `
                                 <button class="btn btn-outline-info btn-sm"><i class="fas fa-search"></i></button>
-                                <button class="btn btn-outline-secondary btn-sm" @click="editFirmAccount(account)"><i class="fas fa-edit"></i></button>
-                                <button class="btn btn-outline-danger btn-sm"><i class="fas fa-trash"></i></button>
+                                <button class="btn btn-outline-secondary btn-sm" onclick="editFirmAccount(${row.id})"><i class="fas fa-edit"></i></button>
+                                <button class="btn btn-outline-danger btn-sm" onclick="deleteFirmAccount(${row.id})"><i class="fas fa-trash"></i></button>
                             `;
                         }
                     }
@@ -468,8 +577,8 @@ export default {
                         render: function (data) {
                             return `
                                 <button class="btn btn-outline-info btn-sm"><i class="fas fa-search"></i></button>
-                                <button class="btn btn-outline-secondary btn-sm" @click="editFirmAccount(account)"><i class="fas fa-edit"></i></button>
-                                <button class="btn btn-outline-danger btn-sm"><i class="fas fa-trash"></i></button>
+                                <button class="btn btn-outline-secondary btn-sm edit-beneficiary-btn" data-id="${data.id}"><i class="fas fa-edit"></i></button>
+                                <button class="btn btn-outline-danger btn-sm delete-beneficiary-btn" data-id="${data.id}"><i class="fas fa-trash"></i></button>
                             `;
                         }
                     }
@@ -485,6 +594,18 @@ export default {
                 searching: true,
                 autoWidth: true,
                 wrap: true,
+            });
+
+            // Event listener for edit button
+            $('#beneficiary-accounts-table tbody').on('click', '.edit-beneficiary-btn', (event) => {
+                const id = $(event.currentTarget).data('id');
+                this.editFirmAccount(id);
+            });
+
+            // Event listener for delete button
+            $('#beneficiary-accounts-table tbody').on('click', '.delete-beneficiary-btn', (event) => {
+                const id = $(event.currentTarget).data('id');
+                this.confirmDelete(id);
             });
         },
         // Method to load both accounts when Firm Accounts tab is clicked

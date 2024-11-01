@@ -4,6 +4,7 @@ namespace Database\Seeders;
 
 use Illuminate\Database\Seeder;
 use App\Models\BeneficiaryAccount;
+
 class BeneficiaryAccountSeeder extends Seeder
 {
     public function run()
@@ -29,6 +30,7 @@ class BeneficiaryAccountSeeder extends Seeder
                 'branch_code_match' => true,
                 'holder_name_match' => true,
                 'registration_number_match' => true,
+                'user_id' => 1, // Assuming user ID 1 exists
             ],
 
             // Natural account
@@ -52,6 +54,7 @@ class BeneficiaryAccountSeeder extends Seeder
                 'branch_code_match' => true,
                 'holder_name_match' => true,
                 'registration_number_match' => false,
+                'user_id' => 2, // Assuming user ID 2 exists
             ],
 
             // Juristic account
@@ -69,11 +72,13 @@ class BeneficiaryAccountSeeder extends Seeder
                 'verification_status' => 'pending',
                 'account_found' => false,
                 'account_open' => false,
+                'branch_code' => '250655',
                 'account_type_verified' => null,
                 'account_type_match' => false,
                 'branch_code_match' => false,
                 'holder_name_match' => false,
                 'registration_number_match' => false,
+                'user_id' => 3, // Assuming user ID 3 exists
             ],
 
             // Natural account
@@ -97,6 +102,7 @@ class BeneficiaryAccountSeeder extends Seeder
                 'branch_code_match' => true,
                 'holder_name_match' => true,
                 'registration_number_match' => false,
+                'user_id' => 4, // Assuming user ID 4 exists
             ]
         ];
 

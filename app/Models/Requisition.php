@@ -38,7 +38,12 @@ class Requisition extends Model
 
     public function firmAccount()
     {
-        return $this->belongTo(FirmAccount::class, 'firm_account_id');
+        return $this->belongsTo(FirmAccount::class);
+    }
+
+    public function authorizedBy()
+    {
+        return $this->belongsTo(User::class, 'authorized_user_id');
     }
 
     public function user()

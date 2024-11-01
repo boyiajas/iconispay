@@ -4,10 +4,12 @@
 
      <!-- Pass necessary Laravel variables -->
      <script>
-        window.Laravel = <?php echo json_encode([
-            'csrfToken' => csrf_token(),
-            'user' => Auth::check() ? Auth::user()->load('roles', 'permissions') : null,
-        ]); ?>
+        
+
+        window.Laravel = {
+            csrfToken: '{{ csrf_token() }}',
+            user: {!! json_encode(Auth::check() ? Auth::user()->load('roles', 'permissions') : null) !!}
+        };
     </script>
 
 @endsection

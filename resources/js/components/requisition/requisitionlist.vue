@@ -39,7 +39,7 @@
                                 <th>Parties</th>
                                 <th>Status</th>
                                 <th>Progress</th>
-                                <th>Action</th>
+                                <th v-if="canAction">Action</th>
                             </tr>
                         </thead>
                     </table>
@@ -54,6 +54,7 @@ import axios from 'axios';
 import $ from 'jquery';
 import 'datatables.net';
 import 'datatables.net-bs5';
+import { userCan } from '../permission/userCan.js';
 
 export default {
     props: ['status'],
@@ -66,10 +67,16 @@ export default {
             statusTitle: this.status, // Dynamically set title based on status
         };
     },
+    computed: {
+        canAction() {
+            return userCan(['admin']);
+        }
+    },
     methods: {
         loadStatuses() {
             axios.get('/api/statuses').then(response => {
                 this.statuses = response.data;
+                this.reloadStatusColumn();// Refresh status column in DataTable once statuses are loaded
             });
         },
         initializeDataTable() {
@@ -93,7 +100,9 @@ export default {
                     { data: 'parties', name: 'parties' },
                     { data: 'status_id', name: 'status_id', render: (data) => this.getStatusName(data) },
                     { data: 'progress', name: 'progress' },
-                    { data: 'id', name: 'id', orderable: false, searchable: false, render: (data) => this.actionButtons(data) }
+                     // Conditionally add the Action column if the user has the admin role
+                     ...(this.canAction ? [{ data: 'id', name: 'id', orderable: false, searchable: false, render: (data) => this.actionButtons(data) }] : [])
+                    //{ data: 'id', name: 'id', orderable: false, searchable: false, render: (data) => this.actionButtons(data) }
                 ],
                 responsive: true,
                 destroy: true, // Reinitialize the table if needed
@@ -109,6 +118,21 @@ export default {
         reloadTable() {
             if (this.mattersTable) {
                 this.mattersTable.ajax.reload();
+            }
+        },
+        reloadStatusColumn() {
+            if (this.mattersTable) {
+                // Redraw only the Status column after statuses have been loaded
+                this.mattersTable.columns().every((index) => {
+                    if (this.mattersTable.column(index).dataSrc() === 'status_id') {
+                        this.mattersTable.column(index).data((row, type, set) => {
+                            if (type === 'display') {
+                                return this.getStatusName(row.status_id);
+                            }
+                            return row.status_id;
+                        }).draw(false);
+                    }
+                });
             }
         },
         getStatusName(statusId) {
@@ -127,8 +151,8 @@ export default {
         }
     },
     mounted() {
-        this.loadStatuses();
         this.initializeDataTable();
+        this.loadStatuses();
     }
 };
 </script>

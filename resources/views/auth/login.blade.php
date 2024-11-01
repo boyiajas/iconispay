@@ -53,8 +53,8 @@
 
                         <div class="row mb-0">
                             <div class="col-md-8 offset-md-4">
-                                <button type="submit" class="btn btn-primary">
-                                    {{ __('Login') }}
+                                <button onClick="handleLoginButton()" type="submit" class="btn btn-primary">
+                                    <span id="buttonSpinner" class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span> {{ __('Login') }}
                                 </button>
 
                                 @if (Route::has('password.request'))
@@ -70,4 +70,11 @@
         </div>
     </div>
 </div>
+
+<script>
+function handleLoginButton() {
+    const buttonSpinner = document.getElementById('buttonSpinner');
+    buttonSpinner.classList.remove('d-none');
+}
+</script>
 @endsection

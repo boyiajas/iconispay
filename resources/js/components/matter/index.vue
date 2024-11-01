@@ -38,7 +38,7 @@
                         <th>Parties</th>
                         <th>Status</th>
                         <th>Progress</th>
-                        <th>Action</th>
+                        <th v-if="canAction">Action</th>
                     </tr>
                 </thead>
             </table>
@@ -53,6 +53,7 @@ import axios from 'axios';
 import $ from 'jquery';
 import 'datatables.net';
 import 'datatables.net-bs5';
+import { userCan } from '../permission/userCan';
 
 export default {
     name: 'Matters',
@@ -64,10 +65,16 @@ export default {
             mattersTable: null,
         };
     },
+    computed: {
+        canAction() {
+            return userCan(['admin']); // Only users with the admin role can access actions
+        }
+    },
     methods: {
         loadStatuses() {
             axios.get('/api/statuses').then(response => {
                 this.statuses = response.data;
+                this.reloadStatusColumn(); // Refresh status column in DataTable once statuses are loaded
             });
         },
         
@@ -103,7 +110,9 @@ export default {
                     { data: 'parties', name: 'parties' },
                     { data: 'status_id', name: 'status_id', render: (data) => this.getStatusName(data) },
                     { data: 'progress', name: 'progress' },
-                    { data: 'id', name: 'id', orderable: false, searchable: false, render: (data) => this.actionButtons(data) }
+                    // Conditionally add the Action column if the user has the admin role
+                    ...(this.canAction ? [{ data: 'id', name: 'id', orderable: false, searchable: false, render: (data) => this.actionButtons(data) }] : [])
+                    //{ data: 'id', name: 'id', orderable: false, searchable: false, render: (data) => this.actionButtons(data) }
                 ],
                 responsive: true,
                 destroy: true, // Reinitializes the table if needed
@@ -121,7 +130,26 @@ export default {
                 this.mattersTable.ajax.reload();
             }
         },
+        reloadStatusColumn() {
+            if (this.mattersTable) {
+                // Redraw only the Status column after statuses have been loaded
+                this.mattersTable.columns().every((index) => {
+                    if (this.mattersTable.column(index).dataSrc() === 'status_id') {
+                        this.mattersTable.column(index).data((row, type, set) => {
+                            if (type === 'display') {
+                                return this.getStatusName(row.status_id);
+                            }
+                            return row.status_id;
+                        }).draw(false);
+                    }
+                });
+            }
+        },
         actionButtons(matterId) {
+            // Conditionally render action buttons only if the user has admin role
+            if (!this.canAction) {
+                return ''; // Return an empty string if the user is not an admin
+            }
             return `
                 <button class="btn btn-sm btn-outline-primary" onclick="event.stopPropagation(); editMatter(${matterId})">
                     <i class="fas fa-edit"></i> Edit
@@ -137,8 +165,8 @@ export default {
         },
     },
     mounted() {
-        this.loadStatuses();
         this.initializeDataTable();
+        this.loadStatuses();
     },
 };
 </script>

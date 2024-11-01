@@ -40,7 +40,7 @@ class RequisitionController extends Controller
         return Datatables::of($query)
             ->addColumn('progress', function ($requisition) {
                 $progress = '';
-                if ($requisition->is_authorized) {
+                if ($requisition->authorization_status) {
                     $progress .= '<span class="badge bg-success me-1">Authorized</span>';
                 }else{
                     $progress .= '<span class="badge bg-default me-1 disabled">Authorized</span>';
@@ -111,8 +111,20 @@ class RequisitionController extends Controller
      */
     public function show(Requisition $requisition)
     {
-         // Return the requisition with any required relationships, such as the user who created it
-        return response()->json($requisition->load('user'));
+        
+        try {
+            // Return the requisition with any required relationships, such as the user who created it
+            return response()->json($requisition->load('user', 'authorizedBy', 'firmAccount.institution', 'payments.beneficiaryAccount', 'payments.beneficiaryAccount.institution', 'deposits.firmAccount', 'deposits.user'));
+        } catch (\Exception $e) {
+            // Log the error message
+            \Log::error('Error getting requisition: ' . $e->getMessage());
+
+            // Return an error response to the client
+            return response()->json([
+                'message' => 'An error occurred while getting requisition.',
+                'error' => $e->getMessage() // Optional: for debugging, remove in production
+            ], 500);
+        }
     }
 
     /**
@@ -301,8 +313,8 @@ class RequisitionController extends Controller
         return Datatables::of($query)
             ->addColumn('progress', function ($requisition) {
                 $progress = '';
-                if ($requisition->is_authorized) {
-                    $progress .= '<span class="badge bg-success me-2">Authorized</span>';
+                if ($requisition->authorization_status) {
+                    $progress .= '<span class="badge bg-success me-1">Authorized</span>';
                 }
                 if ($requisition->funding_status) {
                     $progress .= '<span class="badge bg-success">Funded</span>';

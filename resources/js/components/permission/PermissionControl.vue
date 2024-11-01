@@ -20,6 +20,11 @@ export default {
     computed: {
         hasAccess() {
             const user = window.Laravel.user;
+            // If `user` is null, access should be denied
+            if (!user) {
+                return false;
+            }
+            // Safely access `roles` and `permissions`
             const userRoles = user.roles.map(role => role.name);
             const userPermissions = user.permissions.map(permission => permission.name);
 
