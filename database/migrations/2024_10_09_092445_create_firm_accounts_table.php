@@ -15,6 +15,7 @@ return new class extends Migration
             $table->id();
             $table->string('display'); //Display name for the account
             $table->enum('account_holder_type', ['natural', 'juristic'])->default('natural'); //Natural and 
+            $table->enum('method', ['manual', 'file_upload'])->default('manual');
             $table->string('account_holder');
             $table->string('account_number');
             $table->foreignId('category_id'); // Category of the account (e.g., "Firm trust account")

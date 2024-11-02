@@ -95,23 +95,37 @@
                 </div>
                 
             </div>
-            <div class="col-md-3 box" :class="{'complete': requisition.funding_status, 'incomplete': !requisition.funding_status}">
+            <div class="col-md-3 box" :class="{'complete': requisition.funding_status, 'incomplete': !requisition.funding_status, 'current': requisition.deposits && requisition.deposits.length > 0}">
                 <div class="status-card row pt-2">
                     <div class="col-md-9">
                         <h6 class="fw-bold">Funding</h6>
-                        <p class="status-value mb-0 mt-3" v-if="requisition">
-                            <span v-if="requisition.deposits && requisition.deposits.length > 0">
+                        <p class="status-value mb-0 mt-3" v-if="requisition.deposits && requisition.deposits.length > 0 && requisition.funding_status">
+                            <span>
                                 {{ requisition.funding_status ? 'Completed on '+formatDate(requisition.deposits[requisition.deposits.length - 1].created_at) : fundingStatus }}
                             </span>
                             
+                            
                         </p>
-                        <p class="status-value mb-0 mt-3" v-else-if="requisition.funding_status">
+                        <p class="status-value mb-0 mt-3" v-else-if="requisition.deposits && requisition.deposits.length > 0 && !requisition.funding_status">
+                            <span>Mark as received on entry(s)</span>
+                            <div class="mb-2"><a class="btn btn-sm btn-white btn-default-default" @click="fundDeposit">Fund</a></div>
+                            
+                        </p>
+                       <!--  <p class="status-value mb-0 mt-3" v-else="requisition.funding_status">
                             {{ fundingStatus }}
-                        </p>
+                        </p> -->
                     </div>
                     <div class="col-md-3" v-if="requisition.funding_status">
                         <i class="fa fa-check-circle bg-green" aria-hidden="true"></i>
                     </div>
+                    <div class="col-md-3" v-else-if="requisition.deposits && requisition.deposits.length > 0 && !requisition.funding_status">
+                        <span class="badge bg-info">
+                            {{requisition.deposits ? requisition.deposits.filter(deposit => deposit.funded).length : 0}}
+                            / 
+                            {{requisition.deposits.length}}
+                        </span>                               
+                    </div>
+                    
                 </div>
             </div>
             <div class="col-md-3 box" :class="{'incomplete': requisition.status_id !== 4, 'almostcomplete': requisition.status_id == 5}">
@@ -273,27 +287,43 @@
                                     <div>Deposits</div>
 
                                     <!-- Loop through deposits if they exist -->
-                                        <div v-if="requisition && requisition.deposits && requisition.deposits.length > 0" class="deposit-section row ml-0 mt-1">
-                                            <div v-for="deposit in requisition.deposits" :key="deposit.id" class="col-md-12 row mb-2 lighthover">
-                                                <div class="col-md-3">
-                                                    <span>
-                                                        <i class="fa fa-check mr-2 text-success"></i></span>{{ deposit.description }}
-                                                </div>
-                                                <div class="col-md-6">
-                                                    <!-- Display the user's name who made the deposit -->
-                                                    <div class="bg-light p-1 rounded" style="background-color: #e0ffe0 !important;border: solid 1px #a5f2a5;">Marked as received by {{ deposit.user ? deposit.user.name : 'Unknown User' }} on {{ formatDate(deposit.created_at) }}</div>
-                                                </div>
-                                                <div class="col-md-3 pl-4">
-                                                    R{{ parseFloat(deposit.amount).toFixed(2) }}
+                                        <div v-if="requisition && requisition.deposits && requisition.deposits.length > 0" class="deposit-section row ml-0 mt-1 p-0">
+                                            <div v-for="deposit in requisition.deposits" :key="deposit.id" class="p-0">
+                                                <div v-if="deposit.funded" class="col-md-12 row mb-2 lighthover p-0">
+                                                    <div class="col-md-3">
+                                                        <span>
+                                                            <i class="fa fa-check mr-2 text-success"></i></span>{{ deposit.description }}
+                                                    </div>
+                                                    <div class="col-md-6">
+                                                        <!-- Display the user's name who made the deposit -->
+                                                        <div class="bg-light p-1 rounded txt-xs" style="background-color: #e0ffe0 !important;border: solid 1px #a5f2a5;">Marked as received by {{ deposit.user ? deposit.user.name : 'Unknown User' }} on {{ formatDate(deposit.created_at) }}</div>
+                                                    </div>
+                                                    <div class="col-md-3 pl-4">
+                                                        R{{ parseFloat(deposit.amount).toFixed(2) }}
 
-                                                    <span class="pull-right"><i class="fa fa-edit text-primary" @click="openEditDepositModal(deposit)"></i></span>
+                                                        <span class="pull-right"><i class="fa fa-edit text-primary" @click="openEditDepositModal(deposit)"></i></span>
+                                                    </div>
                                                 </div>
-                                                
+                                                <div v-if="!deposit.funded" class="col-md-12 row mb-2 lighthover p-0">
+                                                    <div class="col-md-3">
+                                                        <span>
+                                                            <i class="fa fa-donate mr-2 text-fade"></i></span>{{ deposit.description }}
+                                                    </div>
+                                                    <div class="col-md-6">
+                                                        <!-- Display the user's name who made the deposit -->
+                                                        <div class="bg-light p-1 rounded txt-xs" style="background-color: #f2f2f2 !important;border: solid 1px #f2f2f2;"> Not funded</div>
+                                                    </div>
+                                                    <div class="col-md-3 pl-4">
+                                                        R{{ parseFloat(deposit.amount).toFixed(2) }}
+
+                                                        <span class="pull-right"><i class="fa fa-edit text-primary" @click="openEditDepositModal(deposit)"></i></span>
+                                                    </div>
+                                                </div>
                                             </div>
                                         </div>
 
                                         <!-- Display a message if no deposits are found -->
-                                        <div v-else class="txt-xs">No deposits have been added</div>
+                                        <div v-if="!requisition.deposits" class="txt-xs">No deposits have been added</div>
                                
                                     <div class="mt-3 mb-1">Payments</div>
                                     <div class="payment-section row mb-0">
@@ -310,8 +340,8 @@
                                 </li>
                                 <li class="list-group-item">
                                     <!-- Loop through deposits if they exist -->
-                                    <div v-if="requisition && requisition.payments && requisition.payments.length > 0" class="deposit-section row ml-0 mt-1 mb-0">
-                                        <div v-for="payment in requisition.payments" :key="payment.id" class="col-md-12 row mb-2 lighthover">
+                                    <div v-if="requisition && requisition.payments && requisition.payments.length > 0" class="deposit-section row ml-0 mt-1 mb-0 p-0">
+                                        <div v-for="payment in requisition.payments" :key="payment.id" class="col-md-12 row mb-2 lighthover p-0">
                                             <div class="col-md-3">
                                                 <span v-if="!payment.verified">
                                                     <i class="fa fa-square mr-2 mt-1 text-success" ref="popoverIcon" 
@@ -350,7 +380,7 @@
 
                                     <div v-else class="txt-xs">No Payments have been added</div>
                                 
-                                    <div class="row ml-0">
+                                    <div class="row ml-0 p-0">
                                         <div class="col-md-3">
                                             
                                         </div>
@@ -358,7 +388,7 @@
                                             <div><br/><br/></div>
                                             <div class="pull-right" v-if="!requisition.deposits  && !requisition.deposits.length > 0">Net Balance: </div>
                                         </div>
-                                        <div class="col-md-3 row">
+                                        <div class="col-md-3 row pr-0">
 
                                             <div v-if="requisition.deposits && requisition.deposits.length > 0 && !requisition.payments">
                                                 <hr class="mb-1"/>
@@ -381,7 +411,7 @@
                                                     
                                                 </div>
                                                 <hr class="mb-0 mt-1"/>
-                                                <span class="pull-right mr-4" v-if="requisition.payments  && requisition.payments.length > 0">&nbsp; R {{ netBalance }}</span>
+                                                <span class="pull-right mr-4" v-if="requisition.payments  && requisition.payments.length > 0" :class="netBalance > 0 ? 'orange' : null">&nbsp; R {{ netBalance }}</span>
                                                 <div v-if="requisition.payments  && requisition.payments.length > 0  && requisition.status_id === 2" class="btn btn-white btn-default-default btn-sm mt-1" data-toggle="tooltip" data-placement="bottom" title="Balance the matter by adding a default source / deposit entry" @click="balancePaymentFund"><i class="fas fa-balance-scale"></i> Balance and Fund</div>
                                             </div>
                                             
@@ -524,7 +554,7 @@
             <div class="modal-dialog modal-xl">
                 <div class="modal-content">
                     <div class="modal-header card-header">
-                        <h5 class="modal-title" id="sourceAccountModalLabel">Choose a Source Account</h5>
+                        <h5 class="modal-title" id="sourceAccountModalLabel">Change a Source Account</h5>
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" @click="closeModal"></button>
                     </div>
                     <div class="modal-body">
@@ -541,7 +571,7 @@
                                                 <th width="15%">Account Number</th>
                                                 <th width="10%">Branch Code</th>
                                                 <th width="20%">Account Holder</th>
-                                                <th width="10%">Aggregated</th>
+                                                <th width="10%">Authorisations</th>
                                             </tr>
                                         </thead>
                                     </table>
@@ -1680,7 +1710,7 @@ export default {
                 statusClass = 'patialcomplete';
             }
 
-            if (this.requisition && this.requisition.payments && this.requisition.payments.length > 0){
+            if (this.requisition && this.requisition.payments && this.requisition.payments.length > 0 || this.requisition.deposits && this.requisition.deposits.length > 0){
                 statusClass = 'patialcomplete';
             }
             return statusClass; // Default case if statusId is not matched
@@ -1767,6 +1797,10 @@ export default {
                     { data: 'account_holder', name: 'account_holder' },
                     { data: 'authorised', name: 'authorised' }
                 ],
+                createdRow: function(row, data, dataIndex) {
+                    // Apply style to all <td> elements
+                    $('td', row).css('word-wrap', 'break-word').css('white-space', 'normal');
+                },
                 responsive: false,
                 destroy: true, // Reinitializes the table if needed
               
@@ -1918,8 +1952,13 @@ export default {
                     { data: 'account_number', name: 'account_number' },
                     { data: 'branch_code', name: 'branch_code' },
                     { data: 'account_holder', name: 'account_holder' },
-                    { data: 'aggregated', render: (data) => (data ? 'Yes' : 'No') }
+                    { data: 'authorised', name: 'authorised' }
+                    /* { data: 'aggregated', render: (data) => (data ? 'Yes' : 'No') } */
                 ],
+                createdRow: function(row, data, dataIndex) {
+                    // Apply style to all <td> elements
+                    $('td', row).css('word-wrap', 'break-word').css('white-space', 'normal');
+                },
                 responsive: false,
                 destroy: true, // Reinitializes the table if needed
               
@@ -2008,7 +2047,7 @@ export default {
 
                     if(response.data){
                         // Update the requisition object with the new source_account_id
-                        this.requisition.funding_status = 1;
+                        //this.requisition.funding_status = 1;
                         this.closeModal();
                     }
 
@@ -2092,7 +2131,36 @@ export default {
                     }
                 });
         },
+        fundDeposit() {
+            axios.post('/api/deposits/fund-deposits', { requisition_id: this.requisitionId })
+                .then(response => {
+                    console.log('Deposit Funding successfully:', response.data);
+                    
+                    // Show success toast
+                    this.toast.success('Deposit Funding successfully!', {
+                        title: 'Success'
+                    });
 
+                    // Update the funding status in the local requisition object
+                    this.requisition.funding_status = 1;
+
+                    // Update each deposit in the local deposits list to reflect the funded status
+                    this.requisition.deposits.forEach(deposit => {
+                        deposit.funded = true;
+                    });
+
+                    this.closeModal();
+
+                    // Reset the form after submission
+                    this.resetForm();
+                })
+                .catch(error => {
+                    console.error('Error funding deposit:', error);
+                    if (error.response && error.response.data.errors) {
+                        this.errors = error.response.data.errors;  // Show validation errors
+                    }
+                });
+        },
         // Set the account type and update the form fields based on search
         setNewAccountType(accountType) {
             if (accountType === 'juristic') {
@@ -2217,6 +2285,7 @@ export default {
             this.paymentForm.initials = account.initials;
             this.paymentForm.surname = account.surname;
             this.paymentForm.id_number = account.id_number;
+            this.paymentForm.registration_number = account.registration_number;
             this.paymentForm.verified = account.verified;
             this.paymentForm.payments = account.payments;
 
@@ -2493,6 +2562,10 @@ label{
 
 .patialcomplete{
     border-top: 7px solid rgb(255, 198, 94) !important;
+}
+
+.orange{
+    color: rgb(182, 140, 62) !important;
 }
 
 .incomplete.current{

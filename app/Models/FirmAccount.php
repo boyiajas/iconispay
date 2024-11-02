@@ -13,6 +13,7 @@ class FirmAccount extends Model
         'display',
         'category_id',
         'account_holder_type',
+        'method', // e.g., "Manual" or "File Upload"
         'account_holder',
         'account_number',
         'account_type_id',
@@ -55,5 +56,21 @@ class FirmAccount extends Model
     public function requisitions()
     {
         return $this->hasOne(Requisition::class);
+    }
+
+    /**
+     * Check if the account has pending requisitions for confirmation.
+     */
+    public function getPendingConfirmationFilesAttribute()
+    {
+        return $this->requisitions()->where('status_id', 3)->count();
+    }
+
+    /**
+     * Format the display for Ready for Payment.
+     */
+    public function getReadyForPaymentAttribute()
+    {
+        return "{$this->requisitions()->where('status_id', 5)->count()} Matter(s)";
     }
 }

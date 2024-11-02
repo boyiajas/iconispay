@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Deposit;
+use App\Models\Payment;
 use App\Models\Requisition;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
@@ -66,6 +67,24 @@ class DepositController extends Controller
 
     }
 
+    public function fundDeposits(Request $request)
+    {
+        $request->validate([
+            'requisition_id' => 'required|exists:requisitions,id'
+        ]);
+
+        $requisitionId = $request->input('requisition_id');
+
+        // Update all deposits for this requisition to funded: true
+        Deposit::where('requisition_id', $requisitionId)->update(['funded' => true]);
+
+        // Update the requisition's funding_status to true
+        $requisition = Requisition::find($requisitionId);
+        $requisition->update(['funding_status' => true]);
+
+        return response()->json($requisition, 200);
+    }
+
     /**
      * Store a newly created resource in storage.
      */
@@ -86,14 +105,27 @@ class DepositController extends Controller
         }
 
          // If funded is true, set deposit_date to null
-        $depositDate = $request->input('funded') ? null : $request->input('deposit_date');
+        $depositDate = $request->input('deposit_date') ? $request->input('deposit_date') : null;
+
+         // Check if an unfunded deposit already exists for the same requisition_id
+        $existingUnfundedDeposit = Deposit::where('requisition_id', $request->input('requisition_id'))
+        ->where('funded', false)
+        ->exists();
 
         //here we want to update the requisition funding status
         $requisition = Requisition::find($request->input('requisition_id'));
-        if($requisition){
+
+        if(!$existingUnfundedDeposit && $requisition){
             $requisition->update([
-                'funding_status' => 1, // true should be a boolean, not a string
+                'funding_status' => $request->input('funded') ? 1 : null, // true should be a boolean, not a string
             ]);
+        }
+
+        // Check if the requisition already has an existing payment
+        $existingPayment = Payment::where('requisition_id', $request->input('requisition_id'))->exists();
+        // If an existing payment is found, update requisition status_id to 3
+        if ($existingPayment && $requisition) {
+            $requisition->update(['status_id' => 3]);
         }
 
         // Create the deposit record and associate it with the authenticated user
@@ -166,27 +198,34 @@ class DepositController extends Controller
         // Get the requisition associated with the deposit
         $requisition = $deposit->requisition;
 
-        // Check if this is the last deposit for the requisition
-        $remainingDeposits = $requisition->deposits()->count();
+        // Delete the deposit
+        $deposit->delete();
 
-        if ($remainingDeposits === 1) {
-            // If this is the last deposit, set funding_status to null
+        // Check if there are remaining deposits for the requisition
+        $remainingDeposits = $requisition->deposits()->exists();
+
+        if ($remainingDeposits) {
+            // Check if any remaining deposits are not funded
+            $hasUnfundedDeposit = $requisition->deposits()->where('funded', false)->exists();
+
+            // Update funding_status based on the presence of unfunded deposits
+            $requisition->update([
+                'funding_status' => $hasUnfundedDeposit ? null : true,
+                'capturing_status' => null,
+                'status_id' => 2,
+                'locked' => null
+            ]);
+        } else {
+            // If there are no remaining deposits, reset the funding_status to null
             $requisition->update([
                 'funding_status' => null,
                 'capturing_status' => null,
                 'status_id' => 2,
                 'locked' => null
             ]);
-        }else{
-            $requisition->update([
-                'capturing_status' => null,
-                'status_id' => 2,
-                'locked' => null
-            ]);
         }
-        // Delete the deposit
-        $deposit->delete();
 
         return response()->json($requisition, 201);
     }
+
 }

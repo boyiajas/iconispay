@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import Home from './Home.vue';
 import Matter from './matter/index.vue';
+import Account from './account/index.vue';
 import NewRequisition from './requisition/create.vue';
 import DetailsRequisition from './requisition/details.vue';
 import NewBeneficiary from './beneficiary/create.vue';
@@ -13,6 +14,7 @@ import EmailSignatory from './email/emailsignatory.vue';
 const routes = [
     { path: '/home', name: 'home', component: Home },
     { path: '/matters', name: 'matters', component: Matter },
+    { path: '/accounts', name: 'accounts', component: Account },
     { path: '/requisition/new', name: 'newrequisition', component: NewRequisition },
     
     // Updated route for requisition details with dynamic parameters

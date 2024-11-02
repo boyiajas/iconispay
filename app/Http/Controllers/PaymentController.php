@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\BeneficiaryAccount;
 use App\Models\Payment;
+use App\Models\Requisition;
 use Illuminate\Http\Request;
 
 class PaymentController extends Controller
@@ -49,24 +50,24 @@ class PaymentController extends Controller
                 'branch_code' => 'nullable|string|max:10',
                 'id_number' => 'nullable|string|max:255',
                 'verified' => 'nullable|boolean',
-                'existing_beneficiary' => 'required|boolean',
+                /* 'existing_beneficiary' => 'required|boolean', */
                 // Optional: add validation for `verification_status` if needed
             ]);
 
             // Step 1: Check if the beneficiary account exists or create a new one
-            if ($request->existing_beneficiary) {
-                $beneficiaryAccount = BeneficiaryAccount::where('account_number', $validated['account_number'])->firstOrFail();
+          
+            $beneficiaryAccount = BeneficiaryAccount::where('account_number', $validated['account_number'])->first();
 
-            } else {
+            if(!$beneficiaryAccount){
                 //$beneficiaryAccount = BeneficiaryAccount::where('account_number', $validated['account_number'])->first();
 
                 // If the account does not exist, populate additional fields and save it
                 $beneficiaryAccount = BeneficiaryAccount::create([
-                    'display_text' => $validated['account_holder_type'] === 'natural' 
+                    'display_text' => $request->input('account_holder_type') === 'natural' 
                         ? $validated['initials'] . ' ' . $validated['surname'] 
                         : $validated['company_name'],
                     'category_id' => $validated['category'],
-                    'account_holder_type' => $validated['account_holder_type'],
+                    'account_holder_type' => $request->input('account_holder_type'),
                     'initials' => $validated['initials'],
                     'surname' => $validated['surname'],
                     'company_name' => $validated['company_name'],
@@ -99,6 +100,13 @@ class PaymentController extends Controller
                 'authorised' => $request->input('authorised', false),
                 'verified' => $validated['verified'] ?? false,
             ]);
+
+             // Check if the requisition has existing deposits
+            $requisition = Requisition::find($validated['requisition_id']);
+            if ($requisition->deposits()->exists()) {
+                // Update requisition status_id to 3 if a deposit already exists
+                $requisition->update(['status_id' => 3]);
+            }
 
             // Eager load the user relationship and return the deposit with user data
             $payment->load('beneficiaryAccount');

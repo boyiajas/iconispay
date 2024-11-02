@@ -32,7 +32,9 @@
                             </a>
                             <a href="#" @click.prevent="loadRequisitionsByStatus('Awaiting Funding')">
                                 <li class="list-group-item">Awaiting Funding 
-                                    <span class="pull-right badge badge-pill bg-default">0</span>
+                                    <span :class="['pull-right', 'badge', 'badge-pill', awaitingFundingRequisitions > 0 ? 'badge-danger' : 'bg-default']">
+                                        {{ awaitingFundingRequisitions }}
+                                    </span>
                                 </li>
                             </a>
                             <a href="#" @click.prevent="loadRequisitionsByStatus('Ready for Payment')">
@@ -93,6 +95,7 @@ export default {
             incompleteRequisitions: 0, // Store the count of incomplete requisitions
             awaitingAuthorizationRequisitions: 0,
             readyForPaymentRequisitions: 0,
+            awaitingFundingRequisitions: 0,
         };
     },
     methods: {
@@ -107,6 +110,16 @@ export default {
             .catch(error => {
                 console.error("There was an error fetching the requisition data: ", error);
             });
+        },
+        loadAwaitingFunding() {
+            axios.get('/api/requisitions/awaiting-funding')
+                .then(response => {
+                    // Assuming the response contains the count of requisitions with unfunded deposits
+                    this.awaitingFundingRequisitions = response.data.count;
+                })
+                .catch(error => {
+                    console.error("There was an error fetching the awaiting funding requisition data: ", error);
+                });
         },
          // Method to load the Awaiting Authorization requisitions
          loadAwaitingAuthorizationRequisitions() {
@@ -141,6 +154,7 @@ export default {
         this.loadIncompleteRequisitions();
         this.loadAwaitingAuthorizationRequisitions();
         this.loadReadyForPaymentRequisitions();
+        this.loadAwaitingFunding();
     }
 };
 </script>

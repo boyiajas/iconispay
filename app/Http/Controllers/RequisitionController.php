@@ -205,6 +205,27 @@ class RequisitionController extends Controller
         ]);
     }
 
+    public function countAwaitingFunding()
+    {
+        // Get the currently authenticated user ID
+        $user = Auth::user();
+
+         // Check if the user has an 'admin' or 'authorizer' role
+         if ($user->hasRole('admin') || $user->hasRole('authoriser')) {
+            // If the user is an admin or authorizer, get all incomplete requisitions
+            $count = Requisition::whereHas('deposits', function ($query) {
+                $query->where('funded', false);
+            })->count();
+
+        } else {
+            $count = Requisition::whereHas('deposits', function ($query) use ($user) {
+                $query->where('funded', false)->where('created_by', $user->id);
+            })->count();
+        }
+
+        return response()->json(['count' => $count]);
+    }
+
     public function getAwaitingAuthorization(Request $request)
     {
         // Get the currently authenticated user ID
@@ -261,7 +282,7 @@ class RequisitionController extends Controller
         $statusMapping = [
             'Incomplete' => 2,                // Assuming 1 is 'Incomplete'
             'Awaiting Authorisation' => 3,    // Adjust these values as per your database
-            'Awaiting Funding' => 4,
+            'Awaiting Funding' => 3,
             'Ready for Payment' => 5,
             'Pending Payment Confirmation' => 6,
             'Settled Today' => 7,
