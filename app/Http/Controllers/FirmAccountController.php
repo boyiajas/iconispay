@@ -21,7 +21,7 @@ class FirmAccountController extends Controller
     }
 
     // Get Accounts for Accounts Table
-    public function getAccounts()
+    /* public function getAccounts()
     {
         $accounts = FirmAccount::with('institution')->get();
         
@@ -35,31 +35,50 @@ class FirmAccountController extends Controller
                 'ready_for_payment' => $account->ready_for_payment,
                 'pending_confirmation_files' => $account->pending_confirmation_files > 0 ? "Default - {$account->account_number}" : "No open files",
                 /* 'ready_for_payment' => "{$account->ready_for_payment} Matter(s)",
-                'pending_confirmation_files' => $account->pending_confirmation_files_count > 0 ? "Default - {$account->account_number}" : "No open files", */
+                'pending_confirmation_files' => $account->pending_confirmation_files_count > 0 ? "Default - {$account->account_number}" : "No open files", *
+            ];
+        });
+
+        return response()->json(['data' => $data]);
+    }
+ */
+
+    public function getAccounts()
+    {
+        $accounts = FirmAccount::with('institution')->get();
+
+        // Customize the output to include the number of requisitions ready for payment and generated files
+        $data = $accounts->map(function ($account) {
+            // Get the count of requisitions ready for payment
+            $requisitionsReadyForPayment = $account->requisitions()
+                ->where('status_id', 5)
+                ->withCount('fileUploads') // Get the number of generated files per requisition
+                ->get();
+
+            $totalRequisitions = $requisitionsReadyForPayment->count();
+            $totalGeneratedFiles = $requisitionsReadyForPayment->sum('file_uploads_count'); // Sum up all generated files
+
+            // Assuming we want to use the first requisition's ID for this example
+            $requisitionId = $requisitionsReadyForPayment->first()->id ?? null;
+
+            return [
+                'method' => ucfirst($account->method),
+                'display' => $account->display,
+                'institution_name' => $account->institution->name ?? 'N/A',
+                'account_number' => $account->account_number,
+                'ready_for_payment' => [
+                    'requisition_count' => $totalRequisitions,
+                    'generated_file_count' => $totalGeneratedFiles,
+                    'requisition_id' => $requisitionId,
+                ],
+                'pending_confirmation_files' => $account->pending_confirmation_files > 0 ? "Default - {$account->account_number}" : "No open files",
             ];
         });
 
         return response()->json(['data' => $data]);
     }
 
-    // Get Pending Confirmation Files for Pending Confirmation Files Table
-    /* public function getPendingConfirmationFiles()
-    {
-        $pendingFiles = FirmAccount::where('status', 'pending_confirmation')->get();
-
-        $data = $pendingFiles->map(function ($file) {
-            return [
-                'display' => $file->display,
-                'file_name' => "Default - {$file->account_number}",
-                'payments' => $file->payments_count,
-                'date_generated' => $file->date_generated->format('d M Y H:i'),
-                'total_amount' => $file->total_amount,
-                'status' => 'Pending',
-            ];
-        });
-
-        return response()->json(['data' => $data]);
-    } */
+    
     /**
      * Get Pending Confirmation Files for the Pending Confirmation Files Table.
      */
@@ -84,30 +103,6 @@ class FirmAccountController extends Controller
 
         return response()->json(['data' => $data]);
     }
-
-    // Get Recently Closed Files for Recently Closed Files Table
-   /*  public function getRecentlyClosedFiles(Request $request)
-    {
-        $fromDate = $request->from_date;
-        $toDate = $request->to_date;
-
-        $closedFiles = FirmAccount::whereBetween('date_completed', [$fromDate, $toDate])
-            ->where('status', 'closed')
-            ->get();
-
-        $data = $closedFiles->map(function ($file) {
-            return [
-                'display' => $file->display,
-                'file_name' => "Default - {$file->account_number}",
-                'payments' => $file->payments_count,
-                'date_completed' => $file->date_completed->format('d M Y'),
-                'total_amount' => $file->total_amount,
-                'status' => 'Closed',
-            ];
-        });
-
-        return response()->json(['data' => $data]);
-    } */
 
     /**
      * Get Recently Closed Files for the Recently Closed Files Table.

@@ -2,9 +2,10 @@
 
 namespace App\Exceptions;
 
-use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
-use Throwable;
 use Brian2694\Toastr\Facades\Toastr;
+use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
+use Symfony\Component\HttpKernel\Exception\HttpException;
+use Throwable;
 
 class Handler extends ExceptionHandler
 {
@@ -29,10 +30,21 @@ class Handler extends ExceptionHandler
         });
     }
 
+    public function render($request, Throwable $exception)
+    {
+        // Only check for HTTP exceptions
+        if ($exception instanceof HttpException && $exception->getStatusCode() == 419) {
+            Toastr::error('Page expired. Please login again', 'Error');
+            return redirect()->route('login');
+        }
+
+        return parent::render($request, $exception);
+    }
+
     /**
      * Render an exception into an HTTP response.
      */
-    public function render($request, Throwable $exception)
+    /* public function render($request, Throwable $exception)
     {
         // Check if the exception status code is 419 (Page Expired)
         if ($exception->getStatusCode() == 419) {
@@ -41,5 +53,5 @@ class Handler extends ExceptionHandler
         }
 
         return parent::render($request, $exception);
-    }
+    } */
 }

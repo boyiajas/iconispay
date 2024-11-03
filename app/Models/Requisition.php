@@ -85,4 +85,20 @@ class Requisition extends Model
 
         return $this->transaction_value;
     }
+
+     /**
+     * Relationship with FileUpload model.
+     */
+    public function fileUploads()
+    {
+        return $this->hasMany(FileUpload::class);
+    }
+
+    /**
+     * Get the count of generated files for the requisition.
+     */
+    public function getGeneratedFileCountAttribute()
+    {
+        return $this->fileUploads()->count();
+    }
 }

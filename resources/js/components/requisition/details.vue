@@ -1505,10 +1505,17 @@ export default {
                     console.log("Requisition approved successfully:", response.data);
                     // Optionally update local data or trigger a refresh
                     //this.$emit('requisitionUpdated', response.data);
+                    this.toast.success('Requisition approved successfully!', {
+                        title: 'Success'
+                    });
+
                     this.requisition = response.data;
                 })
                 .catch(error => {
                     console.error("Error approving requisition:", error);
+                    this.toast.error(error.response ? error.response.data : 'No response data', {
+                        title: 'Error'
+                    });
                     alert("There was an error approving the requisition. Please try again.");
                 });
         },

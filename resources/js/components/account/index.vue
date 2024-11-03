@@ -103,7 +103,7 @@ export default {
     },
     methods: {
         // Initialize the Accounts Table
-        initializeAccountsTable() {
+        /* initializeAccountsTable() {
             this.accountsTable = $('#accounts-table').DataTable({
                 processing: true,
                 serverSide: true,
@@ -134,7 +134,113 @@ export default {
                 responsive: true,
                 destroy: true,
             });
+        }, */
+        /* initializeAccountsTable() {
+            this.accountsTable = $('#accounts-table').DataTable({
+                processing: true,
+                serverSide: true,
+                ajax: {
+                    url: '/api/accounts',
+                    type: 'GET',
+                },
+                columns: [
+                    { 
+                        data: 'method',
+                        render: (data) => {
+                            let badgeClass = data === 'Manual' ? 'bg-default' : 'bg-success';
+                            return `<span class="badge ${badgeClass} pr-3 pl-3">${data}</span>`;
+                        }
+                    },
+                    { data: 'display' },
+                    { data: 'institution_name' },
+                    { data: 'account_number' },
+                    { 
+                        data: 'ready_for_payment',
+                        render: (data) => {
+                            return `
+                                ${data.requisition_count} Requisition(s) 
+                                 <button class="btn ${data.generated_file_count > 0 ? 'btn-info' : 'btn-default-default'} btn-sm ml-4 px-1 py-0" 
+                                    ${data.requisition_count > 0 ? `onclick="generateFile(${data.requisition_id})"` : 'text-faded'}>
+                                    Generate 
+
+                                    ${data.generated_file_count > 0 ? `<span class="badge text-info bg-white rounded-pill">
+                                        ${data.generated_file_count}
+                                    </span>` : `${data.requisition_count}`}
+                                    
+                                    
+                                </button>
+                            `;
+                        }
+                    },
+                    { data: 'pending_confirmation_files' }
+                ],
+                responsive: true,
+                destroy: true,
+            });
+        }, */
+        initializeAccountsTable() {
+            this.accountsTable = $('#accounts-table').DataTable({
+                processing: true,
+                serverSide: true,
+                ajax: {
+                    url: '/api/accounts',
+                    type: 'GET',
+                },
+                columns: [
+                    { 
+                        data: 'method',
+                        render: (data) => {
+                            let badgeClass = data === 'Manual' ? 'bg-default' : 'bg-success';
+                            return `<span class="badge ${badgeClass} pr-3 pl-3">${data}</span>`;
+                        }
+                    },
+                    { data: 'display' },
+                    { data: 'institution_name' },
+                    { data: 'account_number' },
+                    { 
+                        data: 'ready_for_payment',
+                        render: (data) => {
+                            return `
+                                ${data.requisition_count} Requisition(s) 
+                                <button class="btn ${data.requisition_count > 0 ? 'btn-info' : 'btn-secondary'} btn-sm ml-4 px-1 py-0 generate-file-btn"
+                                    data-id="${data.requisition_id}" ${data.requisition_count > 0 ? '' : 'disabled'}>
+                                    Generate
+                                    <span class="badge ${data.generated_file_count > 0 ? 'text-info bg-white' : 'text-muted bg-white'} rounded-pill">
+                                        ${data.generated_file_count > 0 ? data.generated_file_count : 0}
+                                    </span>
+                                </button>
+                            `;
+                        }
+                    },
+                    { data: 'pending_confirmation_files' }
+                ],
+                responsive: true,
+                destroy: true,
+                drawCallback: () => {
+                    $('#accounts-table').off('click', '.generate-file-btn').on('click', '.generate-file-btn', (event) => {
+                        const requisitionId = $(event.currentTarget).data('id');
+                        if (requisitionId) {
+                            this.generateFile(requisitionId);
+                        } else {
+                            console.error("Requisition ID is undefined");
+                        }
+                    });
+                }
+            });
         },
+
+        generateFile(requisitionId) {
+            alert(`Requisition ID: ${requisitionId}`);
+            axios.post(`/api/requisitions/${requisitionId}/generate-file`)
+                .then(response => {
+                    alert(response.data.message);
+                    this.accountsTable.ajax.reload();
+                })
+                .catch(error => {
+                    console.error("Error generating file:", error);
+                });
+        },
+
 
         // Initialize the Pending Confirmation Files Table
         initializePendingConfirmationFilesTable() {

@@ -68,6 +68,7 @@ Route::prefix('api')->group(function(){
     Route::get('/requisitions/ready-for-payment', [RequisitionController::class, 'getReadyForPayment'])->name('api.requisitions.ready-for-payment');
     Route::get('/requisitions/bystatus', [RequisitionController::class, 'getRequisitionsByStatus'])->name('api.requisitions.byStatus');
     Route::put('/requisitions/{requisition?}/approve', [RequisitionController::class, 'approve']);
+    Route::post('/requisitions/{requisitionId}/generate-file', [RequisitionController::class, 'generateFile']);
 
     Route::post('/deposits/fund-deposits', [DepositController::class, 'fundDeposits']);
     Route::post('/deposits/balance-payment-fund', [DepositController::class, 'balancePaymentFund'])->name('api.deposits.balance-payment-fund');

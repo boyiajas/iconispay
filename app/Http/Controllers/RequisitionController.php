@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\FileUpload;
 use App\Models\Requisition;
 use Auth;
 use Carbon\Carbon;
@@ -273,6 +274,35 @@ class RequisitionController extends Controller
         // Return the count as a JSON response
         return response()->json([
             'count' => $readyForPaymentCount,
+        ]);
+    }
+
+    /**
+     * Generate a file for a given requisition and save the file info in FileUpload.
+     */
+    public function generateFile(Request $request, $requisitionId)
+    {
+        $requisition = Requisition::findOrFail($requisitionId);
+
+        // Generate file (this is a placeholder; replace with actual file generation logic)
+        $fileName = "RequisitionFile_{$requisitionId}_" . now()->format('YmdHis') . '.pdf';
+        $filePath = storage_path("app/public/files/{$fileName}");
+
+        // Create a dummy file for demonstration purposes (replace with actual file generation)
+        file_put_contents($filePath, "Generated file for requisition #{$requisitionId}");
+
+        // Save file information in FileUpload model
+        $fileUpload = FileUpload::create([
+            'requisition_id' => $requisitionId,
+            'file_name' => $fileName,
+            'file_path' => $filePath,
+            'file_size' => filesize($filePath) / 1024, // File size in KB
+            'user_id' => auth()->user()->id,
+        ]);
+
+        return response()->json([
+            'message' => 'File generated successfully',
+            'file' => $fileUpload,
         ]);
     }
 
