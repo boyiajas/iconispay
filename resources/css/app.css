@@ -26,6 +26,10 @@ a{
     background-color: #0097b2bf !important;
     border: solid 1px rgb(0, 151, 157) !important;
 }
+
+.btn-primary:hover{
+    background-color: rgb(0, 151, 157) !important;
+}
 .text-primary{
     color: rgb(0, 151, 157) !important;
 }
@@ -60,4 +64,8 @@ a{
 
 .text-fade{
     color:#999;
+}
+
+.bg-faded{
+    background-color: #f3f3f3;
 }

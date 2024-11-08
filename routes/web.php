@@ -8,6 +8,8 @@ use App\Http\Controllers\BeneficiaryAccountController;
 use App\Http\Controllers\CategoryController;
 use App\Http\Controllers\DepositController;
 use App\Http\Controllers\DocumentController;
+use App\Http\Controllers\EmailController;
+use App\Http\Controllers\FileUploadController;
 use App\Http\Controllers\FirmAccountController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\InstitutionController;
@@ -17,6 +19,8 @@ use App\Http\Controllers\RequisitionController;
 use App\Http\Controllers\StatusController;
 use App\Http\Controllers\UserController;
 use Illuminate\Support\Facades\Route;
+
+
 
 
 
@@ -56,22 +60,39 @@ Route::prefix('api')->group(function(){
     Route::resource('/beneficiary-accounts', BeneficiaryAccountController::class);
 
     Route::get('/accounts', [FirmAccountController::class, 'getAccounts']);
+    Route::post('/firm-accounts/{sourceAccountId}/generate-file', [FirmAccountController::class, 'generateFile']);
+    Route::get('/firm-accounts/{sourceAccountId}/files-details', [FirmAccountController::class, 'filesDetails']);
+    Route::get('/firm-accounts/{id}/pending-confirmation-files', [FirmAccountController::class, 'getIndividualAccountPendingConfirmationFiles']);
+    Route::get('/firm-accounts/{id}/recently-closed-files', [FirmAccountController::class, 'getIndividualAccountRecentlyClosedFiles']);
     Route::get('/pending-confirmation-files', [FirmAccountController::class, 'getPendingConfirmationFiles']);
     Route::get('/recently-closed-files', [FirmAccountController::class, 'getRecentlyClosedFiles']);
+
+    Route::get('/file-management/{id}', [FileUploadController::class, 'getFileDetails']);
     
     Route::resource('/institutions', InstitutionController::class);
 
     // Custom requisition route for incomplete requisitions
     Route::get('/requisitions/incomplete', [RequisitionController::class, 'getIncompleteRequisitions'])->name('api.requisitions.incomplete');
     Route::get('/requisitions/awaiting-authorization', [RequisitionController::class, 'getAwaitingAuthorization'])->name('api.requisitions.awaiting-authorization');
+    Route::get('/requisitions/awaiting-funding', [RequisitionController::class, 'countAwaitingFunding'])->name('api.requisitions.awaiting-funding');
     
     Route::get('/requisitions/ready-for-payment', [RequisitionController::class, 'getReadyForPayment'])->name('api.requisitions.ready-for-payment');
+    Route::get('/requisitions/pending-payment-confirmation', [RequisitionController::class, 'getPendingPaymentConfirmation'])->name('api.requisitions.pending-payment-confirmation');
     Route::get('/requisitions/bystatus', [RequisitionController::class, 'getRequisitionsByStatus'])->name('api.requisitions.byStatus');
     Route::put('/requisitions/{requisition?}/approve', [RequisitionController::class, 'approve']);
-    Route::post('/requisitions/{requisitionId}/generate-file', [RequisitionController::class, 'generateFile']);
+
+    Route::put('/requisitions/{requisition?}/unlock', [RequisitionController::class, 'unlockRequisition']);
+    Route::put('/requisitions/{requisition?}/lock', [RequisitionController::class, 'lockRequisition']);
+    
 
     Route::post('/deposits/fund-deposits', [DepositController::class, 'fundDeposits']);
     Route::post('/deposits/balance-payment-fund', [DepositController::class, 'balancePaymentFund'])->name('api.deposits.balance-payment-fund');
+    Route::post('/deposits/balance-payment-dont-fund', [DepositController::class, 'balancePaymentDontFund'])->name('api.deposits.balance-payment-dont-fund');
+
+    Route::prefix('send-email')->group(function(){
+        Route::post('/requestor-notification', [EmailController::class, 'sendRequestorNotificationEmail']);
+        Route::post('/signatory-notification', [EmailController::class, 'sendSignatoryNotificationEmail']);
+    });
 
     Route::resource('requisitions', RequisitionController::class);
 
@@ -92,7 +113,7 @@ Route::prefix('api')->group(function(){
 });
 
 
-
+Route::get('/secure-download/{fileId}', [RequisitionController::class, 'secureDownload'])->middleware('auth')->name('secure.download');
 
 Route::controller(LoginController::class)->group(function () {
     Route::get('/login', 'login')->name('login');

@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Storage;
 
 class FirmAccount extends Model
 {
@@ -55,7 +56,12 @@ class FirmAccount extends Model
 
     public function requisitions()
     {
-        return $this->hasOne(Requisition::class);
+        return $this->hasMany(Requisition::class);
+    }
+
+    public function files()
+    {
+        return $this->hasMany(FileUpload::class, 'firm_account_id');
     }
 
     /**
@@ -63,8 +69,32 @@ class FirmAccount extends Model
      */
     public function getPendingConfirmationFilesAttribute()
     {
-        return $this->requisitions()->where('status_id', 3)->count();
+        // Eager load FileUploads with their associated requisitions
+        $fileUploads = FileUpload::with(['requisitions' => function ($query) {
+            $query->where('status_id', 5); // Only load requisitions with status_id of 5
+        }])->where('firm_account_id', $this->id)->get();
+
+        $fileLinks = [];
+
+        foreach ($fileUploads as $fileUpload) {
+            // Check if the fileUpload has any pending requisitions
+            if ($fileUpload->requisitions->isNotEmpty()) {
+                $relativePath = str_replace('public/', '', $fileUpload->file_path);
+                $fileLinks[] = [
+                    'file_id' => $fileUpload->id,
+                    'file_name' => $fileUpload->file_name,
+                    'download_url' => Storage::url($relativePath),
+                    'generated_at' => $fileUpload->generated_at,
+                ];
+            }
+        }
+
+        return $fileLinks;
     }
+    
+
+
+
 
     /**
      * Format the display for Ready for Payment.

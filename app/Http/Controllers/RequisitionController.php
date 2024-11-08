@@ -2,12 +2,16 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Deposit;
 use App\Models\FileUpload;
+use App\Models\Payment;
 use App\Models\Requisition;
 use Auth;
 use Carbon\Carbon;
 use DataTables;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Facades\File;
 
 class RequisitionController extends Controller
 {
@@ -174,12 +178,42 @@ class RequisitionController extends Controller
         ]);
 
         $requisition->calculateTransactionValue();
+        $requisition->load('user', 'authorizedBy', 'firmAccount.institution', 'payments.beneficiaryAccount', 'payments.beneficiaryAccount.institution', 'deposits.firmAccount', 'deposits.user');
 
-        return response()->json([
-            'message' => 'Requisition approved successfully',
-            'data' => $requisition
-        ]);
+        return response()->json($requisition);
     }
+
+    public function unlockRequisition(Requisition $requisition)
+    {
+        // Update the requisition with the new values
+        $requisition->update([
+            'authorization_status' => null,                  // Set authorization status to approved
+            'status_id' => 3,                             // Update status ID
+            'authorized_user_id' => auth()->id(),         // Set the current user as the authorizer
+            'authorized_at' => Carbon::now(),            // Set the current time for authorization
+            'locked' => null 
+        ]);
+
+        $requisition->calculateTransactionValue();
+        $requisition->load('user', 'authorizedBy', 'firmAccount.institution', 'payments.beneficiaryAccount', 'payments.beneficiaryAccount.institution', 'deposits.firmAccount', 'deposits.user');
+
+        return response()->json($requisition);
+    }
+
+    public function lockRequisition(Requisition $requisition)
+    {
+        // Update the requisition with the new values
+        $requisition->update([
+            'locked' => 1 
+        ]);
+
+        $requisition->calculateTransactionValue();
+        $requisition->load('user', 'authorizedBy', 'firmAccount.institution', 'payments.beneficiaryAccount', 'payments.beneficiaryAccount.institution', 'deposits.firmAccount', 'deposits.user');
+
+        return response()->json($requisition);
+    }
+
+    
 
     public function getIncompleteRequisitions(Request $request)
     {
@@ -277,34 +311,61 @@ class RequisitionController extends Controller
         ]);
     }
 
-    /**
-     * Generate a file for a given requisition and save the file info in FileUpload.
-     */
-    public function generateFile(Request $request, $requisitionId)
+    public function getPendingPaymentConfirmation(Request $request)
     {
-        $requisition = Requisition::findOrFail($requisitionId);
+        // Get the currently authenticated user ID
+        $user = Auth::user();
+        $pendingPaymentConfirmationStatusId = 6;
+        $pendingPaymentConfirmationCount = 0;
+        
 
-        // Generate file (this is a placeholder; replace with actual file generation logic)
-        $fileName = "RequisitionFile_{$requisitionId}_" . now()->format('YmdHis') . '.pdf';
-        $filePath = storage_path("app/public/files/{$fileName}");
-
-        // Create a dummy file for demonstration purposes (replace with actual file generation)
-        file_put_contents($filePath, "Generated file for requisition #{$requisitionId}");
-
-        // Save file information in FileUpload model
-        $fileUpload = FileUpload::create([
-            'requisition_id' => $requisitionId,
-            'file_name' => $fileName,
-            'file_path' => $filePath,
-            'file_size' => filesize($filePath) / 1024, // File size in KB
-            'user_id' => auth()->user()->id,
-        ]);
-
+         // Check if the user has an 'admin' or 'authorizer' role
+        if ($user->hasRole('admin') || $user->hasRole('authoriser')) {
+            // If the user is an admin or authorizer, get all incomplete requisitions
+            $pendingPaymentConfirmationCount = Requisition::where('status_id', $pendingPaymentConfirmationStatusId)->count();
+        } else {
+            // Otherwise, get incomplete requisitions created by the user
+            $pendingPaymentConfirmationCount = Requisition::where('created_by', $user->id)
+                                        ->where('status_id', $pendingPaymentConfirmationStatusId)
+                                        ->count();
+        }
+       
+        // Return the count as a JSON response
         return response()->json([
-            'message' => 'File generated successfully',
-            'file' => $fileUpload,
+            'count' => $pendingPaymentConfirmationCount,
         ]);
+    }  
+
+
+    public function secureDownload($fileId)
+    {
+        $fileUpload = FileUpload::findOrFail($fileId);
+
+        // Use policy to authorize
+        $this->authorize('download', $fileUpload);
+
+        // Check if the authenticated user has permission to access the file
+        // You can customize this logic based on your requirements
+        if (auth()->user()->cannot('download', $fileUpload)) {
+            abort(403, 'Unauthorized access');
+        }
+
+        // Path to the private file in storage/app/files
+        $filePath = 'files/' . $fileUpload->file_name;
+
+        // Ensure the file exists before downloading
+        if (!Storage::disk('local')->exists($filePath)) {
+            abort(404, 'File not found');
+        }   
+        // Clean the output buffer to prevent file corruption
+        if (ob_get_level()) {
+            ob_end_clean();
+        }
+
+        // Stream the file to the browser
+        return Storage::disk('local')->download($filePath, $fileUpload->file_name);
     }
+
 
     public function getRequisitionsByStatus(Request $request)
     { //dd($request->status, $request->filter_text);
@@ -378,25 +439,7 @@ class RequisitionController extends Controller
             })
             ->rawColumns(['progress'])
             ->make(true);
-    
-       /*  // Get the total number of records (without filters like pagination)
-        $recordsTotal = $query->count();
-    
-        // Apply DataTables pagination and sorting
-        $requisitions = $query->skip($request->start)
-            ->take($request->length)
-            ->get();
-    
-        // Format the response to meet DataTables requirements
-        $response = [
-            'draw' => intval($request->draw), // The draw count for DataTables
-            'recordsTotal' => $recordsTotal,  // Total records before pagination
-            'recordsFiltered' => $recordsTotal,  // Since there's no filter beyond status
-            'data' => $requisitions,  // The actual requisition data
-        ];
-    
-        // Return the JSON response
-        return response()->json($response); */
+
     }
     
     /**
@@ -404,6 +447,21 @@ class RequisitionController extends Controller
      */
     public function destroy(Requisition $requisition)
     {
+       // Retrieve and delete associated FileUpload records
+        $fileUploads = $requisition->fileUploads;
+
+        foreach ($fileUploads as $fileUpload) {
+             //$sizedFilePath = $originalFilePath . $size . '.' . $extension;
+            if (File::exists($fileUpload->file_path)) {
+                File::delete($fileUpload->file_path);
+            }
+            $fileUpload->delete();
+        }
+
+        Payment::whereRequisitionId($requisition->id)->delete();
+        // Delete associated Deposit records
+        Deposit::where('requisition_id', $requisition->id)->delete();
+
         $requisition->delete();
         return response()->json(['message' => 'Requisition deleted successfully.']);
     }

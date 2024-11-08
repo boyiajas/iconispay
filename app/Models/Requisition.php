@@ -25,6 +25,7 @@ class Requisition extends Model
         'locked',
         'funding_status',
         'settlement_status',
+        'completed_at',
         'created_by',
     ];
 
@@ -89,10 +90,16 @@ class Requisition extends Model
      /**
      * Relationship with FileUpload model.
      */
-    public function fileUploads()
+    /* public function fileUploads()
     {
         return $this->hasMany(FileUpload::class);
+    } */
+
+    public function fileUploads()
+    {
+        return $this->belongsToMany(FileUpload::class, 'file_upload_requisition')->withTimestamps();
     }
+
 
     /**
      * Get the count of generated files for the requisition.

@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\FileUpload;
 use App\Models\FirmAccount;
-use Illuminate\Http\Request;
+use App\Models\Requisition;
 use DataTables;
+use Illuminate\Http\Request;
 
 class FirmAccountController extends Controller
 {
@@ -20,46 +22,49 @@ class FirmAccountController extends Controller
         return DataTables::of($firmaccounts)->make(true);
     }
 
-    // Get Accounts for Accounts Table
-    /* public function getAccounts()
-    {
-        $accounts = FirmAccount::with('institution')->get();
-        
-        // Customize the output to match the DataTable columns
-        $data = $accounts->map(function ($account) {
-            return [
-                'method' => ucfirst($account->method), // Manual or File Upload
-                'display' => $account->display,
-                'institution_name' => $account->institution->name,
-                'account_number' => $account->account_number,
-                'ready_for_payment' => $account->ready_for_payment,
-                'pending_confirmation_files' => $account->pending_confirmation_files > 0 ? "Default - {$account->account_number}" : "No open files",
-                /* 'ready_for_payment' => "{$account->ready_for_payment} Matter(s)",
-                'pending_confirmation_files' => $account->pending_confirmation_files_count > 0 ? "Default - {$account->account_number}" : "No open files", *
-            ];
-        });
-
-        return response()->json(['data' => $data]);
-    }
- */
-
     public function getAccounts()
     {
-        $accounts = FirmAccount::with('institution')->get();
+        // Use eager loading to fetch related data in one query
+        $accounts = FirmAccount::with(['institution', 'requisitions' => function ($query) {
+            $query->whereIn('status_id', [5, 6]);
+        }])->get();
 
-        // Customize the output to include the number of requisitions ready for payment and generated files
-        $data = $accounts->map(function ($account) {
-            // Get the count of requisitions ready for payment
-            $requisitionsReadyForPayment = $account->requisitions()
-                ->where('status_id', 5)
-                ->withCount('fileUploads') // Get the number of generated files per requisition
-                ->get();
+        // Collect all firm account IDs to perform a single query for FileUpload records
+        $firmAccountIds = $accounts->pluck('id');
+
+        // Fetch all FileUploads for the retrieved firm accounts in a single query
+        $fileUploads = FileUpload::whereIn('firm_account_id', $firmAccountIds)
+            ->with('requisitions') // Eager load requisitions associated with each FileUpload
+            ->get();
+
+        // Group FileUploads by firm_account_id for easy lookup
+        $fileUploadsGrouped = $fileUploads->groupBy('firm_account_id');
+
+        $data = $accounts->map(function ($account) use ($fileUploadsGrouped) {
+            // Get all requisitions for this account that are ready for payment
+            $requisitionsReadyForPayment = $account->requisitions;
 
             $totalRequisitions = $requisitionsReadyForPayment->count();
-            $totalGeneratedFiles = $requisitionsReadyForPayment->sum('file_uploads_count'); // Sum up all generated files
 
-            // Assuming we want to use the first requisition's ID for this example
+            // Retrieve the FileUploads for this firm account
+            $accountFileUploads = $fileUploadsGrouped->get($account->id, collect());
+
+            // Count the number of files generated for this firm account
+            $totalGeneratedFiles = $accountFileUploads->count();
+
+            // Collect all requisition IDs that already have generated files
+            $requisitionIdsWithFiles = $accountFileUploads->flatMap(function ($fileUpload) {
+                return $fileUpload->requisitions->pluck('id');
+            })->unique()->toArray();
+
+            // Filter new requisitions that don't have generated files
+            $newRequisitions = $requisitionsReadyForPayment->whereNotIn('id', $requisitionIdsWithFiles);
+
+            $newRequisitionsCount = $newRequisitions->count();
+
+            // Assume we want to use the first requisition's ID as an example
             $requisitionId = $requisitionsReadyForPayment->first()->id ?? null;
+            
 
             return [
                 'method' => ucfirst($account->method),
@@ -69,40 +74,395 @@ class FirmAccountController extends Controller
                 'ready_for_payment' => [
                     'requisition_count' => $totalRequisitions,
                     'generated_file_count' => $totalGeneratedFiles,
+                    'new_requisition_count' => $newRequisitionsCount,
                     'requisition_id' => $requisitionId,
+                    'account_id' => $account->id,
                 ],
-                'pending_confirmation_files' => $account->pending_confirmation_files > 0 ? "Default - {$account->account_number}" : "No open files",
+                'account' => [
+                    'pending_confirmation_files' => $account->pending_confirmation_files,
+                    'account_id' => $account->id,
+                    'account_number' => $account->account_number,
+                ]
             ];
         });
 
         return response()->json(['data' => $data]);
     }
 
-    
-    /**
-     * Get Pending Confirmation Files for the Pending Confirmation Files Table.
-     */
+    public function filesDetails(Request $request, $sourceAccountId)
+    {
+        // Retrieve the FirmAccount along with related files, institution, and payments associated with each requisition
+        $firmAccount = FirmAccount::with([
+            'files.requisitions.payments.beneficiaryAccount.institution',
+            'files.user',
+            'institution',
+        ])->find($sourceAccountId);
+
+        // Check if the FirmAccount exists
+        if (!$firmAccount) {
+            return response()->json(['error' => 'Firm account not found.'], 404);
+        }
+
+        // Prepare the file details to return
+        $fileDetails = [
+            'accountName' => $firmAccount->display,
+            'institution' => $firmAccount->institution->name ?? 'N/A',
+            'accountNumber' => $firmAccount->account_number,
+            'accountHolder' => $firmAccount->account_holder,
+            'timeGenerated' => $firmAccount->created_at ? $firmAccount->created_at->format('d M Y H:i') : 'N/A',
+            'createdBy' => $firmAccount->created_by ?? 'N/A',
+            'statusMessage' => 'The Payaway file is ready to download.',
+            'files' => $firmAccount->files->map(function ($file) {
+                return [
+                    'id' => $file->id,
+                    'fileReference' => $file->file_reference ?? 'N/A',
+                    'generatedBy' => $file->user->name ?? 'N/A', // Get the user name
+                    'requisitions' => $file->requisitions->where('status_id', 5)->map(function ($requisition) {
+                        // Fetch the full Requisition object using the requisition ID
+                        $fullRequisition = Requisition::find($requisition->id);
+
+                        return [
+                            'id' => $requisition->id,
+                            // Access the file_reference from the full Requisition object
+                            'fileReference' => $fullRequisition ? $fullRequisition->file_reference : 'N/A',
+                            'payments' => $requisition->payments->map(function ($payment) {
+                                return [
+                                    'id' => $payment->id,
+                                    'recipientAccount' => $payment->beneficiaryAccount->account_number ?? 'N/A',
+                                    'recipientInstitution' => $payment->beneficiaryAccount->institution->name ?? 'N/A',
+                                    'recipientReference' => $payment->recipient_reference ?? 'N/A',
+                                    'myReference' => $payment->my_reference ?? 'N/A',
+                                    'amount' => number_format($payment->amount, 2, '.', ','),
+                                ];
+                            }),
+                        ];
+                    }),
+                ];
+            }),
+            'totalAmount' => number_format($firmAccount->files->flatMap(function ($file) {
+                return $file->requisitions->where('status_id', 5)->flatMap(function ($requisition) {
+                    return $requisition->payments->pluck('amount');
+                });
+            })->sum(), 2, '.', ','),
+            'numberOfEntries' => $firmAccount->files->count(),
+        ];
+        //dd($fileDetails);
+
+        return response()->json($fileDetails);
+    }
+
+
+    public function generateFile(Request $request, $sourceAccountId)
+    {
+        $firmAccount = FirmAccount::findOrFail($sourceAccountId);
+
+        // Retrieve all requisitions for the specified source account with status ready for payment
+        $requisitions = Requisition::where('firm_account_id', $sourceAccountId)
+            ->where('status_id', 5)
+            ->whereDoesntHave('fileUploads') // Exclude requisitions that are already attached to a file upload
+            ->with('fileUploads') // Eager load file uploads to avoid N+1 problem
+            ->get();
+
+        if ($requisitions->isEmpty()) {
+            return response()->json(['message' => 'No new requisitions available for payment.'], 400);
+        }
+
+        // Generate a consolidated file for all payments
+        $fileName = "Default-{$firmAccount->account_number} " . now()->format('YmdHis') . '.txt';
+        $filePath = storage_path("app/files/{$fileName}");
+
+        // Ensure the directory exists
+        $directory = storage_path('app/files');
+        if (!is_dir($directory)) {
+            mkdir($directory, 0755, true);
+        }
+
+        // Create the file and add information about each requisition
+        $fileContent = '';
+        $requisitionIds = []; // Collect requisition IDs to save in FileUpload
+
+        foreach ($requisitions as $requisition) {
+            $fileContent .= "Payment for requisition #{$requisition->id}\n";
+            $requisitionIds[] = $requisition->id; // Add requisition ID to the array
+
+            // Optionally, update each requisition's status_id to 6 (processed)
+            // $requisition->update(['status_id' => 6]);
+        }
+
+        // Write content to the file
+        file_put_contents($filePath, $fileContent);
+
+        // Save a single file record in FileUpload with the requisition_ids as JSON
+        $fileUpload = FileUpload::create([
+            'firm_account_id' => $sourceAccountId, // Associate the file with the firm account
+            'file_name' => $fileName,
+            'file_path' => $filePath,
+            'file_size' => filesize($filePath) / 1024, // File size in KB
+            'user_id' => auth()->user()->id
+        ]);
+
+        // Attach all requisitions to the file upload in a single query
+        $fileUpload->requisitions()->attach($requisitionIds); 
+
+        //====================== the below code is where we get the data based on the uploaded file ===========================//////
+
+        // Retrieve the specified file upload by ID, along with related requisitions and their payments
+        $fileUpload = FileUpload::with([
+            'requisitions' => function ($query) {
+                $query->with('payments','payments.beneficiaryAccount.institution'); // Load payments for each requisition
+            },
+            'firmAccount.institution', // Load the firm account and institution details
+            'user'
+        ])->find($fileUpload->id);
+
+        if (!$fileUpload) {
+            return response()->json(['error' => 'File not found'], 404);
+        }
+       
+
+        // Prepare the file details
+        $fileDetails = [
+            'fileId' => $fileUpload->id,
+            'accountName' => $fileUpload->firmAccount->display,
+            'accountHolder' => $fileUpload->firmAccount->account_holder,
+            'accountNumber' => $fileUpload->firmAccount->account_number,
+            'status' => 'Generated',
+            'numberOfPayments' => 0,
+            'totalAmount' => 0.00,
+            'totalConfirmed' => 0.00,
+            'timeGenerated' => \Carbon\Carbon::parse($fileUpload->generated_at)->format('d M Y Hi'),
+            'createdBy' => $fileUpload->user->name,
+            'institution' => $fileUpload->firmAccount->institution->name,
+            'statusMessage' => 'The Payaway file is ready to download.',
+            'historyLog' => [], // Placeholder for future history log data
+            'payments' => []
+        ];
+
+        // Calculate the number of payments and total amount
+        $fileDetails['numberOfPayments'] = $fileUpload->requisitions->sum(function ($requisition) {
+            return $requisition->payments->count();
+        });
+
+        $fileDetails['totalAmount'] = $fileUpload->requisitions->sum(function ($requisition) {
+            return $requisition->payments->sum('amount');
+        });
+        //dd($fileUpload->firmAccount);
+
+        // Collect payments details
+        foreach ($fileUpload->requisitions as $requisition) {
+            foreach ($requisition->payments as $payment) {
+                $fileDetails['payments'][] = [
+                    'fileReference' => $requisition->file_reference, // Use the file reference from the requisition
+                    'recipientAccount' => $payment->beneficiaryAccount->account_number ?? 'N/A',
+                    'recipientReference' => $payment->recipient_reference ?? 'N/A',
+                    'myReference' => $payment->my_reference ?? 'N/A',
+                    'amount' => number_format($payment->amount, 2, '.', ','),
+                    'status' => $payment->status ?? 'Generated',
+                    'beneficiaryAccount' => $payment->beneficiaryAccount
+                ];
+            }
+        }
+
+        //return response()->json($fileDetails);
+
+        return response()->json([
+            'message' => 'File generated successfully for all new requisitions.',
+            'file' => $fileDetails,
+        ]);
+    }
+
+
+    public function getIndividualAccountPendingConfirmationFiles($id)
+    {
+        // Retrieve pending confirmation files for the specified FirmAccount ID
+        $pendingFiles = FirmAccount::where('id', $id)
+            ->whereHas('requisitions', function ($query) {
+                $query->where('status_id', 5); // Only requisitions with 'pending_confirmation' status
+            })
+            ->with(['requisitions' => function ($query) {
+                $query->where('status_id', 5)
+                    ->has('fileUploads')// Ensure requisitions have file uploads
+                    ->with('fileUploads', 'payments'); // Load related file uploads and payments
+            }, 'institution'])
+            ->get();
+
+        // Group requisitions by generated file
+        $data = $pendingFiles->flatMap(function ($account) {
+            // Create a map of generated files to requisitions
+            $groupedRequisitions = $account->requisitions->groupBy(function ($requisition) {
+                return $requisition->fileUploads->first()->generated_at; // Group by the generated_at date of the first file upload
+            });
+
+            return $groupedRequisitions->map(function ($requisitions, $generatedAt) use ($account) {
+                $totalPayments = $requisitions->sum(function ($requisition) {
+                    return $requisition->payments->count();
+                });
+
+                $totalAmount = $requisitions->sum(function ($requisition) {
+                    return $requisition->calculateTransactionValue();
+                });
+
+                $dateGenerated = \Carbon\Carbon::parse($generatedAt)->format('d M Y H:i');
+
+                // HTML for the edit button
+                $editButton = '<span class="pull-right btn btn-sm btn-default-default py-0 px-1"><i class="fas fa-edit"></i></span>';
+
+                return [
+                    'display' => $account->display,
+                    'file_name' => "Default - {$account->account_number} (".\Carbon\Carbon::parse($generatedAt)->format('Y-m-d Hi').")",
+                    'payments' => $totalPayments,
+                    'date_generated' => $dateGenerated,
+                    'total_amount' => $totalAmount,
+                    'status' => '<span class="badge bg-info" style="width: 95px;border-radius: 3px;height: 20px;">Generated</span> ' . $editButton,
+                ];
+            });
+        })->values()->all(); // Convert entire result to array format for JSON response
+
+        return response()->json(['data' => $data]);
+    }
+
+    public function getIndividualAccountRecentlyClosedFiles($id)
+    {
+        // Retrieve pending confirmation files for the specified FirmAccount ID
+        $pendingFiles = FirmAccount::where('id', $id)
+            ->whereHas('requisitions', function ($query) {
+                $query->where('status_id', 7); // Only requisitions with 'pending_confirmation' status
+            })
+            ->with(['requisitions' => function ($query) {
+                $query->where('status_id', 7)
+                    ->with('fileUploads', 'payments'); // Load related file uploads and payments
+            }, 'institution'])
+            ->get();
+
+        // Flatten and map each account's requisitions and file uploads
+        $data = $pendingFiles->flatMap(function ($account) {
+            return $account->requisitions->map(function ($requisition) use ($account) {
+                // Check if any file uploads exist for this requisition
+                $hasFiles = $requisition->fileUploads->isNotEmpty();
+                $dateGenerated = $hasFiles ? $requisition->fileUploads->max('generated_at')->format('d M Y H:i') : '<span class="badge bg-default">None</span>';
+
+                // HTML for the edit button
+                $editButton = '<span class="pull-right btn btn-sm btn-default-default py-0 px-1"><i class="fas fa-edit"></i></span>';
+
+                return [
+                    'display' => $account->display,
+                    'default_file_name' => "Default - {$account->account_number}",
+                    'payments' => $requisition->payments->count(),
+                    'date_generated' => $dateGenerated,
+                    'total_amount' => $requisition->calculateTransactionValue(),
+                    'status' => ($hasFiles ? '<span class="badge bg-info">Generated</span>' : '<span class="badge bg-default">No open files</span>') . ' ' . $editButton,
+                
+                    'files' => $requisition->fileUploads->map(function ($fileUpload) {
+                        return [
+                            'file_name' => $fileUpload->file_name, // Name of the generated file
+                            'file_id' => $fileUpload->id,
+                            'download_url' => route('secure.download', ['fileId' => $fileUpload->id]), // Secure download route
+                            'date_generated' => $fileUpload->generated_at->format('d M Y H:i'), // File generation date
+                        ];
+                    })->all()
+                
+                ];
+            });
+        })->all(); // Convert entire result to array format for JSON response
+
+        return response()->json(['data' => $data]);
+    }
+
+
+
+
+    /* public function getPendingConfirmationFiles()
+    {
+        // Retrieve FirmAccounts that have 'pending_confirmation' requisitions (status_id 3)
+        $pendingFiles = FirmAccount::whereHas('requisitions', function ($query) {
+            $query->where('status_id', 5);
+        })->with(['requisitions' => function ($query) {
+            $query->where('status_id', 5)
+            ->has('fileUploads')// Ensure requisitions have file uploads
+            ->with('fileUploads', 'payments'); // Load file uploads and payments
+        }, 'institution'])->get();
+
+        // Flatten and map each account's requisitions and file uploads
+        $data = $pendingFiles->flatMap(function ($account) {
+            return $account->requisitions->map(function ($requisition) use ($account) {
+                // Check if any file uploads exist for this requisition
+                $hasFiles = $requisition->fileUploads->isNotEmpty();
+                $dateGenerated = $hasFiles ? $requisition->fileUploads->max('generated_at')->format('d M Y H:i') : null;
+
+                 // HTML for the edit button
+            $editButton = '<span class="pull-right btn btn-sm btn-default-default py-0 px-1"><i class="fas fa-edit"></i></span>';
+
+
+                return [
+                    'display' => $account->display,
+                    'default_file_name' => "Default - {$account->account_number}",
+                    'payments' => $requisition->payments->count(),
+                    'date_generated' => $dateGenerated,
+                    'total_amount' => $requisition->calculateTransactionValue(),
+                    'status' => $statusWithButton = ($hasFiles ? '<span class="badge bg-info">Generated</span>' : '<span class="badge badge-default">No open files</span>') . ' ' . $editButton,
+                    /* 'files' => $requisition->fileUploads->map(function ($fileUpload) {
+                        return [
+                            'file_name' => $fileUpload->file_name, // Name of the generated file
+                            'download_url' => route('secure.download', ['fileId' => $fileUpload->id]), // Secure download route
+                            'date_generated' => $fileUpload->generated_at->format('d M Y H:i'), // File generation date
+                        ];
+                    })->all() * // Convert file uploads to array format
+                ];
+            });
+        })->all(); // Convert entire result to array format for JSON response
+
+        return response()->json(['data' => $data]);
+    }
+ */
+
     public function getPendingConfirmationFiles()
     {
-        // Assuming 'status_id' 3 indicates 'pending_confirmation' in requisitions
-        $pendingFiles = FirmAccount::whereHas('requisitions', function ($query) {
-            $query->where('status_id', 3);
-        })->with('requisitions', 'institution')->get();
+        // Retrieve FirmAccounts that have requisitions with file uploads, grouped by generated file
+        $pendingFiles = FirmAccount::whereHas('requisitions.fileUploads', function ($query) {
+            $query->where('status_id', 5); // Ensure the requisitions have file uploads with status_id 5
+        })->with(['requisitions' => function ($query) {
+            $query->where('status_id', 5)
+                ->has('fileUploads')// Ensure requisitions have file uploads
+                ->with('fileUploads', 'payments'); // Load file uploads and payments
+        }, 'institution'])->get();
 
-        $data = $pendingFiles->map(function ($account) {
-            $requisition = $account->requisitions()->where('status_id', 3)->first();
-            return [
-                'display' => $account->display,
-                'file_name' => "Default - {$account->account_number}",
-                'payments' => $requisition ? $requisition->payments()->count() : 0,
-                'date_generated' => $requisition ? $requisition->created_at->format('d M Y H:i') : '',
-                'total_amount' => $requisition ? $requisition->calculateTransactionValue() : 0,
-                'status' => 'Pending',
-            ];
-        });
+        // Group requisitions by generated file
+        $data = $pendingFiles->flatMap(function ($account) {
+            // Create a map of generated files to requisitions
+            $groupedRequisitions = $account->requisitions->groupBy(function ($requisition) {
+                return $requisition->fileUploads->first()->generated_at; // Group by the generated_at date of the first file upload
+            });
+
+            return $groupedRequisitions->map(function ($requisitions, $generatedAt) use ($account) {
+                $totalPayments = $requisitions->sum(function ($requisition) {
+                    return $requisition->payments->count();
+                });
+
+                $totalAmount = $requisitions->sum(function ($requisition) {
+                    return $requisition->calculateTransactionValue();
+                });
+
+                $dateGenerated = \Carbon\Carbon::parse($generatedAt)->format('d M Y H:i');
+
+                // HTML for the edit button
+                $editButton = '<span class="pull-right btn btn-sm btn-default-default py-0 px-1"><i class="fas fa-edit"></i></span>';
+
+                return [
+                    'display' => $account->display,
+                    'default_file_name' => "Default - {$account->account_number} (".\Carbon\Carbon::parse($generatedAt)->format('Y-m-d Hi').")",
+                    'payments' => $totalPayments,
+                    'date_generated' => $dateGenerated,
+                    'total_amount' => $totalAmount,
+                    'status' => '<span class="badge bg-info" style="width: 95px;border-radius: 3px;height: 20px;">Generated</span> ' . $editButton,
+                ];
+            });
+        })->values()->all(); // Convert entire result to array format for JSON response
 
         return response()->json(['data' => $data]);
     }
+
+
+    
 
     /**
      * Get Recently Closed Files for the Recently Closed Files Table.
@@ -112,9 +472,9 @@ class FirmAccountController extends Controller
         $fromDate = $request->from_date;
         $toDate = $request->to_date;
 
-        // Assuming 'status_id' 6 represents 'closed' in requisitions
+        // Assuming 'status_id' 7 represents 'processed' in requisitions
         $closedFiles = FirmAccount::whereHas('requisitions', function ($query) use ($fromDate, $toDate) {
-            $query->where('status_id', 6)
+            $query->where('status_id', 7)
                   ->whereBetween('updated_at', [$fromDate, $toDate]);
         })->with('requisitions', 'institution')->get();
 

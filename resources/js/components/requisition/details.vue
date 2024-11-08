@@ -5,6 +5,7 @@
         <h4 class="section-title mb-2">
             Requisition: <span style="color:#999;font-weight: normal;font-size: 20px;">{{ requisition.file_reference }} - {{ requisition.reason }}</span>
             <span class="pull-right">
+                <router-link :to="{ name: 'emailrequestor', params: { requisitionId: requisitionId } }" class="btn btn-white btn-default-default btn-sm ml-1">Email Requestor</router-link>
                 <router-link :to="{ name: 'emailsignatory', params: { requisitionId: requisitionId } }" class="btn btn-white btn-default-default btn-sm ml-1">Email Signatory</router-link>
                 <router-link to="/requisition/new" class="btn btn-white btn-default-default btn-sm ml-1">File History</router-link>
                 <button class="btn btn-light btn-default-default btn-sm ml-1" @click="printPage"><i class="fas fa-print"></i> Print</button>
@@ -30,14 +31,14 @@
                                 </span>
                                 <span class="" v-else-if="requisition && requisition.payments && requisition.payments.length > 0">
                                     <i class="fa fa-info-circle text-warning"></i> Not balanced <br/>
-                                    <div class="btn btn-white btn-default-default btn-sm mt-0 mb-1" data-toggle="tooltip" data-placement="bottom" title="Balance the matter by adding a default source / deposit entry" @click="balancePaymentFund"><i class="fas fa-balance-scale"></i> Balance</div>
+                                    <div class="btn btn-white btn-default-default btn-sm mt-0 mb-1" data-toggle="tooltip" data-placement="bottom" title="Balance the matter by adding a default source / deposit entry" @click="balancePaymentDontFund"><i class="fas fa-balance-scale"></i> Balance</div>
                                 </span>
                                 <span v-else>No entries captured</span>
                             </span>
                             <span v-else-if="requisition.status_id === 3">
                                 Transaction value: R{{ totalDepositAmount }}  
                             </span>
-                            <span v-else-if="requisition.status_id === 5">
+                            <span v-else-if="requisition.status_id >= 5">
                                 Transaction value: R{{ totalPaymentAmount }}
                             </span>
                         </p>
@@ -63,7 +64,7 @@
                     
                 </div>
             </div>
-            <div class="col-md-3 incomplete box" :class="{'current': requisition.status_id == 3, 'complete': requisition.status_id == 5}">
+            <div class="col-md-3 incomplete box" :class="{'current': requisition.status_id == 3, 'complete': requisition.status_id >= 5}">
                 <div class="status-card row pt-2">
                     <div class="col-md-9">
                         <h6 class="fw-bold">Authorization</h6>
@@ -72,13 +73,13 @@
                             <PermissionControl :roles="['admin', 'authoriser']">
                                 <div class="mb-2"><a class="btn btn-sm btn-white btn-default-default" @click="approveRequisition(requisition.id)">Approve</a></div>
                             </PermissionControl>
-                            <PermissionControl :roles="['user']">
+                            <!-- <PermissionControl :roles="['user']">
                                 <div class="mb-2"><a class="btn btn-sm btn-white btn-default-default disabled">Approve</a></div>
-                            </PermissionControl>
+                            </PermissionControl> -->
                             
                             
                         </div>
-                        <div v-else-if="requisition.status_id == 5" class="txt-xs mb-0 mt-3">
+                        <div v-else-if="requisition.status_id >= 5" class="txt-xs mb-0 mt-3">
                             Last signed on: {{ formatDate(requisition.authorized_at) }}
                         </div>
                         <p v-else class="status-value mb-0 mt-3">{{ authorizationStatus }}</p>
@@ -89,7 +90,7 @@
                         </span>
                         <span class="badge bg-info" v-else>0 / 0</span>                                
                     </div>
-                    <div class="col-md-3" v-if="requisition.status_id == 5">
+                    <div class="col-md-3" v-if="requisition.status_id >= 5">
                         <i class="fa fa-check-circle bg-green" aria-hidden="true"></i>
                     </div>
                 </div>
@@ -107,8 +108,8 @@
                             
                         </p>
                         <p class="status-value mb-0 mt-3" v-else-if="requisition.deposits && requisition.deposits.length > 0 && !requisition.funding_status">
-                            <span>Mark as received on entry(s)</span>
-                            <div class="mb-2"><a class="btn btn-sm btn-white btn-default-default" @click="fundDeposit">Fund</a></div>
+                            <span>Mark as received on entry(s)</span><br/>
+                            <span class="mb-2"><a class="btn btn-sm btn-white btn-default-default" @click="fundDeposit">Fund</a></span>
                             
                         </p>
                        <!--  <p class="status-value mb-0 mt-3" v-else="requisition.funding_status">
@@ -128,23 +129,23 @@
                     
                 </div>
             </div>
-            <div class="col-md-3 box" :class="{'incomplete': requisition.status_id !== 4, 'almostcomplete': requisition.status_id == 5}">
+            <div class="col-md-3 box" :class="{'incomplete': requisition.status_id !== 4, 'almostcomplete': requisition.status_id >= 5}">
                 <div class="status-card row pt-2">
                     <div class="col-md-9">
                         <h6 class="fw-bold">Settlement</h6>
                         <p class="status-value mt-3" v-if="requisition.status_id < 5">{{ settlementStatus }}</p>
-                        <p class="status-value mt-3" v-else-if="requisition.status_id == 5">Pending payment</p>
+                        <p class="status-value mt-3" v-else-if="requisition.status_id >= 5">Pending payment</p>
                     </div>
-                    <div class="col-md-3" v-if="requisition.status_id == 5">
+                    <div class="col-md-3" v-if="requisition.status_id >= 5">
                         <i class="fa fa-hourglass-half text-primary" aria-hidden="true"></i>
                     </div>
                 </div>
             </div>
         </div>
-        <div v-if="requisition.status_id == 3"><a class="pull-right btn btn-white btn-default-default btn-sm"><i class="fa fa-lock"></i> Lock</a></div>
-        <div v-else-if="requisition.status_id == 5" style="display:flow-root;background-color: #eee;padding:3px;border-radius: 5px;border-left: solid 5px orange;padding-left: 10px;margin-bottom: 10px;margin-top: -10px;">
+        <div v-if="requisition.status_id == 3 && !requisition.locked"><a class="pull-right btn btn-white btn-default-default btn-sm" @click="lockRequisition(requisition.id)"><i class="fa fa-lock"></i> Lock</a></div>
+        <div v-else-if="requisition.locked" style="display:flow-root;background-color: #eee;padding:3px;border-radius: 5px;border-left: solid 5px orange;padding-left: 10px;margin-bottom: 10px;margin-top: -10px;">
             <span><i class="fa fa-lock"></i><b> This matter is locked.</b> It is pending payment</span>
-            <a class="pull-right btn btn-white btn-primary btn-sm"><i class="fa fa-lock-open"></i> Unlock</a>
+            <a class="pull-right btn btn-white btn-primary btn-sm" @click="unlockRequisition(requisition.id)"><i class="fa fa-lock-open"></i> Unlock</a>
         </div>
         <!-- Tabs Navigation -->
         <ul class="nav nav-tabs mb-0" id="requisitionTab" role="tablist">
@@ -218,7 +219,7 @@
                             <div class="col-sm-2"></div>
                             <div class="col-sm-10">
                                 <button class="btn btn-primary" @click="saveRequisition">Save</button>
-                                <button class="btn btn-danger ml-1" @click="deleteRequisition">Delete</button>
+                                <button class="btn btn-danger ml-1" @click="confirmDeleteRequisition">Delete</button>
                             </div>
                         </div>
                     </div>
@@ -350,6 +351,13 @@
                                                     title="Status" 
                                                     data-bs-content="Account details complete, No AVS verification done"></i>
                                                 </span>
+                                                <span v-else-if="payment.verified">
+                                                    <i class="far fa-check-circle bg-green mr-2 mt-1 text-success" ref="popoverIcon" 
+                                                    data-bs-toggle="popover" 
+                                                    data-bs-placement="top" 
+                                                    title="Status" 
+                                                    data-bs-content="Account details complete, No AVS verification done"></i>
+                                                </span>
                                                 {{ payment.description }}
                                             </div>
                                             <div class="col-md-3">
@@ -386,11 +394,11 @@
                                         </div>
                                         <div class="col-md-6">
                                             <div><br/><br/></div>
-                                            <div class="pull-right" v-if="!requisition.deposits  && !requisition.deposits.length > 0">Net Balance: </div>
+                                            <div class="pull-right" v-if="$requisition && !requisition.deposits  && !requisition.deposits.length > 0">Net Balance: </div>
                                         </div>
                                         <div class="col-md-3 row pr-0">
 
-                                            <div v-if="requisition.deposits && requisition.deposits.length > 0 && !requisition.payments">
+                                            <div v-if="requisition && requisition.deposits && requisition.deposits.length > 0 && !requisition.payments">
                                                 <hr class="mb-1"/>
                                                 <div style="display:flex;justify-content:flex-end;">
 
@@ -400,7 +408,7 @@
                                                 <hr class="mb-0 mt-1"/>
                                             </div>
                                            
-                                            <div v-if="requisition.deposits && requisition.deposits.length > 0 || requisition.payments && requisition.payments.length > 0" class="pl-0">
+                                            <div v-if="requisition && requisition.deposits && requisition.deposits.length > 0 || requisition.payments && requisition.payments.length > 0" class="pl-0">
                                                 <hr class="mb-1"/>
                                                 <div 
                                                      :style="{ display: 'flex', flexDirection: 'row', justifyContent: requisition.deposits && requisition.deposits.length > 0 ? 'space-between' : 'flex-end' }"
@@ -412,7 +420,7 @@
                                                 </div>
                                                 <hr class="mb-0 mt-1"/>
                                                 <span class="pull-right mr-4" v-if="requisition.payments  && requisition.payments.length > 0" :class="netBalance > 0 ? 'orange' : null">&nbsp; R {{ netBalance }}</span>
-                                                <div v-if="requisition.payments  && requisition.payments.length > 0  && requisition.status_id === 2" class="btn btn-white btn-default-default btn-sm mt-1" data-toggle="tooltip" data-placement="bottom" title="Balance the matter by adding a default source / deposit entry" @click="balancePaymentFund"><i class="fas fa-balance-scale"></i> Balance and Fund</div>
+                                                <div v-if="requisition.payments  && requisition.payments.length > 0  && requisition.status_id === 2" class="btn btn-white btn-default-default btn-sm mt-1" data-toggle="tooltip" data-placement="bottom" title="Balance the matter by adding a default source / deposit entry" @click="balancePaymentAndFund"><i class="fas fa-balance-scale"></i> Balance and Fund</div>
                                             </div>
                                             
                                         </div>
@@ -454,7 +462,7 @@
                                 </PermissionControl>
                                 
                             </div>
-                            <div v-else-if="requisition.status_id == 5">
+                            <div v-else-if="requisition.status_id >= 5">
                                 <div class="approve-box p-2 pull-right" style="border: solid 1px #40b1c5;background: #eafcff;justify-content: flex-start;">
                                     <div class=""> <i class="fa fa-check mr-2 text-success"></i></div>
                                     <div class="pl-0 pr-0">
@@ -1502,7 +1510,8 @@ export default {
         approveRequisition(requisitionId) {
             axios.put(`/api/requisitions/${requisitionId}/approve`)
                 .then(response => {
-                    console.log("Requisition approved successfully:", response.data);
+                    //console.log(this.requisition);
+                    //console.log("Requisition approved successfully:", response.data);
                     // Optionally update local data or trigger a refresh
                     //this.$emit('requisitionUpdated', response.data);
                     this.toast.success('Requisition approved successfully!', {
@@ -1510,13 +1519,56 @@ export default {
                     });
 
                     this.requisition = response.data;
+
+                    // Update the requisition object directly
+                    //this.requisition = { ...response.data }; // Spread the response data to ensure reactivity
+
                 })
                 .catch(error => {
                     console.error("Error approving requisition:", error);
                     this.toast.error(error.response ? error.response.data : 'No response data', {
                         title: 'Error'
                     });
-                    alert("There was an error approving the requisition. Please try again.");
+                    //alert("There was an error approving the requisition. Please try again.");
+                });
+        },
+        // Method to unlock a requisition
+        unlockRequisition(requisitionId) {
+            axios.put(`/api/requisitions/${requisitionId}/unlock`)
+                .then(response => {
+                    console.log("Requisition unlocked successfully:", response.data);
+                    this.toast.success('Requisition unlocked successfully!', {
+                        title: 'Success'
+                    });
+
+                    // Update the requisition object or handle the response as needed
+                    this.requisition = { ...response.data }; // Ensure reactivity
+                })
+                .catch(error => {
+                    console.error("Error unlocking requisition:", error);
+                    this.toast.error(error.response ? error.response.data : 'No response data', {
+                        title: 'Error'
+                    });
+                });
+        },
+
+        // Method to lock a requisition
+        lockRequisition(requisitionId) {
+            axios.put(`/api/requisitions/${requisitionId}/lock`)
+                .then(response => {
+                    console.log("Requisition locked successfully:", response.data);
+                    this.toast.success('Requisition locked successfully!', {
+                        title: 'Success'
+                    });
+
+                    // Update the requisition object or handle the response as needed
+                    this.requisition = { ...response.data }; // Ensure reactivity
+                })
+                .catch(error => {
+                    console.error("Error locking requisition:", error);
+                    this.toast.error(error.response ? error.response.data : 'No response data', {
+                        title: 'Error'
+                    });
                 });
         },
         openEditPaymentModal(payment) {
@@ -1608,18 +1660,24 @@ export default {
             axios.delete(`/api/deposits/${this.editDepositForm.id}`)
                 .then(response => {
                     // Remove the deposit from the local list
-                    this.requisition.deposits = this.requisition.deposits.filter(deposit => deposit.id !== this.editDepositForm.id);
+                    this.requisition = response.data;
 
                     //console.log('Deposit deleted successfully:', response.data);
 
                     if(response.data){
                         // Update the requisition object with the new source_account_id
-                        this.requisition.funding_status = response.data.funding_status;
+                        //this.requisition.funding_status = response.data.funding_status;
                         this.closeModal();
+                        this.toast.success('Deposit deleted successfully!', {
+                            title: 'Success'
+                        });
                     }
                 })
                 .catch(error => {
                     console.error('Error deleting deposit:', error);
+                    this.toast.error(error.response ? error.response.data : 'No response data', {
+                        title: 'Error'
+                    });
                 });
         },
 
@@ -1709,7 +1767,7 @@ export default {
                 statusClass = 'incomplete current';
             } else if (statusId === 3) {
                 return statusClass = 'complete';
-            } else if (statusId === 5){
+            } else if (statusId >= 5){
                 return statusClass = 'complete';
             }
             // Add 'incomplete' if funding_status is set (not null or empty)
@@ -2015,10 +2073,31 @@ export default {
         },
 
         // Delete requisition (stub method for future implementation)
-        deleteRequisition() {
-            console.log('Delete requisition:', this.requisition);
+        confirmDeleteRequisition() {
+            if (confirm('Are you sure you want to delete this requisition?')) {
+                this.deleteRequisition(this.requisition.id);
+            }
         },
+        deleteRequisition(requisitionId){
+            axios.delete(`/api/requisitions/${requisitionId}`)
+                .then(response => {
 
+                   
+                        this.closeModal();
+                        this.toast.success('Requisition deleted successfully!', {
+                            title: 'Success'
+                        });
+
+                        // Navigate to the new Vue component, passing the status as a parameter
+                        this.$router.push({ name: 'home' });
+                })
+                .catch(error => {
+                    console.error('Error deleting requisition:', error);
+                    this.toast.error(error.response ? error.response.data : 'No response data', {
+                        title: 'Error'
+                    });
+                });
+        },
         // Open the modal for creating a new deposit
         openNewDepositModal() {
             this.resetForm();
@@ -2050,7 +2129,7 @@ export default {
                     });
 
                     // Add the newly created deposit to the local deposits list
-                    this.requisition.deposits.push(response.data);
+                    this.requisition = response.data;
 
                     if(response.data){
                         // Update the requisition object with the new source_account_id
@@ -2095,7 +2174,7 @@ export default {
         },
 
         // process the balance payment fund button
-        balancePaymentFund(){
+        balancePaymentAndFund(){
             this.balanceFundDeposit.description = "Deposit";
             this.balanceFundDeposit.requisition_id = this.requisitionId;
             this.balanceFundDeposit.firm_account_id = this.selectedSourceAccount.id;
@@ -2108,15 +2187,19 @@ export default {
 
             axios.post('/api/deposits/balance-payment-fund', this.balanceFundDeposit)
                 .then(response => {
-                    console.log('Deposit created successfully:', response.data);
+                    console.log('Payment balanced and funded successfully:', response.data);
 
                     // Add the newly created deposit to the local deposits list
-                    this.selectedSourceAccount.deposits.push(response.data);
+                    this.requisition = response.data;
 
                     if(response.data){
                         // Update the requisition object with the new source_account_id
-                        this.requisition.funding_status = 1;
+                        //this.requisition.funding_status = 1;
                         this.closeModal();
+                        // Show success toast
+                        this.toast.success('Payment balanced and funded successfully!', {
+                            title: 'Success'
+                        });
                     }
 
                     // Close the modal if "Save" was clicked
@@ -2135,6 +2218,60 @@ export default {
                     console.error('Error creating deposit:', error);
                     if (error.response && error.response.data.errors) {
                         this.errors = error.response.data.errors;  // Show validation errors
+                        this.toast.error(error.response ? error.response.data : 'No response data', {
+                            title: 'Error'
+                        });
+                    }
+                });
+        },
+        balancePaymentDontFund(){
+            this.balanceFundDeposit.description = "Deposit";
+            this.balanceFundDeposit.requisition_id = this.requisitionId;
+            this.balanceFundDeposit.firm_account_id = this.selectedSourceAccount.id;
+            this.balanceFundDeposit.funded =  false;
+            if(parseFloat(this.totalDepositAmount) < parseFloat(this.totalPaymentAmount)){
+                this.balanceFundDeposit.amount = parseFloat(this.totalPaymentAmount) - parseFloat(this.totalDepositAmount);
+            }else{
+                this.balanceFundDeposit.amount = parseFloat(this.totalDepositAmount) - parseFloat(this.totalPaymentAmount);
+            }
+
+            axios.post('/api/deposits/balance-payment-dont-fund', this.balanceFundDeposit)
+                .then(response => {
+                    console.log('Payment balanced successfully:', response.data);
+
+                    // Add the newly created deposit to the local deposits list
+                    //this.selectedSourceAccount.deposits.push(response.data);
+                    this.requisition = response.data;
+
+                    if(response.data){
+                        // Update the requisition object with the new source_account_id
+                        //this.requisition.funding_status = 1;
+                        this.closeModal();
+                        // Show success toast
+                        this.toast.success('Payment balanced successfully!', {
+                            title: 'Success'
+                        });
+                    }
+
+                    // Close the modal if "Save" was clicked
+                   // if (!stayInModal) {
+                        //this.fundingStatus = 'Completed on '+response.data.created_at;
+                        //this.depositModalInstance.hide();
+                    //}
+
+                    // Reset the form after submission
+                    this.resetForm();
+
+                    // Optionally reload deposit data if required
+                    // this.loadDeposits();
+                })
+                .catch(error => {
+                    console.error('Error creating deposit:', error);
+                    if (error.response && error.response.data.errors) {
+                        this.errors = error.response.data.errors;  // Show validation errors
+                        this.toast.error(error.response ? error.response.data : 'No response data', {
+                            title: 'Error'
+                        });
                     }
                 });
         },
@@ -2276,13 +2413,18 @@ export default {
                     : `Account holder name`;
                 
 
+            }else if (this.paymentForm.search.length === 0) {
+                // Clear filtered accounts and hide suggestions if search input is empty
+                this.filteredAccounts = [];
+                this.showSuggestions = false;
             } else {
+                this.filteredAccounts = [];
                 this.showSuggestions = false;  // Hide suggestions if query is too short
             }
         },
         // Handle account selection from dropdown
         selectAccount(account) {
-            console.log(account);
+            //console.log(account);
             this.paymentForm.account_number = account.account_number;  // Set selected account number
             this.paymentForm.company_name = account.company_name;  // Optionally set the account holder
             this.paymentForm.search = `${account.account_number} - ${account.company_name ? account.company_name : account.surname}`;

@@ -61,9 +61,50 @@ class DepositController extends Controller
         ]);
 
        // Eager load the user relationship and return the deposit with user data
-        $deposit->load('user');
+        //$deposit->load('user');
+        return response()->json($requisition->load('user', 'authorizedBy', 'firmAccount.institution', 'payments.beneficiaryAccount', 'payments.beneficiaryAccount.institution', 'deposits.firmAccount', 'deposits.user'), 201);
+        //return response()->json($requisition->load(['deposits.user']), 201); // Return the created deposit with user data
 
-        return response()->json($deposit, 201); // Return the created deposit with user data
+    }
+
+    public function balancePaymentDontFund(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'amount' => 'required|numeric|min:0.01',
+            'funded' => 'boolean',
+            'requisition_id' => 'required|exists:requisitions,id',
+        ]);
+
+        if ($validator->fails()){
+            return response()->json(['errors' => $validator->errors()], 422);
+        }
+
+         //here we want to update the requisition funding status
+         $requisition = Requisition::find($request->input('requisition_id'));
+         if($requisition){
+             $requisition->update([
+                 'funding_status' => null, // true should be a boolean, not a string
+                 'capturing_status' => 1,
+                 'status_id' => 3, //chainge status to awaiting authorization 
+                 'locked' => null
+             ]);
+         }
+
+         // Create the deposit record and associate it with the authenticated user
+        $deposit = Deposit::create([
+            'description' => $request->input('description'),
+            'amount' => $request->input('amount'),
+            'funded' => $request->input('funded', false),
+            'deposit_date' => null,
+            'firm_account_id' => $request->input('firm_account_id'),
+            'requisition_id' => $request->input('requisition_id'),
+            'user_id' => auth()->id(),  // Save the authenticated user's ID
+        ]);
+
+       // Eager load the user relationship and return the deposit with user data
+        //$deposit->load('user');
+        return response()->json($requisition->load('user', 'authorizedBy', 'firmAccount.institution', 'payments.beneficiaryAccount', 'payments.beneficiaryAccount.institution', 'deposits.firmAccount', 'deposits.user'), 201);
+        //return response()->json($requisition->load(['deposits.user']), 201); // Return the created deposit with user data
 
     }
 
@@ -82,7 +123,8 @@ class DepositController extends Controller
         $requisition = Requisition::find($requisitionId);
         $requisition->update(['funding_status' => true]);
 
-        return response()->json($requisition, 200);
+        return response()->json($requisition->load('user', 'authorizedBy', 'firmAccount.institution', 'payments.beneficiaryAccount', 'payments.beneficiaryAccount.institution', 'deposits.firmAccount', 'deposits.user'), 201);
+        //return response()->json($requisition, 200);
     }
 
     /**
@@ -140,9 +182,9 @@ class DepositController extends Controller
         ]);
 
        // Eager load the user relationship and return the deposit with user data
-        $deposit->load('user');
-
-        return response()->json($deposit, 201); // Return the created deposit with user data
+        //$deposit->load('user');
+        return response()->json($requisition->load('user', 'authorizedBy', 'firmAccount.institution', 'payments.beneficiaryAccount', 'payments.beneficiaryAccount.institution', 'deposits.firmAccount', 'deposits.user'), 201);
+        //return response()->json($deposit, 201); // Return the created deposit with user data
     }
 
     /**
@@ -213,7 +255,10 @@ class DepositController extends Controller
                 'funding_status' => $hasUnfundedDeposit ? null : true,
                 'capturing_status' => null,
                 'status_id' => 2,
-                'locked' => null
+                'locked' => null,
+                'authorization_status' => null,
+                'authorized_user_id' => null,
+                'authorized_at' => null,
             ]);
         } else {
             // If there are no remaining deposits, reset the funding_status to null
@@ -221,11 +266,14 @@ class DepositController extends Controller
                 'funding_status' => null,
                 'capturing_status' => null,
                 'status_id' => 2,
-                'locked' => null
+                'locked' => null,
+                'authorization_status' => null,
+                'authorized_user_id' => null,
+                'authorized_at' => null,
             ]);
         }
-
-        return response()->json($requisition, 201);
+        return response()->json($requisition->load('user', 'authorizedBy', 'firmAccount.institution', 'payments.beneficiaryAccount', 'payments.beneficiaryAccount.institution', 'deposits.firmAccount', 'deposits.user'), 201);
+        //return response()->json($requisition->load(['deposits.user']), 201);
     }
 
 }

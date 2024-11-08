@@ -20,6 +20,7 @@ class Payment extends Model
         'my_reference',
         'recipient_reference',
         'user_id',
+        'status',
         'authorised',
         'verified',
         'verification_status',

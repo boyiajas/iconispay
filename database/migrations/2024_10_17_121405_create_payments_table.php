@@ -22,6 +22,7 @@ return new class extends Migration
             $table->string('my_reference');
             $table->string('recipient_reference')->nullable();
             $table->foreignId('user_id');  // Add user_id column
+            $table->enum('status', ['generated', 'processed', 'failed'])->default(null)->nullable(); //Natural and 
             $table->boolean('authorised')->default(false); // Whether the account is authorised
             $table->boolean('verified')->default(false); // Whether the account has been verified
             $table->string('verification_status')->nullable(); // Status from AVS (e.g., 'pending', 'failed', 'successful')

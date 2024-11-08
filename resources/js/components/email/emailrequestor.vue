@@ -1,6 +1,6 @@
 <template>
     <div class="container mt-4">
-        <h4>Email Notification to Signatory 
+        <h4>Email Notification to Requestor 
             <span class="pull-right">
                 <button class="btn btn-light btn-sm ml-1" @click="printPage"><i class="fas fa-print"></i> Print</button>
             </span>
@@ -50,7 +50,7 @@
 import axios from 'axios';
 
 export default {
-    name: 'EmailSignatory',
+    name: 'EmailRequestor',
     props: {
         requisitionId: {
             type: Number,
@@ -59,41 +59,23 @@ export default {
     },
     data() {
         return {
-            requisition: {},  // Initialize as an empty object
             emailForm: {
                 recipient: '',
-                subject: '',
-                greeting: 'Dear',
-                message: '',
+                subject: 'Matter requiring attention ( HG )',
+                greeting: '',
+                message: 'A matter with file reference: HG requires your attention.',
             },
-            recipients: [],  // This will be populated from the API
-            url: '',  // This will be the URL to follow for authorisation
-            currentUser: window.Laravel.user || { name: 'Guest' }, // Default to 'Guest' if user is not available
-            errors: {},
-           
+            recipients: [],
+            url: '',
+            currentUser: window.Laravel.user || { name: 'Guest' },
+            errors: {}
         };
     },
     mounted() {
-        this.loadRequisitionDetails();
-        this.loadRecipients();  // Fetch recipients when component is mounted
-        this.url = this.generateUrl();  // Generate URL dynamically based on file reference
+        this.loadRecipients();
+        this.url = this.generateUrl();
     },
     methods: {
-
-        loadRequisitionDetails() {
-            axios.get(`/api/requisitions/${this.requisitionId}`)
-                .then(response => {
-                    this.requisition = response.data || {};  // Set requisition data or empty object
-                    // Set subject and message after requisition is loaded
-                    this.emailForm.subject = `Matter ready for authorisation (${this.requisition.file_reference})`;
-                    this.emailForm.message = `A matter with file reference: ${this.requisition.file_reference} is ready for authorisation.`;
-                })
-                .catch(error => {
-                    console.error('Error loading requisition details:', error);
-                });
-        },
-
-        // Fetch recipients from the API
         loadRecipients() {
             axios.get('/api/recipients')
                 .then(response => {
@@ -103,17 +85,11 @@ export default {
                     console.error('Error fetching recipients:', error);
                 });
         },
-
-        // Generate URL for authorisation
         generateUrl() {
-            const matterId = 300316;  // Example matter ID, replace with dynamic value
-            const requisitionId = 3;  // Example requisition ID, replace with dynamic value
-            return `https://app.lexispay.co.za/matters/${matterId}/requisition/payments/${requisitionId}/authorise`;
+            return `https://app.lexispay.co.za/matters/305633/requisition/payments/to/review`;
         },
-
-        // Send email via Axios
         sendEmail() {
-            axios.post('/api/send-email/signatory-notification', this.emailForm)
+            axios.post('/api/send-email/requestor-notification', this.emailForm)
                 .then(response => {
                     alert('Email sent successfully!');
                 })
@@ -125,15 +101,11 @@ export default {
                     }
                 });
         },
-
-        // Print the current page
         printPage() {
             window.print();
         },
-
-        // Handle cancel button
         cancel() {
-            this.$router.go(-1);  // Navigate back
+            this.$router.go(-1);
         }
     }
 };

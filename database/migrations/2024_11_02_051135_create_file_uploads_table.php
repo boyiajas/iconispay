@@ -13,7 +13,8 @@ return new class extends Migration
     {
         Schema::create('file_uploads', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('requisition_id');
+            $table->foreignId('firm_account_id');
+            $table->json('requisition_ids')->nullable();
             $table->string('file_name');
             $table->string('file_path');
             $table->decimal('file_size', 10, 2)->nullable(); // File size in KB

@@ -9,6 +9,9 @@ import NewFirmAccount from './firmaccount/create.vue';
 import Setup from './setup/index.vue';
 import RequisitionList from './requisition/requisitionlist.vue';
 import EmailSignatory from './email/emailsignatory.vue';
+import EmailRequestor from './email/emailrequestor.vue';
+import AccountFileEdit from './account/accountfileedit.vue';
+import FileManagement from './account/filemanagement.vue';
 
 // Define Vue Router routes, excluding the /contact route
 const routes = [
@@ -25,6 +28,17 @@ const routes = [
         props: true // Enables passing route parameters as props to the component
     },
     {
+        path: '/accounts/:id/edit',
+        name: 'accountfileedit',
+        component: AccountFileEdit,
+        props: true
+    },
+    {
+        path: '/file-management/:id',
+        name: 'filemanagement',
+        component: FileManagement
+    },
+    {
         path: '/requisitions/status/:status',
         name: 'requisitionStatus',
         component: RequisitionList,
@@ -34,6 +48,12 @@ const routes = [
         path: '/matter/emailsignatory/:requisitionId', 
         name: 'emailsignatory', 
         component: EmailSignatory, 
+        props: true // Pass route params as props
+    },
+    { 
+        path: '/matter/emailrequestor/:requisitionId', 
+        name: 'emailrequestor', 
+        component: EmailRequestor, 
         props: true // Pass route params as props
     },
 

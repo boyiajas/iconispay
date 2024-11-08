@@ -37,7 +37,7 @@
                                 <th>Reason</th>
                                 <th>Properties</th>
                                 <th>Parties</th>
-                                <th>Status</th>
+                                <!-- <th>Status</th> -->
                                 <th>Progress</th>
                                 <th v-if="canAction">Action</th>
                             </tr>
@@ -98,7 +98,7 @@ export default {
                     { data: 'reason', name: 'reason' },
                     { data: 'properties', name: 'properties' },
                     { data: 'parties', name: 'parties' },
-                    { data: 'status_id', name: 'status_id', render: (data) => this.getStatusName(data) },
+                   /*  { data: 'status_id', name: 'status_id', render: (data) => this.getStatusName(data) }, */
                     { data: 'progress', name: 'progress' },
                      // Conditionally add the Action column if the user has the admin role
                      ...(this.canAction ? [{ data: 'id', name: 'id', orderable: false, searchable: false, render: (data) => this.actionButtons(data) }] : [])

@@ -20,6 +20,8 @@ class StatusSeeder extends Seeder
             'Awaiting Funding',
             'Pending Payment',
             'Pending Payment Confirmation',
+            'Payment Processed',
+            'Payment Failed',
             'Settled Today',
             'Settled Yesterday',
             'Settled in the Last Week',

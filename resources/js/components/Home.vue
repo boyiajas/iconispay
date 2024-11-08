@@ -46,7 +46,9 @@
                             </a>
                             <a href="#" @click.prevent="loadRequisitionsByStatus('Pending Payment Confirmation')">
                                 <li class="list-group-item">Pending Payment Confirmation
-                                    <span class="pull-right badge badge-pill bg-default">0</span>
+                                    <span :class="['pull-right', 'badge', 'badge-pill', pendingPaymentConfirmations > 0 ? 'badge-danger' : 'bg-default']">
+                                        {{ pendingPaymentConfirmations }}
+                                    </span>
                                 </li>
                             </a>
                             <a href="#" @click.prevent="loadRequisitionsByStatus('Settled Today')">
@@ -96,6 +98,7 @@ export default {
             awaitingAuthorizationRequisitions: 0,
             readyForPaymentRequisitions: 0,
             awaitingFundingRequisitions: 0,
+            pendingPaymentConfirmations: 0,
         };
     },
     methods: {
@@ -121,12 +124,23 @@ export default {
                     console.error("There was an error fetching the awaiting funding requisition data: ", error);
                 });
         },
-         // Method to load the Awaiting Authorization requisitions
-         loadAwaitingAuthorizationRequisitions() {
+        // Method to load the Awaiting Authorization requisitions
+        loadAwaitingAuthorizationRequisitions() {
             axios.get('/api/requisitions/awaiting-authorization')
             .then(response => {
                 // Assuming the response contains the count of incomplete requisitions
                 this.awaitingAuthorizationRequisitions = response.data.count;
+                //console.log(response.data);
+            })
+            .catch(error => {
+                console.error("There was an error fetching the requisition data: ", error);
+            });
+        },
+        loadPendingPaymentConfirmationRequisitions(){
+            axios.get('/api/requisitions/pending-payment-confirmation')
+            .then(response => {
+                // Assuming the response contains the count of incomplete requisitions
+                this.pendingPaymentConfirmations = response.data.count;
                 //console.log(response.data);
             })
             .catch(error => {
@@ -154,6 +168,7 @@ export default {
         this.loadIncompleteRequisitions();
         this.loadAwaitingAuthorizationRequisitions();
         this.loadReadyForPaymentRequisitions();
+        this.loadPendingPaymentConfirmationRequisitions();
         this.loadAwaitingFunding();
     }
 };
