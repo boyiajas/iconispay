@@ -125,6 +125,59 @@ class PaymentController extends Controller
         }
     }
 
+    /**
+     * Mark selected payments as generated.
+     */
+    public function markGenerated(Request $request)
+    {
+        // Validate the incoming request
+        $validated = $request->validate([
+            'paymentIds' => 'required|array',
+            'paymentIds.*' => 'integer|exists:payments,id'
+        ]);
+
+        // Retrieve the selected payments and mark them as generated
+        $paymentIds = $validated['paymentIds'];
+        Payment::whereIn('id', $paymentIds)->update(['status' => 'generated']);
+
+        return response()->json(['message' => 'Payments marked as generated successfully.'], 200);
+    }
+
+    /**
+     * Mark selected payments as processed.
+     */
+    public function markProcessed(Request $request)
+    {
+        // Validate the incoming request
+        $validated = $request->validate([
+            'paymentIds' => 'required|array',
+            'paymentIds.*' => 'integer|exists:payments,id'
+        ]);
+
+        // Retrieve the selected payments and mark them as processed
+        $paymentIds = $validated['paymentIds'];
+        Payment::whereIn('id', $paymentIds)->update(['status' => 'processed']);
+
+        return response()->json(['message' => 'Payments marked as processed successfully.'], 200);
+    }
+
+    /**
+     * Mark selected payments as failed.
+     */
+    public function markFailed(Request $request)
+    {
+        // Validate the incoming request
+        $validated = $request->validate([
+            'paymentIds' => 'required|array',
+            'paymentIds.*' => 'integer|exists:payments,id'
+        ]);
+
+        // Retrieve the selected payments and mark them as failed
+        $paymentIds = $validated['paymentIds'];
+        Payment::whereIn('id', $paymentIds)->update(['status' => 'failed']);
+
+        return response()->json(['message' => 'Payments marked as failed successfully.'], 200);
+    }
 
 
     /**

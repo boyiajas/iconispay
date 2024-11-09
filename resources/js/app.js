@@ -1,70 +1,65 @@
 import './bootstrap';
 import { createApp } from 'vue';
-import App from './components/App.vue'; // Main Vue component that includes router-view
-import router from './components/Router'; // Import Vue Router
-import { ZiggyVue } from 'ziggy-js'; // Import ZiggyVue plugin
-//import 'bootstrap/dist/css/bootstrap.css';
-import 'bootstrap/dist/css/bootstrap.min.css';
-import 'bootstrap/dist/js/bootstrap.bundle.min.js';
-import '../css/app.css';
-import Toast from 'vue-toastification';
-import 'vue-toastification/dist/index.css';
+import App from './components/App.vue'; // Main Vue component
+import router from './components/Router'; // Vue Router
+import { ZiggyVue } from 'ziggy-js'; // Ziggy for route generation
+import 'bootstrap/dist/css/bootstrap.min.css'; // Bootstrap CSS
+import 'bootstrap/dist/js/bootstrap.bundle.min.js'; // Bootstrap JS
+import '../css/app.css'; // Custom CSS
+import Toast from 'vue-toastification'; // Toast for notifications
+import 'vue-toastification/dist/index.css'; // Toast CSS
 import axios from 'axios';
-import LoginModal from './components/authentication/LoginModal.vue';
+import $ from 'jquery'; // Import jQuery for DataTables AJAX interception
+import LoginModal from './components/authentication/LoginModal.vue'; // Login Modal component
 
-/* var VueResource = require('vue-resource');
-Vue.use(VueResource);
-
-import Home from './components/Home.vue';
-
-Vue.http.headers.common['X-CSRF-TOKEN'] = window.Laravel.csrfToken;
-const app = new Vue({
-    el: '#app',
-    components: { Home }
-});
- */
-
-/* import { createApp } from "vue";
-
-import Home from './components/Home.vue';
-
-createApp(Home).mount("#app"); */
-
-// Get Ziggy's routes from the global window object
-/* const ziggyOptions = {
-    ...window.Ziggy,
-}; */
-
-// Create Vue app and use Vue Router
+// Create Vue app
 const app = createApp(App);
 
-// Register LoginModal globally
-app.component('LoginModal', LoginModal);
-
-// Global event bus to show login modal
-app.config.globalProperties.$eventBus = app;
-
-
+// Configure Toast notifications
 app.use(Toast, {
     position: 'top-right',
     timeout: 3000,
     closeOnClick: true,
     pauseOnHover: true,
-  });
-  
+});
+
+// Use Vue Router and Ziggy for routing
 app.use(router);
-app.use(ZiggyVue); // Use the Ziggy plugin
-app.mount('#app');
+app.use(ZiggyVue); // Use Ziggy for Laravel route handling
 
-
-// Axios interceptor for handling session expiry
+// Set up an Axios interceptor to handle session expiry and server errors
 axios.interceptors.response.use(
-    response => response,
-    error => {
-      if (error.response && error.response.status === 401) {
-        // Trigger the login modal when 401 error is detected
-        app.config.globalProperties.$eventBus.emit('show-login-modal');
+  response => response, // Pass through successful responses
+  error => {
+      
+      if (error.response && (error.response.status === 401 || error.response.status === 500)) {
+          
+          const appComponent = app._instance.proxy;
+          appComponent.showLoginModal();
       }
-      return Promise.reject(error);
+      return Promise.reject(error); // Return a rejected promise to handle the error further
+  }
+);
+
+// Set up a global AJAX interceptor using jQuery
+/* $.ajaxSetup({
+  error: (xhr, status, error) => {
+    if (xhr.status === 401 || xhr.status === 500) {
+      const appComponent = app._instance.proxy;
+      appComponent.showLoginModal();
     }
-  );
+  }
+}); */
+// Set up a global AJAX interceptor using $.ajaxPrefilter
+$.ajaxPrefilter((options, originalOptions, jqXHR) => {
+  jqXHR.fail((xhr) => {
+    if (xhr.status === 401 || xhr.status === 500) {
+      // Access the Vue app instance and call the showLoginModal method
+      const appComponent = app._instance.proxy;
+      appComponent.showLoginModal();
+    }
+  });
+});
+
+// Mount the Vue app
+app.mount('#app');

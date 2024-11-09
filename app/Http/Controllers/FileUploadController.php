@@ -64,6 +64,7 @@ class FileUploadController extends Controller
         foreach ($fileUpload->requisitions as $requisition) {
             foreach ($requisition->payments as $payment) {
                 $fileDetails['payments'][] = [
+                    'id' => $payment->id,
                     'fileReference' => $requisition->file_reference, // Use the file reference from the requisition
                     'recipientAccount' => $payment->beneficiaryAccount->account_number ?? 'N/A',
                     'recipientReference' => $payment->recipient_reference ?? 'N/A',

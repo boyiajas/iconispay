@@ -75,6 +75,20 @@ export default {
             axios.get('/api/statuses').then(response => {
                 this.statuses = response.data;
                 this.reloadStatusColumn(); // Refresh status column in DataTable once statuses are loaded
+            })
+            .catch(error => {
+               // Check if the error status is 401 (Unauthorized)
+                if (error.response && error.response.status === 401) {
+                    // Emit the 'show-login-modal' event to show the login modal
+                    //this.$eventBus.emit('show-login-modal');
+                    //alert('handle the connection error successful');
+                } else {
+                    // Handle other errors
+                    console.error('Error loading statuses:', error);
+
+                    // Optionally, display an error message to the user
+                    //alert('Failed to load statuses. Please try again later.');
+                }
             });
         },
         
@@ -100,6 +114,10 @@ export default {
                     data: (d) => {
                         d.status_id = this.filterStatus;
                         d.filter_text = this.filterText;
+                    },
+                    error: (xhr, error, thrown) => {
+                        console.error('Error fetching data:', error, thrown);
+                        //alert('An error occurred while fetching the data. Please try again later.');
                     }
                 },
                 columns: [

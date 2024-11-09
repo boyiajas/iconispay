@@ -2009,7 +2009,11 @@ export default {
                 ajax: {
                     url: `/api/firm-accounts`,//`/api/requisitions/${this.requisitionId}/source-accounts`,
                     type: 'GET',
-                    data: (json) => json // Return full JSON response for DataTables
+                    data: (json) => json, // Return full JSON response for DataTables
+                    error: (xhr, error, thrown) => {
+                        console.error('Error fetching data:', error, thrown);
+                        //alert('An error occurred while fetching the data. Please try again later.');
+                    }
                 },
                 columns: [
                     { data: 'display', name: 'display' },

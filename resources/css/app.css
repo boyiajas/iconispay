@@ -38,6 +38,10 @@ a{
     color: green;
 }
 
+.badge-success{
+    background-color: #198754 !important;
+}
+
 .bg-blue{
     color: #0097b2bf;
 }

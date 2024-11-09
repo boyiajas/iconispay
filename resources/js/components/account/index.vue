@@ -241,6 +241,10 @@ export default {
                 ajax: {
                     url: '/api/accounts',
                     type: 'GET',
+                    error: (xhr, error, thrown) => {
+                        console.error('Error fetching data:', error, thrown);
+                        //alert('An error occurred while fetching the data. Please try again later.');
+                    }
                 },
                 columns: [
                     { 
@@ -372,6 +376,10 @@ export default {
                 ajax: {
                     url: '/api/pending-confirmation-files',
                     type: 'GET',
+                    error: (xhr, error, thrown) => {
+                        console.error('Error fetching data:', error, thrown);
+                        //alert('An error occurred while fetching the data. Please try again later.');
+                    }
                 },
                 columns: [
                     { data: 'display' },
@@ -398,6 +406,10 @@ export default {
                     data: (d) => {
                         d.from_date = this.fromDate;
                         d.to_date = this.toDate;
+                    },
+                    error: (xhr, error, thrown) => {
+                        console.error('Error fetching data:', error, thrown);
+                        //alert('An error occurred while fetching the data. Please try again later.');
                     }
                 },
                 columns: [

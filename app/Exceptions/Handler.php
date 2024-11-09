@@ -2,10 +2,10 @@
 
 namespace App\Exceptions;
 
-use Brian2694\Toastr\Facades\Toastr;
 use Illuminate\Foundation\Exceptions\Handler as ExceptionHandler;
-use Symfony\Component\HttpKernel\Exception\HttpException;
+use Brian2694\Toastr\Facades\Toastr;
 use Throwable;
+use Symfony\Component\HttpKernel\Exception\HttpException;
 
 class Handler extends ExceptionHandler
 {
@@ -26,32 +26,27 @@ class Handler extends ExceptionHandler
     public function register(): void
     {
         $this->reportable(function (Throwable $e) {
-            //
+            // You can log or handle other exceptions here if needed
         });
-    }
-
-    public function render($request, Throwable $exception)
-    {
-        // Only check for HTTP exceptions
-        if ($exception instanceof HttpException && $exception->getStatusCode() == 419) {
-            Toastr::error('Page expired. Please login again', 'Error');
-            return redirect()->route('login');
-        }
-
-        return parent::render($request, $exception);
     }
 
     /**
      * Render an exception into an HTTP response.
      */
-    /* public function render($request, Throwable $exception)
+    public function render($request, Throwable $exception)
     {
-        // Check if the exception status code is 419 (Page Expired)
-        if ($exception->getStatusCode() == 419) {
-            Toastr::error('error, Page expired. Please login again','Error');
+        // Handle 419 Page Expired exception
+        if ($exception instanceof HttpException && $exception->getStatusCode() === 419) {
+            Toastr::error('Page expired. Please log in again.', 'Error');
+            return redirect()->route('login');
+        }
+
+        // Handle TokenMismatchException
+        if ($exception instanceof \Illuminate\Session\TokenMismatchException) {
+            Toastr::error('Page expired. Please log in again.', 'Error');
             return redirect()->route('login');
         }
 
         return parent::render($request, $exception);
-    } */
+    }
 }

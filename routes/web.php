@@ -47,7 +47,7 @@ Route::get('/', function () {
 
 //Auth::routes();
 
-Route::prefix('api')->group(function(){
+Route::prefix('api')->middleware('auth')->group(function(){
 
     // User Management Routes
     Route::resource('users', UserController::class);
@@ -93,6 +93,12 @@ Route::prefix('api')->group(function(){
         Route::post('/requestor-notification', [EmailController::class, 'sendRequestorNotificationEmail']);
         Route::post('/signatory-notification', [EmailController::class, 'sendSignatoryNotificationEmail']);
     });
+
+    Route::post('/payments/mark-processed', [PaymentController::class, 'markProcessed']);
+    Route::post('/payments/mark-failed', [PaymentController::class, 'markFailed']);
+    Route::post('/payments/mark-generated', [PaymentController::class, 'markGenerated']);
+
+    
 
     Route::resource('requisitions', RequisitionController::class);
 

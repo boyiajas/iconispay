@@ -90,6 +90,10 @@ export default {
                     data: (d) => {
                         d.status = this.status;
                         d.filter_text = this.filterText; // Send any filter text for server-side filtering
+                    },
+                    error: (xhr, error, thrown) => {
+                        console.error('Error fetching data:', error, thrown);
+                        //alert('An error occurred while fetching the data. Please try again later.');
                     }
                 },
                 columns: [
