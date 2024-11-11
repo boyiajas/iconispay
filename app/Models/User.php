@@ -3,6 +3,7 @@
 namespace App\Models;
 
 // use Illuminate\Contracts\Auth\MustVerifyEmail;
+use Illuminate\Database\Eloquent\Casts\Attribute;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -25,6 +26,7 @@ class User extends Authenticatable
         'password',
         'status',
         'last_login',
+        'google2fa_secret',
     ];
 
     /**
@@ -46,4 +48,24 @@ class User extends Authenticatable
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
     ];
+
+        /** 
+
+     * Interact with the user's first name.
+
+     *
+
+     * @param  string  $value
+
+     * @return \Illuminate\Database\Eloquent\Casts\Attribute
+
+     */
+
+     protected function google2faSecret(): Attribute
+    {
+        return new Attribute(
+            get: fn($value) => $value ? decrypt($value) : null, // Only decrypt if the value is not null or empty
+            set: fn($value) => $value ? encrypt($value) : null  // Only encrypt if the value is not null or empty
+        );
+    }
 }

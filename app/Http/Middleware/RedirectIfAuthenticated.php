@@ -21,7 +21,16 @@ class RedirectIfAuthenticated
 
         foreach ($guards as $guard) {
             if (Auth::guard($guard)->check()) {
-                return redirect(RouteServiceProvider::HOME);
+
+                $user = Auth::user();
+
+                // Check if the user does not have google2fa_secret set
+                if (empty($user->google2fa_secret)) {
+                    // Redirect to the 2FA setup route
+                    //return redirect()->route('setup.2fa');
+                }
+                
+                //return redirect(RouteServiceProvider::HOME);
             }
         }
 

@@ -4,14 +4,28 @@ namespace App\Http\Controllers;
 
 use App\Models\Matter;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 
 class MatterController extends Controller
 {
     // Fetch all matters with status relationship
     public function index()
     {
-        $matters = Matter::with('status', 'user')->get();
+
+        $user = Auth::user();
+        
+
+         // Check if the user has an 'admin' or 'authorizer' role
+        if ($user->hasRole('admin') || $user->hasRole('authoriser')) {
+            // If the user is an admin or authorizer, get all incomplete requisitions
+            $matters = Matter::with('status', 'user')->get();
+        } else {
+            // Otherwise, get incomplete requisitions created by the user
+            $matters = Matter::with('status', 'user')::where('created_by', $user->id)->get();
+        }
+
         return response()->json($matters);
+        
     }
 
     // Create a new matter

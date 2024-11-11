@@ -20,9 +20,21 @@ class RequisitionController extends Controller
      */
     public function index(Request $request)
     {
+        $user = Auth::user();
+        
+
+        // Check if the user has an 'admin' or 'authorizer' role
+       if ($user->hasRole('admin') || $user->hasRole('authoriser')) {
+           // If the user is an admin or authorizer, get all incomplete requisitions
+           $query = Requisition::with('user');
+       } else {
+           // Otherwise, get incomplete requisitions created by the user
+           $query = Requisition::with('user')->where('created_by', $user->id)->get();
+           //$matters = Matter::with('status', 'user')::where('created_by', $user->id)->get();
+       }
         /* $matters = Requisition::with('user')->get();
         return response()->json($matters); */
-        $query = Requisition::with('user');
+        
 
         // Apply status filter if provided
         if ($request->status_id) {

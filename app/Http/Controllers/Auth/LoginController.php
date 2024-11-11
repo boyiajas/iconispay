@@ -24,14 +24,14 @@ class LoginController extends Controller
     |
     */
 
-    use AuthenticatesUsers;
+    //use AuthenticatesUsers;
 
     /**
      * Where to redirect users after login.
      *
      * @var string
      */
-    protected $redirectTo = '/home';
+    //protected $redirectTo = '/home';
 
     /**
      * Create a new controller instance.
@@ -40,8 +40,8 @@ class LoginController extends Controller
      */
     public function __construct()
     {
-        $this->middleware('guest')->except('logout');
-        $this->middleware('auth')->only('logout');
+        //$this->middleware('guest')->except('logout');
+        //$this->middleware('auth')->only('logout');
     }
 
     public function authenticate(Request $request)
@@ -74,13 +74,22 @@ class LoginController extends Controller
             Session::put('position', $user->position);
             Session::put('department', $user->department);
 
-            Toastr::success('Login successfully :)','Success');
+            //Toastr::success('Login successfully :)','Success');
+
+            // Check if the user has set up 2FA
+            if (empty($user->google2fa_secret)) {
+                // Redirect to the 2FA setup page if 2FA is not set up
+                return redirect()->route('setup.2fa'); 
+            } else {  
+                // Redirect to the 2FA verification page if 2FA is set up
+                return redirect()->route('2fa.verify'); 
+            }
 
            /*  if(Auth::user()->hasRole('user')){
                 return redirect()->intended('customer/dashboard');
             } */
            
-            return redirect()->intended('home');
+            //return redirect()->intended('home');
 
         } else {
             Toastr::error('fail, WRONG USERNAME OR PASSWORD :)','Error');

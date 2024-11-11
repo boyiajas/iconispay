@@ -3,6 +3,8 @@
 use App\Http\Controllers\AccountTypeController;
 use App\Http\Controllers\AuditTrailController;
 use App\Http\Controllers\Auth\LoginController;
+use App\Http\Controllers\Auth\RegisterController;
+use App\Http\Controllers\Auth\TwoFactorAuthController;
 use App\Http\Controllers\AvsController;
 use App\Http\Controllers\BeneficiaryAccountController;
 use App\Http\Controllers\CategoryController;
@@ -30,6 +32,7 @@ use Illuminate\Support\Facades\Route;
 
 
 
+
 /*
 |--------------------------------------------------------------------------
 | Web Routes
@@ -45,9 +48,23 @@ Route::get('/', function () {
     return view('welcome');
 });
 
-//Auth::routes();
 
-Route::prefix('api')->middleware('auth')->group(function(){
+Route::get('/complete-registration', [RegisterController::class, 'completeRegistration'])->name('complete.registration');
+Route::get('/complete-2fa-setup', [RegisterController::class, 'complete2FASetup'])->name('complete.2fa.setup');
+Route::post('/verify-2fa', [TwoFactorAuthController::class, 'verify2fa'])->name('verify.2fa');
+Route::get('/setup-2fa', [RegisterController::class, 'redirectTo2FASetup'])->name('setup.2fa')->middleware('auth');
+// Route for 2FA verification
+Route::get('/2fa', function () {
+    //return view('auth.2fa'); // Your 2FA verification view
+    return view('google2fa.index');
+})->name('2fa.verify')->middleware('auth');
+
+
+Auth::routes();
+
+Route::prefix('api')->middleware(['auth'])->group(function(){
+
+//    Route::get('/home', [HomeController::class, 'index'])->name('home');
 
     // User Management Routes
     Route::resource('users', UserController::class);
@@ -131,8 +148,8 @@ Route::get('/users', [UserController::class, 'index']);
 Route::get('/firm-accounts', [FirmAccountController::class, 'index']);
 Route::get('/audit-trails', [AuditTrailController::class, 'index']);
 
+Route::get('/home', [HomeController::class, 'index'])->name('home')->middleware(['auth','2fa']);
 
-Route::get('/home', [HomeController::class, 'index'])->name('home');
 
 
 

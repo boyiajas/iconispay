@@ -6,12 +6,14 @@
     "license": "MIT",
     "require": {
         "php": "^8.1",
+        "bacon/bacon-qr-code": "^3.0",
         "brian2694/laravel-toastr": "^5.59",
         "guzzlehttp/guzzle": "^7.2",
         "laravel/framework": "^10.10",
         "laravel/sanctum": "^3.3",
         "laravel/tinker": "^2.8",
         "laravel/ui": "^4.5",
+        "pragmarx/google2fa-laravel": "^2.2",
         "spatie/laravel-permission": "^6.9",
         "tightenco/ziggy": "^1.4",
         "yajra/laravel-datatables-oracle": "^10.11"
