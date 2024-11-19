@@ -271,14 +271,15 @@
                             </h6>
                             <div style="background: rgb(218, 249, 255);color: #333;padding-left: 10px;padding-right: 10px;border-radius: 3px;">
                                 <span>
-                                    <strong>{{ selectedSourceAccount.display }} - {{ selectedSourceAccount.account_number }}</strong>
+                                    <strong>{{ selectedSourceAccount.display_text }} - {{ selectedSourceAccount.account_number }}</strong>
                                     <span class="ml-2"><i>Bank:  {{ selectedSourceAccount.institution.name}} - ({{ selectedSourceAccount.branch_code }})</i></span>
-                                    <span class="ml-2" id="editChoosedSourceAccount" title="Edit or delete the payment group" data-bs-toggle="popover" data-bs-placement="top"  @click="openSourceAccountModal"><i class="fas fa-edit"></i></span>
+                                    <span v-if="requisition && !requisition.locked" class="ml-2" id="editChoosedSourceAccount" title="Edit or delete the payment group" data-bs-toggle="popover" data-bs-placement="top"  @click="openSourceAccountModal"><i class="fas fa-edit"></i></span>
                                 </span>
                             </div>
                             <div class="pull-right">
-                                <button class="btn btn-white btn-sm" @click="openNewDepositModal"><i class="fa fa-plus" aria-hidden="true"></i> New Deposit</button>
-                                <button class="btn btn-white btn-sm ml-1" @click="openCreatePaymentModal"><i class="fa fa-plus" aria-hidden="true"></i> New Payment</button>
+                                <div v-if="requisition && requisition.locked" style="width: 200px;">&nbsp;</div>
+                                <button v-if="requisition && !requisition.locked" class="btn btn-white btn-sm" @click="openNewDepositModal"><i class="fa fa-plus" aria-hidden="true"></i> New Deposit</button>
+                                <button v-if="requisition && !requisition.locked" class="btn btn-white btn-sm ml-1" @click="openCreatePaymentModal"><i class="fa fa-plus" aria-hidden="true"></i> New Payment</button>
                             </div>
                             
                         </div>
@@ -344,7 +345,14 @@
                                     <div v-if="requisition && requisition.payments && requisition.payments.length > 0" class="deposit-section row ml-0 mt-1 mb-0 p-0">
                                         <div v-for="payment in requisition.payments" :key="payment.id" class="col-md-12 row mb-2 lighthover p-0">
                                             <div class="col-md-3">
-                                                <span v-if="!payment.verified">
+                                                <span v-if="payment.beneficiary_account && payment.beneficiary_account.authorised">
+                                                    <i class="far fa-check-circle mr-2 mt-1 text-success" ref="popoverIcon" 
+                                                    data-bs-toggle="popover" 
+                                                    data-bs-placement="top" 
+                                                    title="Status" 
+                                                    data-bs-content="Account details complete, No AVS verification done"></i>
+                                                </span>
+                                                <span v-else-if="!payment.verified">
                                                     <i class="fa fa-square mr-2 mt-1 text-success" ref="popoverIcon" 
                                                     data-bs-toggle="popover" 
                                                     data-bs-placement="top" 
@@ -360,11 +368,11 @@
                                                 </span>
                                                 {{ payment.description }}
                                             </div>
-                                            <div class="col-md-3">
+                                            <div class="col-md-3" v-bind:style="payment.beneficiary_account.authorised === 1 ? { background: '#f2f2f2', border: '1px solid #ddd', padding: '6px 12px', fontSize: '14px', color: '#666' } : {}">
                                                 <div>
                                                     <b>{{ payment.beneficiary_account?.account_holder_type === 'natural' 
-                                                        ? payment.beneficiary_account.initials + " " + payment.beneficiary_account.surname 
-                                                        : payment.beneficiary_account.company_name }}
+                                                        ? payment.beneficiary_account?.initials + " " + payment.beneficiary_account?.surname 
+                                                        : payment.beneficiary_account?.company_name }}
                                                     </b>
                                                 </div>
                                                 <div>
@@ -511,10 +519,11 @@
                             <table id="documents-table" class="table table-bordered table-striped display nowrap" style="width:100%">
                                 <thead>
                                     <tr class="table-secondary">
-                                        <th>User</th>
+                                        <th width="15%">User</th>
                                         <th>Description</th>
                                         <th>File Name</th>
-                                        <th>Date Uploaded</th>
+                                        <th width="15%">Date Uploaded</th>
+                                        <th width="15%">Actions</th>
                                     </tr>
                                 </thead>
                             </table>
@@ -609,7 +618,7 @@
                 </div>
                 <div class="modal-body">
                     <div class="alert alert-info">
-                        The maximum file size is 10 MB. Only PDFs and images may be uploaded.
+                        The maximum file size is 20 MB. Only PDFs and images may be uploaded.
                     </div>
                     <form @submit.prevent="uploadDocument">
                         <div class="mb-3">
@@ -630,8 +639,8 @@
         </div>
     </div>
 
-     <!-- Upload Document Modal -->
-     <div class="modal fade" id="uploadDocumentModal" tabindex="-1" aria-labelledby="uploadDocumentModalLabel" aria-hidden="true">
+    <!-- Upload Document Modal -->
+    <!-- <div class="modal fade" id="uploadDocumentModal" tabindex="-1" aria-labelledby="uploadDocumentModalLabel" aria-hidden="true">
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
@@ -660,7 +669,7 @@
             </div>
         </div>
     </div>
-
+ -->
 
     <!-- New Deposit Modal -->
     <div class="modal fade" id="newDepositModal" tabindex="-1" aria-labelledby="newDepositModalLabel" aria-hidden="true">
@@ -797,7 +806,9 @@
                                     @click="selectAccount(account)"
                                     class="dropdown-item"
                                 >
-                                <span><i class="fa fa-university" aria-hidden="true"></i>&nbsp;</span>
+                                <span>
+                                    <i :class="account.authorised === 1 ? 'fa fa-check text-success' : 'fa fa-university'" aria-hidden="true"></i>&nbsp;
+                                </span>
                                 <!-- Render display_text with highlighted search term -->
                                 <span v-html="highlightMatch(account.display_text, paymentForm.search)"></span> |
 
@@ -835,14 +846,14 @@
                                         <option value="juristic">Juristic Person</option>
                                     </optgroup>
                                     <optgroup label="Existing Beneficiary">
-                                        <option v-for="beneficiary in categoryBeneficiaries" :key="beneficiary.id" :value="beneficiary.id">{{ beneficiary.display_text }}</option>
+                                        <option v-for="beneficiary in categoryBeneficiaries" :key="beneficiary.id" :value="`${beneficiary.id}_${beneficiary.account_number}`">{{ beneficiary.display_text }}</option>
                                     </optgroup>
                                 </select>
                             </div>
                         </div>
 
                         <!-- Hidden section for authorised Beneficiary Account details (visible when an authorised beneficiary account is selected) -->
-                        <div v-if="showBeneficiaryDetails && beneficiaryDetails" class="mb-4" style="background: rgb(242, 242, 242);border: 1px solid rgb(221, 221, 221);padding: 6px 6px 6px 12px;font-size: 14px;color: rgb(102, 102, 102);">
+                        <div v-if="showAccountDetails && beneficiaryDetails && beneficiaryDetails.authorised" class="mb-4" style="background: rgb(242, 242, 242);border: 1px solid rgb(221, 221, 221);padding: 6px 6px 6px 12px;font-size: 14px;color: rgb(102, 102, 102);">
                             <div class="row mb-1">
                                 <div class="col-sm-3">
                                     <p>Beneficiary Account</p>
@@ -878,13 +889,27 @@
                                     <h6>Authorisations:</h6>
                                 </div>
                                 <div class="col-sm-9">
-                                    {{ beneficiaryDetails.authorisations }} <a href="#">Show more</a>
+                                    {{ beneficiaryDetails.authorisations }} <a href="#"  @click="toggleCollapseApproveShow" data-bs-target="#approveDropdown" :aria-expanded="showApprove" aria-controls="approveDropdown">Show more</a><br/>
+                                    
+                                    <div :class="['collapse', { show: showPayments }]" id="approveDropdown">
+                                        <!-- Loop through each authorizer and create an approve-box for each -->
+                                        <div v-for="(authorizer, index) in beneficiaryDetails.authorizers" :key="index" class="approve-box p-2 mb-2" style="border: solid 1px #40b1c5; background: #eafcff; justify-content: flex-start;">
+                                            <div class="d-flex align-items-center">
+                                                <i class="fa fa-check mr-2 text-success"></i>
+                                                <div class="pl-0 pr-0">
+                                                    <h6>{{ authorizer.user.name }}</h6>
+                                                    <div class="txt-xs">on {{ formatDate(authorizer.created_at) }}</div>
+                                                    <div class="txt-xs">logged in as {{ authorizer.user.email }}</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
                         </div>
                         
                         <!-- Hidden section for New Account details (visible when a new account is selected) -->
-                        <div v-if="showAccountDetails">
+                        <div v-else>
                             <h6 class="mb-1">Account Details (Ad-hoc)</h6>
                             <hr class="mt-0"/>
                             <div class="mb-3 row">
@@ -1050,7 +1075,7 @@
                                         <option value="juristic">Juristic Person</option>
                                     </optgroup>
                                     <optgroup label="Existing Beneficiary">
-                                        <option v-for="beneficiary in categoryBeneficiaries" :key="beneficiary.id" :value="beneficiary.id">{{ beneficiary.display_text }}</option>
+                                        <option v-for="beneficiary in categoryBeneficiaries" :key="beneficiary.id" :value="`${beneficiary.id}_${beneficiary.account_number}`">{{ beneficiary.display_text }}</option>
                                     </optgroup>
                                 </select>
                             </div>
@@ -1312,6 +1337,7 @@ export default {
         return {
             loading: true,
             showPayments: false,
+            showApprove: false,
             loadingHtml: '<div class="loading-spinner" style="position:fixed;top:50%;left: 50%;transform: translate(-50%, -50%);font-size: 2em;color: #0097b2bf;text-align: center;z-index: 1000;background: rgba(64, 177, 197, 0.05);padding: 40px;border: 5px;"><i class="fa fa-spinner fa-spin"></i> Loading...</div>',
             contentHtml: '',
             requisition: {},  // Initialize as an empty object
@@ -1507,6 +1533,20 @@ export default {
                 collapseElement.classList.remove("show");
             }
         },
+        toggleCollapseApproveShow()
+        {
+            const collapseElement = document.getElementById("approveDropdown");
+
+            // Toggle the visibility in Vue's data property
+            this.showApprove = !this.showApprove;
+
+            // Directly remove or add the 'show' class based on `showPayments`
+            if (this.showApprove) {
+                collapseElement.classList.add("show");
+            } else {
+                collapseElement.classList.remove("show");
+            }
+        },
         approveRequisition(requisitionId) {
             axios.put(`/api/requisitions/${requisitionId}/approve`)
                 .then(response => {
@@ -1584,19 +1624,19 @@ export default {
             this.editPaymentForm.id = payment.id;
             this.editPaymentForm.description = payment.description;
             this.editPaymentForm.amount = payment.amount;
-            this.editPaymentForm.verified = payment.beneficiary_account.verified;
+            this.editPaymentForm.verified = payment.beneficiary_account?.verified;
             this.editPaymentForm.my_reference = payment.my_reference;
             this.editPaymentForm.recipient_reference = payment.recipient_reference;
-            this.editPaymentForm.account_number = payment.beneficiary_account.account_number;
-            this.editPaymentForm.account_holder_type = payment.beneficiary_account.account_holder_type;
-            this.editPaymentForm.initials = payment.beneficiary_account.initials;
-            this.editPaymentForm.surname = payment.beneficiary_account.surname;
-            this.editPaymentForm.company_name = payment.beneficiary_account.company_name;
-            this.editPaymentForm.id_number = payment.beneficiary_account.id_number;
-            this.editPaymentForm.registration_number = payment.beneficiary_account.registration_number;
-            this.editPaymentForm.account_type.id = payment.beneficiary_account.account_type_id;
-            this.editPaymentForm.institution = payment.beneficiary_account.institution;
-            this.editPaymentForm.branch_code = payment.beneficiary_account.branch_code;
+            this.editPaymentForm.account_number = payment.beneficiary_account?.account_number;
+            this.editPaymentForm.account_holder_type = payment.beneficiary_account?.account_holder_type;
+            this.editPaymentForm.initials = payment.beneficiary_account?.initials;
+            this.editPaymentForm.surname = payment.beneficiary_account?.surname;
+            this.editPaymentForm.company_name = payment.beneficiary_account?.company_name;
+            this.editPaymentForm.id_number = payment.beneficiary_account?.id_number;
+            this.editPaymentForm.registration_number = payment.beneficiary_account?.registration_number;
+            this.editPaymentForm.account_type.id = payment.beneficiary_account?.account_type_id;
+            this.editPaymentForm.institution = payment.beneficiary_account?.institution;
+            this.editPaymentForm.branch_code = payment.beneficiary_account?.branch_code;
             this.editPaymentForm.category = payment.category_id;
             //console.log(this.editPaymentForm);
             // Convert funded from 1 or 0 to boolean true/false
@@ -1728,30 +1768,61 @@ export default {
         },
         // Handle account type change based on the selected option
         onAccountChange() {
-            if (this.paymentForm.account_holder_type === 'natural') {
+            if (this.paymentForm.account_holder_type === 'natural' || this.paymentForm.account_holder_type === 'juristic') {
                 this.showAccountDetails = true;
-                this.showBeneficiaryDetails = false;
                 this.loadAccountTypes();
                 this.loadInstitutions();
-                //this.handleNaturalPersonSelection();
-            } else if (this.paymentForm.account_holder_type === 'juristic') {
-                this.showAccountDetails = true;  // Show the form for Juristic Person too
-                this.showBeneficiaryDetails = false;
-                this.loadAccountTypes();
-                this.loadInstitutions();
-                //this.handleJuristicPersonSelection();
             } else {
-                this.showAccountDetails = false; // Hide for existing beneficiaries
-                this.showBeneficiaryDetails = true;
-                this.loadBeneficiaryDetails(this.paymentForm.account_holder_type);
+                
+                this.showAccountDetails = true; // Hide for existing beneficiaries
+                //this.showBeneficiaryDetails = true;
+                console.log(this.paymentForm)
+                const [beneficiaryId, accountNumber] = this.paymentForm.account_holder_type.split('_');
+                this.loadBeneficiaryDetails(beneficiaryId, accountNumber);
             }
 
             
         },
-        loadBeneficiaryDetails(beneficiaryId) {
-            axios.get(`/api/beneficiary-accounts/${beneficiaryId}`)
+        loadBeneficiaryDetails(beneficiaryId, accountNumber) {
+            axios.get(`/api/beneficiary-accounts/${beneficiaryId}/${accountNumber}`)
                 .then(response => {
-                    this.beneficiaryDetails = response.data;
+                    const selectedBeneficiary = response.data; 
+                    if (selectedBeneficiary) {
+                        this.paymentForm.account_number = selectedBeneficiary.account_number;
+                        this.paymentForm.company_name = selectedBeneficiary.company_name;
+                        this.paymentForm.initials = selectedBeneficiary.initials;
+                        this.paymentForm.surname = selectedBeneficiary.surname;
+                        this.paymentForm.id_number = selectedBeneficiary.id_number;
+                        this.paymentForm.account_holder_type = selectedBeneficiary.account_holder_type;
+                        this.paymentForm.registration_number = selectedBeneficiary.registration_number;
+                        this.paymentForm.verified = selectedBeneficiary.verified == 1;
+                        this.paymentForm.payments = selectedBeneficiary.payments; 
+                        this.paymentForm.authorised = selectedBeneficiary.authorised;
+                        this.paymentForm.display_text = selectedBeneficiary.display_text;
+                        this.paymentForm.authorizers = selectedBeneficiary.authorizers;
+
+                        // Populate the previously paid field
+                        if (selectedBeneficiary.payments.length > 0) {
+                            const firstPayment = selectedBeneficiary.payments[0];
+                            this.paymentForm.previously_paid = `${this.formatDate(firstPayment.created_at)} - R${firstPayment.amount}`;
+                        } else {
+                            this.paymentForm.previously_paid = "No previous payment";
+                        } 
+
+                        this.paymentForm.category = selectedBeneficiary.category.id;
+                        this.paymentForm.account_type = selectedBeneficiary.account_type;
+                        this.paymentForm.institution = selectedBeneficiary.institution;
+                        this.paymentForm.branch_code = selectedBeneficiary.branch_code;
+
+                        this.beneficiaryDetails = this.paymentForm;
+                        console.log("beneficiary details ", this.beneficiaryDetails);
+
+                        this.showAccountDetails = true;
+
+                        this.loadCategories();
+                        this.loadAccountTypes();
+                        this.loadInstitutions();
+                    }
                     console.log('Beneficiary details loaded successfully:', response.data);
                 })
                 .catch(error => {
@@ -1804,14 +1875,91 @@ export default {
                 columns: [
                     { data: 'user_name', name: 'user_name' },  // Assuming the API returns `user_name`
                     { data: 'description', name: 'description' },
-                    { data: 'file_name', name: 'file_name' },
-                    { data: 'uploaded_at', name: 'uploaded_at', render: (data) => new Date(data).toLocaleString() }  // Format date
+                    /* { data: 'file_name', name: 'file_name' },
+                    { data: 'uploaded_at', name: 'uploaded_at', render: (data) => new Date(data).toLocaleString() }  // Format date */
+                    {
+                        data: 'file_name',
+                        name: 'file_name',
+                        render: (data, type, row) => {
+                            return `<a href="/api/documents/${row.id}/download" class="text-primary">${data}</a>`;
+                        }
+                    },
+                    { data: 'uploaded_at', name: 'uploaded_at', render: (data) => new Date(data).toLocaleString() },
+                    {
+                        data: null,
+                        orderable: false,
+                        render: (data, type, row) => {
+                            return `
+                                <button class="btn btn-sm btn-primary view-document-btn" data-id="${row.id}">View</button>
+                                <button class="btn btn-sm btn-danger delete-document-btn" data-id="${row.id}">Delete</button>
+                            `;
+                        }
+                    }
                 ],
                 responsive: false,
                 destroy: true,  // Reinitialize the table if needed
+                createdRow: (row, data, dataIndex) => {
+                    // Attach click event to the View button
+                    $(row).find('.view-document-btn').on('click', (event) => {
+                        const documentId = $(event.currentTarget).data('id');
+                        if (documentId) {
+                            this.viewDocument(documentId);
+                        }
+                    });
+
+                    // Attach click event to the Delete button
+                    $(row).find('.delete-document-btn').on('click', (event) => {
+                        const documentId = $(event.currentTarget).data('id');
+                        if (documentId) {
+                            this.deleteDocument(documentId);
+                        }
+                    });
+                },
+                /* drawCallback: () => {
+                    // Re-attach event listeners when the table is redrawn
+                    $('#documents-table').off('click', '.view-document-btn').on('click', '.view-document-btn', (event) => {
+                        const documentId = $(event.currentTarget).data('id');
+                        if (documentId) {
+                            this.viewDocument(documentId);
+                        }
+                    });
+
+                    $('#documents-table').off('click', '.delete-document-btn').on('click', '.delete-document-btn', (event) => {
+                        const documentId = $(event.currentTarget).data('id');
+                        if (documentId) {
+                            this.deleteDocument(documentId);
+                        }
+                    });
+                } */
             });
         },
+        viewDocument(documentId) {
+            // Implement the logic to view the document details (e.g., open a modal)
+            //alert(`Viewing document ID: ${documentId}`);
+            // Construct the URL to view the document
+            const documentUrl = `/api/documents/${documentId}/view`;
 
+            // Open the document in a new browser tab
+            window.open(documentUrl, '_blank');
+        },
+        deleteDocument(documentId) {
+            if (confirm('Are you sure you want to delete this document?')) {
+                axios.delete(`/api/documents/${documentId}`)
+                    .then(response => {
+                        
+                        this.toast.success('Document deleted successfully!', {
+                            title: 'Success'
+                        });
+                        this.documentsTable.ajax.reload();
+                    })
+                    .catch(error => {
+                        this.toast.error(error.response ? error.response.data : 'An error occurred while deleting the document', {
+                                                title: 'Error'
+                                            });
+                        console.error(error);
+                    });
+            }
+        },
         // Handle file selection
         handleFileUpload(event) {
             this.documentForm.file = event.target.files[0];
@@ -1855,7 +2003,7 @@ export default {
                     data: (json) => json // Return full JSON response for DataTables
                 },
                 columns: [
-                    { data: 'display', name: 'display' },
+                    { data: 'display_text', name: 'display_text' },
                     { data: 'institution.name', name: 'institution.name' },
                     { data: 'account_number', name: 'account_number' },
                     { data: 'branch_code', name: 'branch_code' },
@@ -2016,7 +2164,7 @@ export default {
                     }
                 },
                 columns: [
-                    { data: 'display', name: 'display' },
+                    { data: 'display_text', name: 'display_text' },
                     { data: 'institution.name', name: 'institution.name' },
                     { data: 'account_number', name: 'account_number' },
                     { data: 'branch_code', name: 'branch_code' },
@@ -2403,7 +2551,7 @@ export default {
                 this.filteredAccounts = [];
                 axios.get(`/api/beneficiary-accounts/search?query=${this.paymentForm.search}`)
                     .then(response => {
-                        this.filteredAccounts = response.data;
+                        this.filteredAccounts = response.data; //console.log("this is the account_type", this.filteredAccounts);
                     })
                     .catch(error => {
                         console.error('Error fetching accounts:', error);
@@ -2428,7 +2576,7 @@ export default {
         },
         // Handle account selection from dropdown
         selectAccount(account) {
-            //console.log(account);
+            console.log("selected account information ", account);
             this.paymentForm.account_number = account.account_number;  // Set selected account number
             this.paymentForm.company_name = account.company_name;  // Optionally set the account holder
             this.paymentForm.search = `${account.account_number} - ${account.company_name ? account.company_name : account.surname}`;
@@ -2441,6 +2589,7 @@ export default {
             this.paymentForm.registration_number = account.registration_number;
             this.paymentForm.verified = account.verified;
             this.paymentForm.payments = account.payments;
+            this.paymentForm.authorised = account.authorised;
 
             if (account.payments.length > 0) {
                 const firstPayment = account.payments[0];
@@ -2455,9 +2604,10 @@ export default {
 
             // Update additional fields based on the selected account
             this.paymentForm.category = account.category_id;  // Assuming category_id is returned from API
-            this.paymentForm.account_type = account.accounttype;  // Assuming account_type is returned from API
+            this.paymentForm.account_type = account.account_type;  // Assuming account_type is returned from API
             this.paymentForm.institution = account.institution;  // Assuming institution name is returned from API
             this.paymentForm.branch_code = account.branch_code;  // Assuming branch code is returned from API
+            this.beneficiaryDetails = account;
 
             this.showAccountDetails = true;
             this.showBeneficiaryDetails = false;
@@ -2469,6 +2619,9 @@ export default {
         },
         // Method to highlight matching text in the result
         highlightMatch(text, searchTerm) {
+            // If text is undefined or null, return an empty string
+            if (!text) return '';
+
             if (!searchTerm) return text; // If no search term, return text as is
 
             const regex = new RegExp(`(${searchTerm})`, 'gi');  // Case-insensitive match
@@ -2516,6 +2669,8 @@ export default {
                      this.toast.success('Payment created successfully!', {
                         title: 'Success'
                     });
+
+                    //console.log('this is the complete data back ===> ', response.data);
 
                      // Add the newly created deposit to the local deposits list
                      this.requisition.payments.push(response.data);

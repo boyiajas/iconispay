@@ -74,13 +74,17 @@ Route::prefix('api')->middleware(['auth'])->group(function(){
     Route::resource('audit-trails', AuditTrailController::class);
     
     Route::get('/beneficiary-accounts/search', [BeneficiaryAccountController::class, 'search']);
+   
+    Route::get('/beneficiary-accounts/{beneficiaryId?}/{accountNumber?}', [BeneficiaryAccountController::class, 'showBeneficiaryAndFirm']);
     Route::resource('/beneficiary-accounts', BeneficiaryAccountController::class);
+    Route::post('/beneficiary-accounts/{sourceAccountId}/authorize', [BeneficiaryAccountController::class, 'authorise']);
 
     Route::get('/accounts', [FirmAccountController::class, 'getAccounts']);
     Route::post('/firm-accounts/{sourceAccountId}/generate-file', [FirmAccountController::class, 'generateFile']);
     Route::get('/firm-accounts/{sourceAccountId}/files-details', [FirmAccountController::class, 'filesDetails']);
     Route::get('/firm-accounts/{id}/pending-confirmation-files', [FirmAccountController::class, 'getIndividualAccountPendingConfirmationFiles']);
     Route::get('/firm-accounts/{id}/recently-closed-files', [FirmAccountController::class, 'getIndividualAccountRecentlyClosedFiles']);
+    Route::post('/firm-accounts/{sourceAccountId}/authorize', [FirmAccountController::class, 'authorise']);
     Route::get('/pending-confirmation-files', [FirmAccountController::class, 'getPendingConfirmationFiles']);
     Route::get('/recently-closed-files', [FirmAccountController::class, 'getRecentlyClosedFiles']);
 
@@ -116,6 +120,10 @@ Route::prefix('api')->middleware(['auth'])->group(function(){
     Route::post('/payments/mark-generated', [PaymentController::class, 'markGenerated']);
 
     
+    // Routes for document management
+    Route::get('documents/{document}/download', [DocumentController::class, 'download'])->name('documents.download');
+    Route::get('documents/{document}/view', [DocumentController::class, 'view'])->name('documents.view');
+    //Route::delete('documents/{document}', [DocumentController::class, 'destroy'])->name('documents.destroy');
 
     Route::resource('requisitions', RequisitionController::class);
 
@@ -156,4 +164,4 @@ Route::get('/home', [HomeController::class, 'index'])->name('home')->middleware(
 // Catch-all Route for Vue Router
 Route::get('/{any}', function () {
     return view('home'); // Make sure this is the view where your Vue app is mounted
-})->where('any', '.*');
+})->where('any', '.*')->middleware(['auth']);

@@ -11,7 +11,7 @@ class FirmAccount extends Model
     use HasFactory;
 
     protected $fillable = [
-        'display',
+        'display_text',
         'category_id',
         'account_holder_type',
         'method', // e.g., "Manual" or "File Upload"
@@ -20,8 +20,28 @@ class FirmAccount extends Model
         'account_type_id',
         'institution_id',
         'branch_code',
-        'aggregated',
+        'initials',
+        'surname',
+        'company_name',
+        'id_number',
+        'registration_number',
+        'my_reference',
+        'recipient_reference',
+        'verified',
+        'verification_status',
+        'account_found',
+        'account_open',
+        'account_type_verified',
+        'account_type_match',
+        'branch_code_match',
+        'holder_name_match',
+        'holder_initials_match',
+        'registration_number_match',
         'authorised',
+        'avs_verified_at',
+        'number_of_authorizer',
+        'user_id',
+        'aggregated',
         'mandated',
     ];
 
@@ -39,7 +59,7 @@ class FirmAccount extends Model
         return $this->belongsTo(Category::class);
     }
 
-    public function accounttype()
+    public function accountType()
     {
         return $this->belongsTo(AccountType::class, 'account_type_id');
     }
@@ -47,6 +67,29 @@ class FirmAccount extends Model
     public function deposits()
     {
         return $this->hasMany(Deposit::class);
+    }
+
+     /**
+     * Relationship with the Authorizer model.
+     */
+    public function authorizers()
+    {
+        return $this->hasMany(Authorizer::class);
+    }
+
+    /**
+     * Method to get authorizer details including the authorized date.
+     */
+    public function getAuthorizerDetails()
+    {
+        return $this->authorizers->map(function ($authorizer) {
+            return [
+                'user_id' => $authorizer->user_id,
+                'authorized_date' => $authorizer->authorized_date,
+                'user_name' => $authorizer->user->name, // Assuming the User model has a 'name' attribute
+                'email' => $authorizer->user->email,
+            ];
+        });
     }
 
     public function payments()

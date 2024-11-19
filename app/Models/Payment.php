@@ -24,6 +24,7 @@ class Payment extends Model
         'authorised',
         'verified',
         'verification_status',
+        'account_type',
     ];
 
     /**
@@ -53,10 +54,10 @@ class Payment extends Model
     /**
      * A payment has an account type
      */
-    public function accountType()
+   /*  public function accountType()
     {
         return $this->belongsTo(AccountType::class, 'account_type_id');
-    }
+    } */
 
     /**
      * Relationship with the FirmAccount model.
@@ -66,6 +67,20 @@ class Payment extends Model
         return $this->belongsTo(FirmAccount::class);
     }
 
+     /**
+     * Relationship with the source FirmAccount (account to pay from).
+     */
+    public function sourceFirmAccount()
+    {
+        return $this->belongsTo(FirmAccount::class, 'firm_account_id');
+    }
+    /**
+     * Relationship with the FirmAccount model for the "pay to" account.
+     */
+    public function payToFirmAccount()
+    {
+        return $this->belongsTo(FirmAccount::class, 'beneficiary_account_id');
+    }
     /**
      * Relationship with the Requisition model.
      */
@@ -79,6 +94,34 @@ class Payment extends Model
      */
     public function beneficiaryAccount()
     {
-        return $this->belongsTo(BeneficiaryAccount::class);
+        return $this->belongsTo(BeneficiaryAccount::class, 'beneficiary_account_id');
+    }
+
+     /**
+     * Custom method to eager load the correct "pay to" account based on account_type.
+     */
+    public function loadPayToAccount()
+    {
+        if ($this->account_type === 'B') {
+            return $this->beneficiaryAccount()->getResults();
+        } elseif ($this->account_type === 'F') {
+            return $this->payToFirmAccount()->getResults();
+        }
+
+        return null;
+    }
+
+    /**
+     * Custom accessor to get the correct "pay to" account based on account_type.
+     */
+    public function getPayToAccountAttribute()
+    {
+        return $this->loadPayToAccount();
+    }
+
+    public static function getBeneficiaryByIdAndAccountType($id, $accountType)
+    {
+       
+        return BeneficiaryAccount::whereId($id)->whereAccountType($accountType);
     }
 }

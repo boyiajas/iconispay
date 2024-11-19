@@ -26,6 +26,7 @@ return new class extends Migration
             $table->boolean('authorised')->default(false); // Whether the account is authorised
             $table->boolean('verified')->default(false); // Whether the account has been verified
             $table->string('verification_status')->nullable(); // Status from AVS (e.g., 'pending', 'failed', 'successful')
+            $table->enum('account_type', ['F', 'B'])->default('B')->nullable(); // Add account_type column: 'F' for FirmAccount, 'B' for BeneficiaryAccount
             $table->timestamps();
 
         });

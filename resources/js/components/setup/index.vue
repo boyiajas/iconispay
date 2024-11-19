@@ -39,9 +39,9 @@
                                     <th>Account Holder</th>
                                     <th width="10%">Account</th>
                                     <th>Institution</th>
-                                    <th width="9%">Aggregated</th>
+                                    <!-- <th width="9%">Aggregated</th> -->
                                     <th width="9%">Authorised</th>
-                                    <th width="9%">Mandated</th>
+                                    <!-- <th width="9%">Mandated</th> -->
                                     <th width="12%">Actions</th>
                                 </tr>
                             </thead>
@@ -207,12 +207,14 @@
                                 <input class="form-check-input" type="checkbox" v-model="newUser.authoriser_role" id="authoriser_role">
                                 <label class="form-check-label" for="authoriser_role">Request Authoriser Role</label>
                             </div>
-                            <div class="form-check mb-2">
+                            <div class="form-check mb-0">
                                 <input class="form-check-input" type="checkbox" v-model="newUser.bookkeeper_role" id="bookkeeper_role">
                                 <label class="form-check-label" for="bookkeeper_role">Request Bookkeeper Role</label>
                             </div>
-                            <button type="submit" class="btn btn-primary mt-3">Save</button>
-                            <button type="button" class="btn btn-secondary mt-3" data-bs-dismiss="modal">Cancel</button>
+                            <div class="form-check mb-1 pull-right">
+                                <button type="submit" class="btn btn-primary mt-2 mr-1">Save</button>
+                                <button type="button" class="btn btn-secondary mt-2" @click="closeModal">Cancel</button>
+                            </div>
                         </form>
                     </div>
                 </div>
@@ -300,6 +302,7 @@ import axios from 'axios';
 import $ from 'jquery';
 import 'datatables.net';
 import 'datatables.net-bs5';
+import { useToast } from 'vue-toastification';
 
 export default {
     data() {
@@ -330,6 +333,11 @@ export default {
     mounted() {
         this.loadUsers();
     },
+    setup() {
+        // Initialize toast
+        const toast = useToast();
+        return { toast };
+    },
     methods: {
         loadUsers() {
             
@@ -343,7 +351,11 @@ export default {
                 ajax: {
                     url: '/api/users',
                     type: 'GET',
-                    dataSrc: 'data' // Assumes the API response has a `data` field
+                    dataSrc: 'data', // Assumes the API response has a `data` field
+                    error: (xhr, error, thrown) => {
+                        console.error('Error fetching data:', error, thrown);
+                        //alert('An error occurred while fetching the data. Please try again later.');
+                    }
                 },
                 columns: [
                     { data: 'email' },
@@ -464,6 +476,150 @@ export default {
                 .catch(error => console.error('Error updating firm account:', error));
         },
 
+        // Show Authorize confirmation
+        confirmFirmAccountDelete(id) {
+            if (confirm('Are you sure you want to delete this account?')) {
+                this.deleteFirmAccount(id);
+            }
+        },
+
+        // Show delete confirmation
+        confirmFirmAccountAuhtorize(id) {
+            if (confirm('Are you sure you want to Authorize this account?')) {
+                this.authorizeFirmAccount(id);
+            }
+        },
+        confirmBeneficiaryAuhtorize(id){
+            if (confirm('Are you sure you want to Authorize this account?')) {
+                this.authorizeBeneficiaryAccount(id);
+            }
+        },
+        // Authorize firm account
+        authorizeFirmAccount(id) {
+            axios.post(`/api/firm-accounts/${id}/authorize`)
+                .then(response => {
+                    // Check the status of the response and display the appropriate toast message
+                    if (response.status === 200) {
+                        this.toast.success(response.data.message, {
+                            title: 'Success'
+                        });
+                    } else if (response.status === 201) {
+                        this.toast.info(response.data.message, {
+                            title: 'Info'
+                        });
+                    } else if (response.status === 404) {
+                        this.toast.warning('The firm account was not found.', {
+                            title: 'Warning'
+                        });
+                    } else {
+                        this.toast.error('An unexpected error occurred.', {
+                            title: 'Error'
+                        });
+                    }
+
+                    // Reload table data
+                    this.initializeFirmAccounts();
+                })
+                .catch(error => {
+                    // Handle any errors that occur during the request
+                    if (error.response) {
+                        // Server responded with a status other than 2xx
+                        if (error.response.status === 400) {
+                            this.toast.warning(error.response.data.message || 'Bad Request', {
+                                title: 'Warning'
+                            });
+                        } else if (error.response.status === 404) {
+                            this.toast.info('The firm account was not found.', {
+                                title: 'Info'
+                            });
+                        } else if (error.response.status === 500) {
+                            this.toast.error('Server error. Please try again later.', {
+                                title: 'Error'
+                            });
+                        } else {
+                            this.toast.error(error.response.data.message || 'An unexpected error occurred.', {
+                                title: 'Error'
+                            });
+                        }
+                    } else {
+                        // Network error or request was not made
+                        this.toast.error('Network error. Please check your connection.', {
+                            title: 'Error'
+                        });
+                    }
+                    console.error('Error authorizing firm account:', error);
+                });
+        },
+
+        // Authorize beneficiary account
+        authorizeBeneficiaryAccount(id) {
+            axios.post(`/api/beneficiary-accounts/${id}/authorize`)
+                .then(response => {
+                    console.log(response);
+                    // Check the status of the response and display the appropriate toast message
+                    if (response.status === 200) {
+                        this.toast.success(response.data.message, {
+                            title: 'Success'
+                        });
+                    } else if (response.status === 201) {
+                        this.toast.info(response.data.message, {
+                            title: 'Info'
+                        });
+                    } else if (response.status === 404) {
+                        this.toast.warning('The beneficiary account was not found.', {
+                            title: 'Warning'
+                        });
+                    } else {
+                        this.toast.error('An unexpected error occurred.', {
+                            title: 'Error'
+                        });
+                    }
+
+                    // Reload table data
+                    this.initializeFirmAccounts();
+                    this.initializeBeneficiaryAccounts();
+                })
+                .catch(error => {
+                    // Handle any errors that occur during the request
+                    if (error.response) {
+                        // Server responded with a status other than 2xx
+                        if (error.response.status === 400) {
+                            this.toast.warning(error.response.data.message || 'Bad Request', {
+                                title: 'Warning'
+                            });
+                        } else if (error.response.status === 404) {
+                            this.toast.info('The beneficiary account was not found.', {
+                                title: 'Info'
+                            });
+                        } else if (error.response.status === 500) {
+                            this.toast.error('Server error. Please try again later.', {
+                                title: 'Error'
+                            });
+                        } else {
+                            this.toast.error(error.response.data.message || 'An unexpected error occurred.', {
+                                title: 'Error'
+                            });
+                        }
+                    } else {
+                        // Network error or request was not made
+                        this.toast.error('Network error. Please check your connection.', {
+                            title: 'Error'
+                        });
+                    }
+                    console.error('Error authorizing firm account:', error);
+                });
+        },
+
+        // Delete firm account
+        deleteFirmAccount(id) { 
+            axios.delete(`/api/firm-accounts/${id}`)
+                .then(response => {
+                    //this.modalInstance.hide();
+                    this.initializeFirmAccounts(); // Reload table data
+                })
+                .catch(error => console.error('Error deleting firm account:', error));
+        },
+
         // Show delete confirmation
         confirmDelete(id) {
             if (confirm('Are you sure you want to delete this account?')) {
@@ -516,24 +672,40 @@ export default {
                 ajax: {
                     url: '/api/firm-accounts',
                     type: 'GET',
-                    dataSrc: 'data' // Assumes the API response has a `data` field
+                    dataSrc: 'data', // Assumes the API response has a `data` field
+                    error: (xhr, error, thrown) => {
+                        console.error('Error fetching data:', error, thrown);
+                        //alert('An error occurred while fetching the data. Please try again later.');
+                    }
                 },
                 columns: [
-                    { data: 'display' },
+                    { data: 'display_text' },
                     { data: 'category.name' },
                     { data: 'account_holder' },
                     { data: 'account_number' },
                     { data: 'institution.name' },
-                    { data: 'aggregated', render: data => data ? '<i class="fas fa-check text-success"></i>' : '' },
-                    { data: 'authorised', render: data => data ? '<i class="fas fa-check text-success"></i>' : '' },
-                    { data: 'mandated', render: data => data ? '<i class="fas fa-check text-success"></i>' : '' },
+                   /*  { data: 'aggregated', render: data => data ? '<i class="fas fa-check text-success"></i>' : '' }, */
+                    { 
+                        data: 'authorizer_progress',
+                        render: (data, type, row) => {
+                            if (row.authorised && row.authorised > 0) { //console.log("data is ");console.log(data); console.log("row data"); console.log(row);
+                                return '<span class="custom-badge-success form-control"><i class="fas fa-check text-success"></i></span>';
+                            }
+                            return `<i class="custom-badge-primary form-control">${data}</i>`;
+                        }
+                    },
+                    /* { data: 'mandated', render: data => data ? '<i class="fas fa-check text-success"></i>' : '' }, */
                     {
                         data: null,
                         render: function (data, type, row) {
+                            // Conditionally display the fa-check icon
+                            const showCheckIcon = (row.authorised === null || row.authorised === 0) && row.number_of_authorizer > 0;
                             return `
-                                <button class="btn btn-outline-info btn-sm"><i class="fas fa-search"></i></button>
-                                <button class="btn btn-outline-secondary btn-sm" onclick="editFirmAccount(${row.id})"><i class="fas fa-edit"></i></button>
-                                <button class="btn btn-outline-danger btn-sm" onclick="deleteFirmAccount(${row.id})"><i class="fas fa-trash"></i></button>
+                                 ${showCheckIcon ? `<button class='btn btn-outline-info btn-sm authorize-firmaccount-btn' data-toggle='tooltip' title='Authorise this firm Account' data-id='${data.id}'><i class='fas fa-check text-success'></i></button>` : ''}
+                                 ${showCheckIcon ? '<button class="btn btn-outline-secondary btn-sm" data-toggle="tooltip" title="Edit this firm Account" onclick="editFirmAccount(${row.id})"><i class="fas fa-edit"></i></button>' : ''}
+                                  ${!showCheckIcon ? '<button class="btn btn-outline-info btn-sm" data-toggle="tooltip" title="View this firm Account"><i class="fas fa-search"></i></button>' : ''}
+                                
+                                <button class="btn btn-outline-danger btn-sm delete-firmaccount-btn" data-toggle="tooltip" title="Delete this firm Account" data-id="${data.id}"><i class="fas fa-trash"></i></button>
                             `;
                         }
                     }
@@ -550,6 +722,18 @@ export default {
                 autoWidth: true,
                 wrap: true,
             });
+
+            // Event listener for delete button
+            $('#source-accounts-table tbody').on('click', '.delete-firmaccount-btn', (event) => {
+                const id = $(event.currentTarget).data('id');
+                this.confirmFirmAccountDelete(id);
+            });
+            // Event listener for delete button
+            $('#source-accounts-table tbody').on('click', '.authorize-firmaccount-btn', (event) => {
+                const id = $(event.currentTarget).data('id');
+                this.confirmFirmAccountAuhtorize(id);
+            });
+            
         },
        // Initialize the Beneficiary Accounts DataTable
        initializeBeneficiaryAccounts() {
@@ -563,7 +747,11 @@ export default {
                 ajax: {
                     url: '/api/beneficiary-accounts',
                     type: 'GET',
-                    dataSrc: 'data' // Assumes the API response has a `data` field
+                    dataSrc: 'data', // Assumes the API response has a `data` field
+                    error: (xhr, error, thrown) => {
+                        console.error('Error fetching data:', error, thrown);
+                        //alert('An error occurred while fetching the data. Please try again later.');
+                    }
                 },
                 columns: [
                     { data: 'display_text' },
@@ -571,7 +759,30 @@ export default {
                     { data: 'company_name' },
                     { data: 'account_number' },
                     { data: 'institution.name' },
-                    { data: 'authorised', render: data => data ? '<i class="fas fa-check text-success"></i>' : '' },
+                    { 
+                        data: 'authorizer_progress',
+                        render: (data, type, row) => {
+                            if (row.authorised && row.authorised > 0) { //console.log("data is ");console.log(data); console.log("row data"); console.log(row);
+                                return '<span class="custom-badge-success form-control"><i class="fas fa-check text-success"></i></span>';
+                            }
+                            return `<i class="custom-badge-primary form-control">${data}</i>`;
+                        }
+                    },
+                    {
+                        data: null,
+                        render: function (data, type, row) {
+                            // Conditionally display the fa-check icon
+                            const showCheckIcon = (row.authorised === null || row.authorised === 0) && row.number_of_authorizer > 0;
+                            return `
+                                 ${showCheckIcon ? `<button class='btn btn-outline-info btn-sm authorize-beneficiary-btn' data-toggle='tooltip' title='Authorise this beneficiary Account' data-id='${data.id}'><i class='fas fa-check text-success'></i></button>` : ''}
+                                 ${showCheckIcon ? '<button class="btn btn-outline-secondary btn-sm" data-toggle="tooltip" title="Edit this beneficiary Account" onclick="editFirmAccount(${row.id})"><i class="fas fa-edit"></i></button>' : ''}
+                                  ${!showCheckIcon ? '<button class="btn btn-outline-info btn-sm" data-toggle="tooltip" title="View this beneficiary Account"><i class="fas fa-search"></i></button>' : ''}
+                                
+                                <button class="btn btn-outline-danger btn-sm delete-beneficiary-btn" data-toggle="tooltip" title="Delete this beneficiary Account" data-id="${data.id}"><i class="fas fa-trash"></i></button>
+                            `;
+                        }
+                    }
+                    /* { data: 'authorised', render: data => data ? '<i class="fas fa-check text-success"></i>' : '' },
                     {
                         data: null,
                         render: function (data) {
@@ -581,7 +792,7 @@ export default {
                                 <button class="btn btn-outline-danger btn-sm delete-beneficiary-btn" data-id="${data.id}"><i class="fas fa-trash"></i></button>
                             `;
                         }
-                    }
+                    } */
                 ],
                 createdRow: function(row, data, dataIndex) {
                     // Apply style to all <td> elements
@@ -606,6 +817,12 @@ export default {
             $('#beneficiary-accounts-table tbody').on('click', '.delete-beneficiary-btn', (event) => {
                 const id = $(event.currentTarget).data('id');
                 this.confirmDelete(id);
+            });
+             // Event listener for delete button
+             $('#beneficiary-accounts-table tbody').on('click', '.authorize-beneficiary-btn', (event) => {
+               
+                const id = $(event.currentTarget).data('id');
+                this.confirmBeneficiaryAuhtorize(id);
             });
         },
         // Method to load both accounts when Firm Accounts tab is clicked

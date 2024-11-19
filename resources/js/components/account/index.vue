@@ -176,8 +176,8 @@
 <script>
 import axios from 'axios';
 import $ from 'jquery';
-import 'datatables.net';
-import 'datatables.net-bs5';
+/* import 'datatables.net';
+import 'datatables.net-bs5'; */
 import moment from 'moment';
 import { useToast } from 'vue-toastification';
 
@@ -238,6 +238,8 @@ export default {
             this.accountsTable = $('#accounts-table').DataTable({
                 processing: true,
                 serverSide: true,
+                paging: true, // Ensure pagination is enabled
+                pageLength: 10, // Number of records per page
                 ajax: {
                     url: '/api/accounts',
                     type: 'GET',
@@ -253,7 +255,7 @@ export default {
                             return `<span class="badge bg-default pr-3 pl-3">${data.generated_file_count > 0 ? 'Manual' : 'File Upload'}</span>`;
                         }
                     },
-                    { data: 'display' },
+                    { data: 'display_text' },
                     { data: 'institution_name' },
                     { data: 'account_number' },
                     { 
@@ -320,6 +322,8 @@ export default {
                 destroy: true,
                
                 drawCallback: () => {
+                    
+
                     $('#accounts-table').off('click', '.generate-file-btn').on('click', '.generate-file-btn', (event) => {
                         const sourceAccountId = $(event.currentTarget).data('id');
                        
@@ -382,7 +386,7 @@ export default {
                     }
                 },
                 columns: [
-                    { data: 'display' },
+                    { data: 'display_text' },
                     { data: 'default_file_name' }, // This will display "Default - {account_number}"
                     { data: 'payments' },
                     { data: 'date_generated'},
@@ -390,6 +394,17 @@ export default {
                     { data: 'status' },
                     
                 ],
+                createdRow: (row, data, dataIndex) => {
+                   
+                    $(row).find('.file-management-btn').on('click', (event) => {
+                        const fileId = $(event.currentTarget).data('file-id');
+                        if (fileId) {
+                            this.navigateToFileManagement(fileId);
+                        }
+                    });
+
+                    $('td', row).css('word-wrap', 'break-word').css('white-space', 'normal');
+                },
                 responsive: true,
                 destroy: true,
             });
@@ -413,7 +428,7 @@ export default {
                     }
                 },
                 columns: [
-                    { data: 'display' },
+                    { data: 'display_text' },
                     { data: 'file_name' },
                     { data: 'payments' },
                     { data: 'date_completed' },

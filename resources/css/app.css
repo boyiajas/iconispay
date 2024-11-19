@@ -73,3 +73,21 @@ a{
 .bg-faded{
     background-color: #f3f3f3;
 }
+
+.custom-badge-success{
+    border-radius: 5px;
+    text-align: center;
+    color: #fff;
+    font-weight: bold;
+    border: solid 1px #95c195;
+    background-color: #e8f9f1;
+}
+
+.custom-badge-primary{
+    border-radius: 5px;
+    text-align: center;
+    color: #149dd5;
+    font-weight: bold;
+    border: solid 1px #95b9c1;
+    background-color: #e3faff;
+}

@@ -25,10 +25,9 @@ class BeneficiaryAccount extends Model
         'my_reference',
         'recipient_reference',
         'authorised',
-        'authorized_user_id',
-        'authorized_at',
         'verified',
         'avs_verified_at',
+        'number_of_authorizer',
         'verification_status',
         'account_found',
         'account_open',
@@ -66,9 +65,27 @@ class BeneficiaryAccount extends Model
         return $this->belongsTo(AccountType::class, 'account_type_id');
     }
 
-    public function authorizedBy()
+     /**
+     * Relationship with the Authorizer model.
+     */
+    public function authorizers()
     {
-        return $this->belongsTo(User::class, 'authorized_user_id');
+        return $this->hasMany(Authorizer::class);
+    }
+
+    /**
+     * Method to get authorizer details including the authorized date.
+     */
+    public function getAuthorizerDetails()
+    {
+        return $this->authorizers->map(function ($authorizer) {
+            return [
+                'user_id' => $authorizer->user_id,
+                'authorized_date' => $authorizer->created_at,
+                'user_name' => $authorizer->user->name, // Assuming the User model has a 'name' attribute
+                'email' => $authorizer->user->email
+            ];
+        });
     }
 
     /**

@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Authorizer;
 use App\Models\FileUpload;
 use App\Models\FirmAccount;
 use App\Models\Requisition;
@@ -15,8 +16,33 @@ class FirmAccountController extends Controller
      */
     public function index()
     {
-        // Get the FirmAccount data with related 'institution'
-        $firmaccounts = FirmAccount::with('institution','category','accounttype');
+        // Get the FirmAccount data with related 'institution', 'category', and 'accountType'
+        $firmaccounts = FirmAccount::with('institution', 'category', 'accountType')
+            ->get()
+            ->map(function ($firmAccount) {
+                // Check if the firm account has not been authorized
+                if (!$firmAccount->authorised ) {
+                    // Count the number of entries in the Authorizer model for this firm account
+                    $authorizerCount = $firmAccount->authorizers()->count() ?? 0;
+                    $numberOfAuthorizer = $firmAccount->number_of_authorizer ?? 0;
+
+                    if ($authorizerCount > 0 && $authorizerCount == $numberOfAuthorizer) {
+                        // If the count matches, set 'authorised' to 1
+                        $firmAccount->authorised = 1;
+                        $firmAccount->save();
+                    } else {
+                        // Otherwise, set a custom property to indicate the authorizer progress
+                        $firmAccount->authorizer_progress = "$authorizerCount of $numberOfAuthorizer";
+                    }
+                } else {
+                    // Count the number of entries in the Authorizer model for this firm account
+                    $authorizerCount = $firmAccount->authorizers()->count() ?? 0;
+                    // If already authorized, set authorizer progress as complete
+                    $firmAccount->authorizer_progress = ($authorizerCount) ." of ".($firmAccount->number_of_authorizer ?? 0);
+                }
+
+                return $firmAccount;
+            });
 
         // Use the DataTables facade to return data in the required format
         return DataTables::of($firmaccounts)->make(true);
@@ -68,7 +94,7 @@ class FirmAccountController extends Controller
 
             return [
                 'method' => ucfirst($account->method),
-                'display' => $account->display,
+                'display_text' => $account->display_text,
                 'institution_name' => $account->institution->name ?? 'N/A',
                 'account_number' => $account->account_number,
                 'ready_for_payment' => [
@@ -105,7 +131,7 @@ class FirmAccountController extends Controller
 
         // Prepare the file details to return
         $fileDetails = [
-            'accountName' => $firmAccount->display,
+            'accountName' => $firmAccount->display_text,
             'institution' => $firmAccount->institution->name ?? 'N/A',
             'accountNumber' => $firmAccount->account_number,
             'accountHolder' => $firmAccount->account_holder,
@@ -151,6 +177,61 @@ class FirmAccountController extends Controller
         return response()->json($fileDetails);
     }
 
+    public function authorise(Request $request, $sourceAccountId)
+    {
+        // Find the FirmAccount by ID
+        $firmAccount = FirmAccount::findOrFail($sourceAccountId);
+
+        // Check if the firm account has already been authorized
+        if ($firmAccount->authorised) {
+            return response()->json([
+                'message' => 'This firm account has already been authorised.'
+            ], 201);
+        }
+
+        // Check if the user has already authorized this firm account
+        $userId = $request->user()->id; // Assuming the user is authenticated and you have their ID
+        $existingAuthorizer = Authorizer::where('firm_account_id', $firmAccount->id)
+            ->where('user_id', $userId)
+            ->first();
+
+        if ($existingAuthorizer) {
+            return response()->json([
+                'message' => 'You have already authorized this firm account.'
+            ], 201);
+        }
+
+        // Create a new Authorizer record
+        Authorizer::create([
+            'firm_account_id' => $firmAccount->id,
+            'beneficiary_account_id' => null, // You can set this if applicable
+            'user_id' => $userId,
+        ]);
+
+        // Count the number of authorizer entries for this firm account
+        $authorizerCount = $firmAccount->authorizers()->count();
+        $numberOfAuthorizer = $firmAccount->number_of_authorizer;
+
+        // Check if the current number of authorizers meets the required number
+        if ($authorizerCount >= $numberOfAuthorizer) {
+            // Mark the firm account as authorised
+            $firmAccount->authorised = 1;
+            $firmAccount->save();
+
+            return response()->json([
+                'message' => 'Firm account has been successfully authorised.',
+                'authoriser_count' => $authorizerCount,
+                'required_count' => $numberOfAuthorizer
+            ], 200);
+        }
+
+        // If not enough authorizers, return the current progress
+        return response()->json([
+            'message' => 'Not enough authorizers to authorise this firm account.',
+            'authoriser_count' => $authorizerCount,
+            'required_count' => $numberOfAuthorizer
+        ], 201);
+    }
 
     public function generateFile(Request $request, $sourceAccountId)
     {
@@ -180,9 +261,40 @@ class FirmAccountController extends Controller
         // Create the file and add information about each requisition
         $fileContent = '';
         $requisitionIds = []; // Collect requisition IDs to save in FileUpload
+        $bank = 'ABSA';
+        $absacount = 1001;
+        $company_name = "STRAUSS DALY INCORPORATED";
 
         foreach ($requisitions as $requisition) {
-            $fileContent .= "Payment for requisition #{$requisition->id}\n";
+            foreach ($requisition->payments as $payment) {
+
+                //here we building the content of the files
+                switch ($bank) {
+                    case 'ABSA':
+                        
+                        $fileContent .= "ABSADATA\t"."3450000".$absacount."C".$company_name."\t\t";
+                        $fileContent .= $firmAccount->account_number."".$firmAccount->branch_code."3".$payment->my_reference;
+                        $fileContent .= "\t\t".$payment->recipient_reference;
+                        $fileContent .= "\t\t".$payment->beneficiaryAccount->account_number.$payment->beneficiaryAccount->branch_code.$payment->recipient_reference;
+                        $fileContent .= "\t\t". number_format($payment->amount, 2, '.', ',');
+                        $fileContent .= \Carbon\Carbon::parse($payment->create_at)->format('ymd')."N  0000000CNAD HOC\n";
+
+                        //$fileContent .= "Payment for requisition #{$requisition->id}\n";
+
+                        break;
+                    
+                    default:
+                        # code...
+                        break;
+                }
+                
+                $absacount += 1000;
+            }
+
+            
+
+
+
             $requisitionIds[] = $requisition->id; // Add requisition ID to the array
 
             // Optionally, update each requisition's status_id to 6 (processed)
@@ -223,7 +335,7 @@ class FirmAccountController extends Controller
         // Prepare the file details
         $fileDetails = [
             'fileId' => $fileUpload->id,
-            'accountName' => $fileUpload->firmAccount->display,
+            'accountName' => $fileUpload->firmAccount->display_text,
             'accountHolder' => $fileUpload->firmAccount->account_holder,
             'accountNumber' => $fileUpload->firmAccount->account_number,
             'status' => 'Generated',
@@ -308,7 +420,7 @@ class FirmAccountController extends Controller
                 $editButton = '<span class="pull-right btn btn-sm btn-default-default py-0 px-1"><i class="fas fa-edit"></i></span>';
 
                 return [
-                    'display' => $account->display,
+                    'display' => $account->display_text,
                     'file_name' => "Default - {$account->account_number} (".\Carbon\Carbon::parse($generatedAt)->format('Y-m-d Hi').")",
                     'payments' => $totalPayments,
                     'date_generated' => $dateGenerated,
@@ -345,7 +457,7 @@ class FirmAccountController extends Controller
                 $editButton = '<span class="pull-right btn btn-sm btn-default-default py-0 px-1"><i class="fas fa-edit"></i></span>';
 
                 return [
-                    'display' => $account->display,
+                    'display' => $account->display_text,
                     'default_file_name' => "Default - {$account->account_number}",
                     'payments' => $requisition->payments->count(),
                     'date_generated' => $dateGenerated,
@@ -367,53 +479,6 @@ class FirmAccountController extends Controller
 
         return response()->json(['data' => $data]);
     }
-
-
-
-
-    /* public function getPendingConfirmationFiles()
-    {
-        // Retrieve FirmAccounts that have 'pending_confirmation' requisitions (status_id 3)
-        $pendingFiles = FirmAccount::whereHas('requisitions', function ($query) {
-            $query->where('status_id', 5);
-        })->with(['requisitions' => function ($query) {
-            $query->where('status_id', 5)
-            ->has('fileUploads')// Ensure requisitions have file uploads
-            ->with('fileUploads', 'payments'); // Load file uploads and payments
-        }, 'institution'])->get();
-
-        // Flatten and map each account's requisitions and file uploads
-        $data = $pendingFiles->flatMap(function ($account) {
-            return $account->requisitions->map(function ($requisition) use ($account) {
-                // Check if any file uploads exist for this requisition
-                $hasFiles = $requisition->fileUploads->isNotEmpty();
-                $dateGenerated = $hasFiles ? $requisition->fileUploads->max('generated_at')->format('d M Y H:i') : null;
-
-                 // HTML for the edit button
-            $editButton = '<span class="pull-right btn btn-sm btn-default-default py-0 px-1"><i class="fas fa-edit"></i></span>';
-
-
-                return [
-                    'display' => $account->display,
-                    'default_file_name' => "Default - {$account->account_number}",
-                    'payments' => $requisition->payments->count(),
-                    'date_generated' => $dateGenerated,
-                    'total_amount' => $requisition->calculateTransactionValue(),
-                    'status' => $statusWithButton = ($hasFiles ? '<span class="badge bg-info">Generated</span>' : '<span class="badge badge-default">No open files</span>') . ' ' . $editButton,
-                    /* 'files' => $requisition->fileUploads->map(function ($fileUpload) {
-                        return [
-                            'file_name' => $fileUpload->file_name, // Name of the generated file
-                            'download_url' => route('secure.download', ['fileId' => $fileUpload->id]), // Secure download route
-                            'date_generated' => $fileUpload->generated_at->format('d M Y H:i'), // File generation date
-                        ];
-                    })->all() * // Convert file uploads to array format
-                ];
-            });
-        })->all(); // Convert entire result to array format for JSON response
-
-        return response()->json(['data' => $data]);
-    }
- */
 
     public function getPendingConfirmationFiles()
     {
@@ -443,12 +508,14 @@ class FirmAccountController extends Controller
                 });
 
                 $dateGenerated = \Carbon\Carbon::parse($generatedAt)->format('d M Y H:i');
+                $fileId = $requisitions->first()->fileUploads->first()->id; // Get the file ID from the first file upload
+
 
                 // HTML for the edit button
-                $editButton = '<span class="pull-right btn btn-sm btn-default-default py-0 px-1"><i class="fas fa-edit"></i></span>';
+                $editButton = "<span class='pull-right btn btn-sm btn-default-default py-0 px-1 file-management-btn' data-file-id='{$fileId}'><i class='fas fa-edit'></i></span>";
 
                 return [
-                    'display' => $account->display,
+                    'display' => $account->display_text,
                     'default_file_name' => "Default - {$account->account_number} (".\Carbon\Carbon::parse($generatedAt)->format('Y-m-d Hi').")",
                     'payments' => $totalPayments,
                     'date_generated' => $dateGenerated,
@@ -481,7 +548,7 @@ class FirmAccountController extends Controller
         $data = $closedFiles->map(function ($account) {
             $requisition = $account->requisitions()->where('status_id', 6)->first();
             return [
-                'display' => $account->display,
+                'display' => $account->display_text,
                 'file_name' => "Default - {$account->account_number}",
                 'payments' => $requisition ? $requisition->payments()->count() : 0,
                 'date_completed' => $requisition ? $requisition->updated_at->format('d M Y') : '',
@@ -506,7 +573,65 @@ class FirmAccountController extends Controller
      */
     public function store(Request $request)
     {
-        //
+         // Validate the incoming request
+         $validated = $request->validate([
+            'displayText' => 'required|string|max:255',
+            'accountHolderType' => 'required|in:natural,juristic',
+            'accountNumber' => 'required|string|max:50',
+            'accountCategory' => 'required|integer',
+            'accountType' => 'required|exists:account_types,id',
+            'institution' => 'required|exists:institutions,id',
+            'branchCode' => 'nullable|string|max:20',
+            'initials' => 'nullable|string|max:10',
+            'surname' => 'nullable|string|max:100',
+            'companyName' => 'nullable|string|max:255',
+            'idNumber' => 'nullable|string|max:50',
+            'registrationNumber' => 'nullable|string|max:100',
+            'myReference' => 'nullable|string|max:100',
+            'recipientReference' => 'nullable|string|max:100',
+            'verified' => 'boolean',
+            'number_of_authorizer' => 'nullable|integer',
+            'emailAddress' => 'nullable|string|email|max:255',
+            'phoneNumber' => 'nullable|string|max:20',
+            //'numberOfAuthorizer' => 'required|array', // List of authorizers
+        ]);
+
+        // Check if the accountNumber already exists
+        $existingAccount = FirmAccount::where('account_number', $request->input('accountNumber'))->first();
+        if ($existingAccount) {
+            return response()->json([
+                'message' => 'The account number already exists.'
+            ], 400);
+        }
+
+         // Create the FirmAccount
+        $firmAccount = FirmAccount::create([
+            'display_text' => $request->input('displayText'),
+            'category_id' => $request->input('accountCategory'),
+            'account_holder_type' => $request->input('accountHolderType'),
+            'account_holder' => $request->input('displayText'),
+            'account_number' => $request->input('accountNumber'),
+            'account_type_id' => $request->input('accountType'),
+            'institution_id' => $request->input('institution.id'),
+            'branch_code' => $request->input('branchCode'),
+            'initials' => $request->input('initials'),
+            'surname' => $request->input('surname'),
+            'company_name' => $request->input('companyName'),
+            'id_number' => $request->input('idNumber'),
+            'registration_number' => $request->input('registrationNumber'),
+            'my_reference' => $request->input('myReference'),
+            'recipient_reference' => $request->input('recipientReference'),
+            'verified' => $request->input('verified'),
+            //'authorised' => $request->input('verified'),
+            'number_of_authorizer' => $request->input('numberOfAuthorizer'),
+            'user_id' => auth()->id(),
+        ]);
+
+
+       
+        //$firmAccount = FirmAccount::create($validated);
+         
+        return response()->json($firmAccount, 201);
     }
 
     /**
@@ -515,7 +640,7 @@ class FirmAccountController extends Controller
     public function show(FirmAccount $firmAccount)
     {
         // Return the firmAccount with any required relationships, such as the user who created it
-        return response()->json($firmAccount->load('institution','deposits.user','payments.user','payments.accounttype', 'payments.institution'));
+        return response()->json($firmAccount->load('institution','deposits.user','payments.user','payments.accountType', 'payments.institution'));
     }
 
     /**
@@ -539,6 +664,19 @@ class FirmAccountController extends Controller
      */
     public function destroy(FirmAccount $firmAccount)
     {
-        //
+         // Get all associated requisitions
+         $requisitions = $firmAccount->requisitions;
+        if(count($requisitions) > 0){
+            // Create an instance of the RequisitionController
+            $requisitionController = new RequisitionController();
+
+            // Loop through each Requisition and call the destroy method
+            foreach ($requisitions as $requisition) {
+                $requisitionController->destroy($requisition);
+            }
+        }
+
+        $firmAccount->delete();
+        return response()->json(['message' => 'Firm Account deleted successfully.']);
     }
 }

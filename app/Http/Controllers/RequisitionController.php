@@ -26,10 +26,10 @@ class RequisitionController extends Controller
         // Check if the user has an 'admin' or 'authorizer' role
        if ($user->hasRole('admin') || $user->hasRole('authoriser')) {
            // If the user is an admin or authorizer, get all incomplete requisitions
-           $query = Requisition::with('user');
+           $query = Requisition::with('user','payments','payments.beneficiaryAccount');
        } else {
            // Otherwise, get incomplete requisitions created by the user
-           $query = Requisition::with('user')->where('created_by', $user->id)->get();
+           $query = Requisition::with('user','payments','payments.beneficiaryAccount')->where('created_by', $user->id)->get();
            //$matters = Matter::with('status', 'user')::where('created_by', $user->id)->get();
        }
         /* $matters = Requisition::with('user')->get();
@@ -130,8 +130,48 @@ class RequisitionController extends Controller
     {
         
         try {
-            // Return the requisition with any required relationships, such as the user who created it
-            return response()->json($requisition->load('user', 'authorizedBy', 'firmAccount.institution', 'payments.beneficiaryAccount', 'payments.beneficiaryAccount.institution', 'deposits.firmAccount', 'deposits.user'));
+            // Eager load the relationships
+            $requisition->load(
+                'user',
+                'authorizedBy',
+                'firmAccount.institution',
+                'payments.beneficiaryAccount.institution',
+                'payments.payToFirmAccount.institution',
+                'payments.beneficiaryAccount.accountType',
+                'payments.payToFirmAccount.accountType',
+                //'payments.payToFirmAccount',
+                'payments.sourceFirmAccount',
+                'deposits.firmAccount',
+                'deposits.user'
+            );
+
+            // Transform the requisition data to include payToAccount details
+            $requisitionData = $requisition->toArray();
+
+            // Add payToAccount details for each payment
+            $requisitionData['payments'] = $requisition->payments->map(function ($payment) {
+                $paymentData = $payment->toArray();
+
+                // Get the payToAccount and include its institution details
+                $payToAccount = $payment->payToAccount;
+                $payToAccountData = $payToAccount ? $payToAccount->toArray() : null;
+
+                if ($payToAccount && $payToAccount->institution) {
+                    $payToAccountData['institution'] = $payToAccount->institution->toArray();
+                }
+
+                if ($payToAccount && $payToAccount->accountType) {
+                    $payToAccountData['account_type'] = $payToAccount->accountType->toArray();
+                }
+
+                // Include the transformed payToAccount in the payment data
+                $paymentData['beneficiary_account'] = $payToAccountData;
+               
+                return $paymentData;
+            });
+
+            return response()->json($requisitionData);
+            
         } catch (\Exception $e) {
             // Log the error message
             \Log::error('Error getting requisition: ' . $e->getMessage());

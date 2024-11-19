@@ -2,7 +2,7 @@
     <div class="container mt-4">
         <!-- Account Header -->
         <div class="account-header mb-4">
-            <h4>Account Files <span style="color:#999;font-weight: normal;font-size: 20px;">{{ accountData.display }} - {{ accountData.account_number }} ({{ accountData.branch_code	 }})</span></h4>
+            <h4>Account Files <span style="color:#999;font-weight: normal;font-size: 20px;">{{ accountData.display_text }} - {{ accountData.account_number }} ({{ accountData.branch_code	 }})</span></h4>
             <p>Account Holder: {{ accountData.account_holder }}</p>
         </div>
 
@@ -110,7 +110,7 @@ export default {
                     }
                 },
                 columns: [
-                    { data: 'display' },
+                    { data: 'display_text' },
                     /* { data: 'file_name' }, */
                     { data: 'file_name' },
                     { data: 'payments' },
@@ -141,7 +141,7 @@ export default {
                     }
                 },
                 columns: [
-                    { data: 'display' },
+                    { data: 'display_text' },
                     {
                         data: 'files',
                         render: (data, row) => {

@@ -18,4 +18,9 @@ class Category extends Model
     {
         return $this->hasMany(BeneficiaryAccount::class, 'category_id');
     }
+
+    public function firmAccounts()
+    {
+        return $this->hasMany(FirmAccount::class, 'category_id');
+    }
 }

@@ -11,7 +11,7 @@ class SourceAccountSeeder extends Seeder
     {
         $sourceAccounts = [
             [
-                'display' => 'Legal Assoc Absa Trust Account',
+                'display_text' => 'Legal Assoc Absa Trust Account',
                 'account_holder_type' => 'natural',//juristic
                 'category_id' => 4,
                 'account_holder' => 'Legal Associates',
@@ -22,9 +22,10 @@ class SourceAccountSeeder extends Seeder
                 'aggregated' => true,
                 'authorised' => true,
                 'mandated' => true,
+                'user_id' => 2
             ],
             [
-                'display' => 'Legal Assoc FNB Trust Account',
+                'display_text' => 'Legal Assoc FNB Trust Account',
                 'account_holder_type' => 'juristic',//juristic
                 'category_id' => 3,
                 'account_holder' => 'Legal Assoc',
@@ -35,9 +36,10 @@ class SourceAccountSeeder extends Seeder
                 'aggregated' => true,
                 'authorised' => true,
                 'mandated' => true,
+                'user_id' => 2
             ],
             [
-                'display' => 'Legal Assoc Standard Bank Trust Account',
+                'display_text' => 'Legal Assoc Standard Bank Trust Account',
                 'account_holder_type' => 'juristic',//juristic
                 'category_id' => 4,
                 'account_holder' => 'Legal Assoc',
@@ -48,9 +50,10 @@ class SourceAccountSeeder extends Seeder
                 'aggregated' => true,
                 'authorised' => true,
                 'mandated' => true,
+                'user_id' => 2
             ],
             [
-                'display' => 'Legal Assoc Nedbank Trust Account',
+                'display_text' => 'Legal Assoc Nedbank Trust Account',
                 'account_holder_type' => 'juristic',//juristic
                 'category_id' => 2,
                 'account_holder' => 'Legal Assoc',
@@ -61,9 +64,10 @@ class SourceAccountSeeder extends Seeder
                 'aggregated' => true,
                 'authorised' => false,
                 'mandated' => false,
+                'user_id' => 2
             ],
             [
-                'display' => 'Legal Assoc ABSA General Account',
+                'display_text' => 'Legal Assoc ABSA General Account',
                 'account_holder_type' => 'natural',//juristic
                 'category_id' => 1,
                 'account_holder' => 'Legal Associates',
@@ -74,9 +78,10 @@ class SourceAccountSeeder extends Seeder
                 'aggregated' => false,
                 'authorised' => false,
                 'mandated' => true,
+                'user_id' => 2
             ],
             [
-                'display' => 'Legal Assoc FNB Business Account',
+                'display_text' => 'Legal Assoc FNB Business Account',
                 'account_holder_type' => 'natural',//juristic
                 'category_id' => 4,
                 'account_holder' => 'Legal Associates',
@@ -87,9 +92,10 @@ class SourceAccountSeeder extends Seeder
                 'aggregated' => false,
                 'authorised' => true,
                 'mandated' => true,
+                'user_id' => 2
             ],
             [
-                'display' => 'Legal Assoc Standard Bank Current Account',
+                'display_text' => 'Legal Assoc Standard Bank Current Account',
                 'account_holder_type' => 'natural',//juristic
                 'category_id' => 6,
                 'account_holder' => 'Legal Assoc',
@@ -100,9 +106,10 @@ class SourceAccountSeeder extends Seeder
                 'aggregated' => true,
                 'authorised' => false,
                 'mandated' => false,
+                'user_id' => 2
             ],
             [
-                'display' => 'Legal Assoc Nedbank Savings Account',
+                'display_text' => 'Legal Assoc Nedbank Savings Account',
                 'account_holder_type' => 'natural',//juristic
                 'category_id' => 4,
                 'account_holder' => 'Legal Associates',
@@ -113,9 +120,10 @@ class SourceAccountSeeder extends Seeder
                 'aggregated' => false,
                 'authorised' => true,
                 'mandated' => false,
+                'user_id' => 2
             ],
             [
-                'display' => 'Capitec Savings Account',
+                'display_text' => 'Capitec Savings Account',
                 'account_holder_type' => 'juristic',//juristic
                 'category_id' => 4,
                 'account_holder' => 'Legal Associates',
@@ -126,9 +134,10 @@ class SourceAccountSeeder extends Seeder
                 'aggregated' => false,
                 'authorised' => true,
                 'mandated' => false,
+                'user_id' => 2
             ],
             [
-                'display' => 'Legal Assoc Fnb Cheque Account',
+                'display_text' => 'Legal Assoc Fnb Cheque Account',
                 'account_holder_type' => 'juristic',//juristic
                 'category_id' => 3,
                 'account_holder' => 'In2assets Property Auctions',
@@ -139,9 +148,10 @@ class SourceAccountSeeder extends Seeder
                 'aggregated' => true,
                 'authorised' => true,
                 'mandated' => false,
+                'user_id' => 2
             ],
             [
-                'display' => 'Nedbank Savings Account',
+                'display_text' => 'Nedbank Savings Account',
                 'account_holder_type' => 'natural',//juristic
                 'category_id' => 4,
                 'account_holder' => 'Legal Associates',
@@ -152,9 +162,10 @@ class SourceAccountSeeder extends Seeder
                 'aggregated' => false,
                 'authorised' => false,
                 'mandated' => false,
+                'user_id' => 2
             ],
             [
-                'display' => 'Legal Assoc Fnb Bussiness Account',
+                'display_text' => 'Legal Assoc Fnb Bussiness Account',
                 'account_holder_type' => 'juristic',//juristic
                 'category_id' => 4,
                 'account_holder' => 'Xpress Home',
@@ -165,6 +176,7 @@ class SourceAccountSeeder extends Seeder
                 'aggregated' => false,
                 'authorised' => true,
                 'mandated' => false,
+                'user_id' => 1
             ]
         ];
 

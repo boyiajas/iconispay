@@ -29,6 +29,7 @@ return new class extends Migration
             $table->string('recipient_reference')->nullable(); // Recipient's reference for aggregated payments
             $table->boolean('authorised')->default(false); // Whether the account is authorised
             $table->string('avs_verified_at')->nullable();
+            $table->integer('number_of_authorizer')->nullable(); // Number of authorizers required
             
             // Fields for Account Verification Service (AVS)
             $table->boolean('verified')->default(false); // Whether the account has been verified

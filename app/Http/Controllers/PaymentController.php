@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\BeneficiaryAccount;
+use App\Models\FirmAccount;
 use App\Models\Payment;
 use App\Models\Requisition;
 use Illuminate\Http\Request;
@@ -54,64 +55,81 @@ class PaymentController extends Controller
                 // Optional: add validation for `verification_status` if needed
             ]);
 
-            // Step 1: Check if the beneficiary account exists or create a new one
-          
-            $beneficiaryAccount = BeneficiaryAccount::where('account_number', $validated['account_number'])->first();
-
-            if(!$beneficiaryAccount){
-                //$beneficiaryAccount = BeneficiaryAccount::where('account_number', $validated['account_number'])->first();
-
-                // If the account does not exist, populate additional fields and save it
-                $beneficiaryAccount = BeneficiaryAccount::create([
-                    'display_text' => $request->input('account_holder_type') === 'natural' 
-                        ? $validated['initials'] . ' ' . $validated['surname'] 
-                        : $validated['company_name'],
+             // Step 1: Check if the account number exists in FirmAccount
+            $firmAccount = FirmAccount::where('account_number', $validated['account_number'])->first();
+            if ($firmAccount) {
+                // If the account exists in FirmAccount, create a new payment with payment type 'F'
+                $payment = Payment::create([
+                    'firm_account_id' => $validated['firm_account_id'],
+                    'beneficiary_account_id' => $firmAccount->id,
+                    'requisition_id' => $validated['requisition_id'],
                     'category_id' => $validated['category'],
-                    'account_holder_type' => $request->input('account_holder_type'),
-                    'initials' => $validated['initials'],
-                    'surname' => $validated['surname'],
-                    'company_name' => $validated['company_name'],
-                    'registration_number' => $validated['registration_number'],
-                    'account_number' => $validated['account_number'],
-                    'id_number' => $validated['id_number'],
-                    'account_type_id' => $request->account_type['id'],
-                    'institution_id' => $request->institution['id'],
-                    'branch_code' => $validated['branch_code'],
+                    'description' => $validated['description'],
+                    'amount' => $validated['amount'],
                     'my_reference' => $validated['my_reference'],
                     'recipient_reference' => $validated['recipient_reference'],
+                    'user_id' => auth()->id(),
                     'authorised' => $request->input('authorised', false),
                     'verified' => $validated['verified'] ?? false,
-                    'verification_status' => $validated['verification_status'] ?? null,
+                    'account_type' => 'F'
+                ]);
+            } else {
+                // Step 2: Check if the account number exists in BeneficiaryAccount
+                $beneficiaryAccount = BeneficiaryAccount::where('account_number', $validated['account_number'])->first();
+                if (!$beneficiaryAccount) {
+                    // If the account does not exist in BeneficiaryAccount, create a new one
+                    $beneficiaryAccount = BeneficiaryAccount::create([
+                        'display_text' => $request->input('account_holder_type') === 'natural'
+                            ? $validated['initials'] . ' ' . $validated['surname']
+                            : $validated['company_name'],
+                        'category_id' => $validated['category'],
+                        'account_holder_type' => $request->input('account_holder_type'),
+                        'initials' => $validated['initials'],
+                        'surname' => $validated['surname'],
+                        'company_name' => $validated['company_name'],
+                        'registration_number' => $validated['registration_number'],
+                        'account_number' => $validated['account_number'],
+                        'id_number' => $validated['id_number'],
+                        'account_type_id' => $request->account_type['id'],
+                        'institution_id' => $request->institution['id'],
+                        'branch_code' => $validated['branch_code'],
+                        'my_reference' => $validated['my_reference'],
+                        'recipient_reference' => $validated['recipient_reference'],
+                        'authorised' => $request->input('authorised', false),
+                        'verified' => $validated['verified'] ?? false,
+                        'verification_status' => $validated['verification_status'] ?? null,
+                        'user_id' => auth()->id(),
+                    ]);
+                }
+
+                 // Step 3: Create a new payment linked to the BeneficiaryAccount with payment type 'B'
+                $payment = Payment::create([
+                    'firm_account_id' => $validated['firm_account_id'],
+                    'requisition_id' => $validated['requisition_id'],
+                    'beneficiary_account_id' => $beneficiaryAccount->id,
+                    'category_id' => $validated['category'],
+                    'description' => $validated['description'],
+                    'amount' => $validated['amount'],
+                    'my_reference' => $validated['my_reference'],
+                    'recipient_reference' => $validated['recipient_reference'],
                     'user_id' => auth()->id(),
+                    'authorised' => $request->input('authorised', false),
+                    'verified' => $validated['verified'] ?? false,
+                    'account_type' => 'B'
                 ]);
             }
 
-            // Step 2: Create the payment record linked to the beneficiary account
-            $payment = Payment::create([
-                'firm_account_id' => $validated['firm_account_id'],
-                'requisition_id' => $validated['requisition_id'],
-                'beneficiary_account_id' => $beneficiaryAccount->id,
-                'category_id' => $validated['category'],
-                'description' => $validated['description'],
-                'amount' => $validated['amount'],
-                'my_reference' => $validated['my_reference'],
-                'recipient_reference' => $validated['recipient_reference'],
-                'user_id' => auth()->id(),
-                'authorised' => $request->input('authorised', false),
-                'verified' => $validated['verified'] ?? false,
-            ]);
-
-             // Check if the requisition has existing deposits
+            // Step 4: Check if the requisition has existing deposits
             $requisition = Requisition::find($validated['requisition_id']);
             if ($requisition->deposits()->exists()) {
                 // Update requisition status_id to 3 if a deposit already exists
                 $requisition->update(['status_id' => 3]);
             }
 
-            // Eager load the user relationship and return the deposit with user data
+            // Eager load the beneficiary account relationship and return the payment
             $payment->load('beneficiaryAccount');
 
-            return response()->json($payment, 201); // Return the created payment with user data
+            return response()->json($payment, 201); // Return the created payment with user data                   
 
         } catch (\Exception $e) {
             // Log the error message

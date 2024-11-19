@@ -2,17 +2,17 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Category;
+use App\Models\Authorizer;
 use Illuminate\Http\Request;
 
-class CategoryController extends Controller
+class AuthorizerController extends Controller
 {
     /**
      * Display a listing of the resource.
      */
     public function index()
     {
-        return Category::all();
+        //
     }
 
     /**
@@ -23,19 +23,6 @@ class CategoryController extends Controller
         //
     }
 
-    public function getBeneficiariesByCategory($category_id)
-    {
-        $category = Category::findOrFail($category_id);
-
-         // Get all beneficiaries and firm accounts for this category
-        $beneficiaries = $category->beneficiaries;
-        $firmAccounts = $category->firmAccounts;
-
-        // Merge both collections and return
-        $allAccounts = $beneficiaries->merge($firmAccounts);
-
-        return $allAccounts;
-    }
     /**
      * Store a newly created resource in storage.
      */
@@ -47,7 +34,7 @@ class CategoryController extends Controller
     /**
      * Display the specified resource.
      */
-    public function show(Category $category)
+    public function show(Authorizer $authorizer)
     {
         //
     }
@@ -55,7 +42,7 @@ class CategoryController extends Controller
     /**
      * Show the form for editing the specified resource.
      */
-    public function edit(Category $category)
+    public function edit(Authorizer $authorizer)
     {
         //
     }
@@ -63,7 +50,7 @@ class CategoryController extends Controller
     /**
      * Update the specified resource in storage.
      */
-    public function update(Request $request, Category $category)
+    public function update(Request $request, Authorizer $authorizer)
     {
         //
     }
@@ -71,7 +58,7 @@ class CategoryController extends Controller
     /**
      * Remove the specified resource from storage.
      */
-    public function destroy(Category $category)
+    public function destroy(Authorizer $authorizer)
     {
         //
     }

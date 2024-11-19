@@ -32,7 +32,7 @@ axios.interceptors.response.use(
   response => response, // Pass through successful responses
   error => {
       
-      if (error.response && (error.response.status === 401 || error.response.status === 500)) {
+      if (error.response && (error.response.status === 401 )) {
           
           const appComponent = app._instance.proxy;
           appComponent.showLoginModal();

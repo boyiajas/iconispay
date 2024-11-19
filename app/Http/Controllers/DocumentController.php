@@ -6,6 +6,9 @@ use App\Models\Document;
 use DataTables;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
+use Illuminate\Support\Str;
+use Exception;
 
 class DocumentController extends Controller
 {
@@ -44,34 +47,79 @@ class DocumentController extends Controller
     {
         //
     }
-
-    /**
-     * Store a newly created resource in storage.
-     */
+    
     public function store(Request $request)
     {
         // Validate the incoming request
         $request->validate([
             'description' => 'required|string|max:255',
-            'file' => 'required|mimes:pdf,jpg,jpeg,png|max:10240',  // Max size 10MB, PDF and image files only
+            'file' => 'required|mimes:pdf,jpg,jpeg,png|max:20480',  // Max size 20MB, PDF and image files only
             'requisition_id' => 'required|exists:requisitions,id'
         ]);
+    
+        try {
+            // Generate a new unique file name with the original file extension
+            $file = $request->file('file');
+            $newFileName = Str::uuid() . '.' . $file->getClientOriginalExtension();
+    
+            // Define the directory to store the file
+            $directory = 'documents';
+    
+            // Check if the directory exists, if not, create it
+            if (!Storage::exists($directory)) {
+                Storage::makeDirectory($directory);
+            }
+    
+            // Store the file securely in the specified directory
+            $filePath = $file->storeAs($directory, $newFileName);
+    
+            // Save the document in the database
+            $document = Document::create([
+                'requisition_id' => $request->input('requisition_id'),
+                'created_by' => auth()->id(),  // Assuming the user is authenticated
+                'description' => $request->input('description'),
+                'file_name' => $newFileName,
+                'file_path' => $filePath,
+                'file_type' => $file->getClientMimeType(),
+            ]);
+    
+            return response()->json([
+                'message' => 'Document uploaded successfully',
+                'document' => $document
+            ], 201);
+        } catch (Exception $e) {
+            // Handle any errors or exceptions
+            return response()->json([
+                'message' => 'An error occurred while uploading the document',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+    
+    // Method to download the file securely
+    public function download(Document $document)
+    {
+        // Check if the user is authorized to download the file
+        if ($document->created_by !== auth()->id()) {
+            abort(403, 'Unauthorized access to the file');
+        }
 
-        // Store the uploaded file
-        $filePath = $request->file('file')->store('documents', 'public');
+        // Serve the file using Storage, making sure it's only accessible to the authenticated user
+        return Storage::download($document->file_path, $document->file_name);
+    }
+    
+    public function view(Document $document)
+    {
+        // Check if the user is authorized to view the file
+        if ($document->created_by !== auth()->id()) {
+            abort(403, 'Unauthorized access to the file');
+        }
 
-        // Save the document in the database
-        $document = Document::create([
-            'requisition_id' => $request->input('requisition_id'),
-            'user_id' => auth()->id(),  // Assuming the user is authenticated
-            'description' => $request->input('description'),
-            'file_name' => $filePath
-        ]);
+        // Get the file's full path from storage
+        $filePath = Storage::path($document->file_path);
 
-        return response()->json([
-            'message' => 'Document uploaded successfully',
-            'document' => $document
-        ], 201);
+        // Return the file for viewing
+        return response()->file($filePath);
     }
 
     /**
@@ -103,6 +151,23 @@ class DocumentController extends Controller
      */
     public function destroy(Document $document)
     {
-        //
+        try {
+            // Check if the user is authorized to delete the file
+            if ($document->created_by !== auth()->id()) {
+                abort(403, 'Unauthorized action');
+            }
+
+            // Delete the file from storage
+            if (Storage::exists($document->file_path)) {
+                Storage::delete($document->file_path);
+            }
+
+            // Delete the document record from the database
+            $document->delete();
+
+            return response()->json(['message' => 'Document deleted successfully'], 200);
+        } catch (Exception $e) {
+            return response()->json(['message' => 'An error occurred while deleting the document', 'error' => $e->getMessage()], 500);
+        }
     }
 }
