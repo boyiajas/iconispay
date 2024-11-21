@@ -126,10 +126,53 @@ class PaymentController extends Controller
                 $requisition->update(['status_id' => 3]);
             }
 
-            // Eager load the beneficiary account relationship and return the payment
-            $payment->load('beneficiaryAccount');
+            // Eager load the relationships
+            $requisition->load(
+                'user',
+                'authorizedBy',
+                'lockedBy',
+                'firmAccount.institution',
+                'payments.beneficiaryAccount.institution',
+                'payments.payToFirmAccount.institution',
+                'payments.beneficiaryAccount.accountType',
+                'payments.payToFirmAccount.accountType',
+                //'payments.payToFirmAccount',
+                'payments.sourceFirmAccount',
+                'deposits.firmAccount',
+                'deposits.user'
+            );
 
-            return response()->json($payment, 201); // Return the created payment with user data                   
+            // Transform the requisition data to include payToAccount details
+            $requisitionData = $requisition->toArray();
+
+            // Add payToAccount details for each payment
+            $requisitionData['payments'] = $requisition->payments->map(function ($payment) {
+                $paymentData = $payment->toArray();
+
+                // Get the payToAccount and include its institution details
+                $payToAccount = $payment->payToAccount;
+                $payToAccountData = $payToAccount ? $payToAccount->toArray() : null;
+
+                if ($payToAccount && $payToAccount->institution) {
+                    $payToAccountData['institution'] = $payToAccount->institution->toArray();
+                }
+
+                if ($payToAccount && $payToAccount->accountType) {
+                    $payToAccountData['account_type'] = $payToAccount->accountType->toArray();
+                }
+
+                // Include the transformed payToAccount in the payment data
+                $paymentData['beneficiary_account'] = $payToAccountData;
+               
+                return $paymentData;
+            });
+
+            return response()->json($requisitionData);
+
+            // Eager load the beneficiary account relationship and return the payment
+            //$payment->load('beneficiaryAccount');
+
+            //return response()->json($payment, 201); // Return the created payment with user data                   
 
         } catch (\Exception $e) {
             // Log the error message

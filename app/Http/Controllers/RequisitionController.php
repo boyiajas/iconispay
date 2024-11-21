@@ -134,6 +134,7 @@ class RequisitionController extends Controller
             $requisition->load(
                 'user',
                 'authorizedBy',
+                'lockedBy',
                 'firmAccount.institution',
                 'payments.beneficiaryAccount.institution',
                 'payments.payToFirmAccount.institution',
@@ -218,6 +219,24 @@ class RequisitionController extends Controller
         ]);
     }
 
+    public function updateStatus(Request $request)
+    {
+        // Validate the request
+        $request->validate([
+            'requisitionIds' => 'required|array',
+            'requisitionIds.*' => 'integer'
+        ]);
+
+        // Update the status of the requisitions to 7
+        Requisition::whereIn('id', $request->requisitionIds)->update([
+            'status_id' => 7,
+            'completed_at' => Carbon::now(), 
+        ]);
+
+        return response()->json(['message' => 'Requisitions updated successfully.']);
+    }
+
+
     public function approve(Requisition $requisition)
     {
         // Update the requisition with the new values
@@ -226,13 +245,54 @@ class RequisitionController extends Controller
             'status_id' => 5,                             // Update status ID
             'authorized_user_id' => auth()->id(),         // Set the current user as the authorizer
             'authorized_at' => Carbon::now(),            // Set the current time for authorization
-            'locked' => 1 
+            'locked' => 1, 
+            'locked_at' => Carbon::now(),
+            'locked_by' => auth()->id(),
         ]);
 
         $requisition->calculateTransactionValue();
-        $requisition->load('user', 'authorizedBy', 'firmAccount.institution', 'payments.beneficiaryAccount', 'payments.beneficiaryAccount.institution', 'deposits.firmAccount', 'deposits.user');
+        $requisition->load(
+            'user', 
+            'authorizedBy', 
+            'lockedBy',
+            'firmAccount.institution', 
+            'payments.beneficiaryAccount.institution',
+            'payments.payToFirmAccount.institution',
+            'payments.beneficiaryAccount.accountType',
+            'payments.payToFirmAccount.accountType',
+            'payments.sourceFirmAccount',
+            'deposits.firmAccount',
+            'deposits.user'
+        );
 
-        return response()->json($requisition);
+        // Transform the requisition data to include payToAccount details
+        $requisitionData = $requisition->toArray();
+
+        // Add payToAccount details for each payment
+        $requisitionData['payments'] = $requisition->payments->map(function ($payment) {
+            $paymentData = $payment->toArray();
+
+            // Get the payToAccount and include its institution details
+            $payToAccount = $payment->payToAccount;
+            $payToAccountData = $payToAccount ? $payToAccount->toArray() : null;
+
+            if ($payToAccount && $payToAccount->institution) {
+                $payToAccountData['institution'] = $payToAccount->institution->toArray();
+            }
+
+            if ($payToAccount && $payToAccount->accountType) {
+                $payToAccountData['account_type'] = $payToAccount->accountType->toArray();
+            }
+
+            // Include the transformed payToAccount in the payment data
+            $paymentData['beneficiary_account'] = $payToAccountData;
+        
+            return $paymentData;
+        });
+
+        return response()->json($requisitionData);
+
+        //return response()->json($requisition);
     }
 
     public function unlockRequisition(Requisition $requisition)
@@ -241,28 +301,114 @@ class RequisitionController extends Controller
         $requisition->update([
             'authorization_status' => null,                  // Set authorization status to approved
             'status_id' => 3,                             // Update status ID
-            'authorized_user_id' => auth()->id(),         // Set the current user as the authorizer
-            'authorized_at' => Carbon::now(),            // Set the current time for authorization
-            'locked' => null 
+            'authorized_user_id' => null,         // Set the current user as the authorizer
+            'authorized_at' => null,            // Set the current time for authorization
+            'locked' => null,
+            'locked_at' => null,
+            'locked_by' => null,
         ]);
 
         $requisition->calculateTransactionValue();
-        $requisition->load('user', 'authorizedBy', 'firmAccount.institution', 'payments.beneficiaryAccount', 'payments.beneficiaryAccount.institution', 'deposits.firmAccount', 'deposits.user');
+        $requisition->load(
+            'user', 
+            'authorizedBy', 
+            'lockedBy',
+            'firmAccount.institution', 
+            'payments.beneficiaryAccount.institution',
+            'payments.payToFirmAccount.institution',
+            'payments.beneficiaryAccount.accountType',
+            'payments.payToFirmAccount.accountType',
+            'payments.sourceFirmAccount',
+            'deposits.firmAccount',
+            'deposits.user'
+        );
 
-        return response()->json($requisition);
+        // Transform the requisition data to include payToAccount details
+        $requisitionData = $requisition->toArray();
+
+        // Add payToAccount details for each payment
+        $requisitionData['payments'] = $requisition->payments->map(function ($payment) {
+            $paymentData = $payment->toArray();
+
+            // Get the payToAccount and include its institution details
+            $payToAccount = $payment->payToAccount;
+            $payToAccountData = $payToAccount ? $payToAccount->toArray() : null;
+
+            if ($payToAccount && $payToAccount->institution) {
+                $payToAccountData['institution'] = $payToAccount->institution->toArray();
+            }
+
+            if ($payToAccount && $payToAccount->accountType) {
+                $payToAccountData['account_type'] = $payToAccount->accountType->toArray();
+            }
+
+            // Include the transformed payToAccount in the payment data
+            $paymentData['beneficiary_account'] = $payToAccountData;
+        
+            return $paymentData;
+        });
+
+        return response()->json($requisitionData);
+
+        //$requisition->load('user', 'authorizedBy', 'firmAccount.institution', 'payments.beneficiaryAccount', 'payments.beneficiaryAccount.institution', 'deposits.firmAccount', 'deposits.user');
+
+        //return response()->json($requisition);
     }
 
     public function lockRequisition(Requisition $requisition)
     {
         // Update the requisition with the new values
         $requisition->update([
-            'locked' => 1 
+            'locked' => 1,
+            'locked_at' => Carbon::now(),
+            'locked_by' => auth()->id(),
         ]);
 
         $requisition->calculateTransactionValue();
-        $requisition->load('user', 'authorizedBy', 'firmAccount.institution', 'payments.beneficiaryAccount', 'payments.beneficiaryAccount.institution', 'deposits.firmAccount', 'deposits.user');
+        $requisition->load(
+            'user', 
+            'authorizedBy',
+            'lockedBy',
+            'firmAccount.institution', 
+            'payments.beneficiaryAccount.institution',
+            'payments.payToFirmAccount.institution',
+            'payments.beneficiaryAccount.accountType',
+            'payments.payToFirmAccount.accountType',
+            'payments.sourceFirmAccount',
+            'deposits.firmAccount',
+            'deposits.user'
+        );
 
-        return response()->json($requisition);
+        // Transform the requisition data to include payToAccount details
+        $requisitionData = $requisition->toArray();
+
+        // Add payToAccount details for each payment
+        $requisitionData['payments'] = $requisition->payments->map(function ($payment) {
+            $paymentData = $payment->toArray();
+
+            // Get the payToAccount and include its institution details
+            $payToAccount = $payment->payToAccount;
+            $payToAccountData = $payToAccount ? $payToAccount->toArray() : null;
+
+            if ($payToAccount && $payToAccount->institution) {
+                $payToAccountData['institution'] = $payToAccount->institution->toArray();
+            }
+
+            if ($payToAccount && $payToAccount->accountType) {
+                $payToAccountData['account_type'] = $payToAccount->accountType->toArray();
+            }
+
+            // Include the transformed payToAccount in the payment data
+            $paymentData['beneficiary_account'] = $payToAccountData;
+        
+            return $paymentData;
+        });
+
+        return response()->json($requisitionData);
+
+        //$requisition->load('user', 'authorizedBy', 'firmAccount.institution', 'payments.beneficiaryAccount', 'payments.beneficiaryAccount.institution', 'deposits.firmAccount', 'deposits.user');
+
+        //return response()->json($requisition);
     }
 
     
@@ -335,6 +481,36 @@ class RequisitionController extends Controller
         // Return the count as a JSON response
         return response()->json([
             'count' => $awaitingAuthorizationCount,
+        ]);
+    }
+
+    public function getSettledTodayRequisitions()
+    {
+        // Get the currently authenticated user
+        $user = Auth::user();
+        $statusId = 7; // Status ID for "settled" requisitions
+        $today = Carbon::today();
+
+        // Count of requisitions settled today
+        $settledTodayCount = 0;
+
+        // Check if the user has an 'admin' or 'authorizer' role
+        if ($user->hasRole('admin') || $user->hasRole('authoriser')) {
+            // If the user is an admin or authorizer, get all settled requisitions for today
+            $settledTodayCount = Requisition::where('status_id', $statusId)
+                ->whereDate('updated_at', $today)
+                ->count();
+        } else {
+            // Otherwise, get settled requisitions created by the user for today
+            $settledTodayCount = Requisition::where('created_by', $user->id)
+                ->where('status_id', $statusId)
+                ->whereDate('updated_at', $today)
+                ->count();
+        }
+
+        // Return the count as a JSON response
+        return response()->json([
+            'count' => $settledTodayCount,
         ]);
     }
     

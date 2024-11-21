@@ -18,7 +18,7 @@
             
             <div class="col-md-3 box" :class="statusClass">
                 <div class="status-card row pt-2">
-                    <div class="col-md-9">
+                    <div class="col-md-10">
                         <h6 class="fw-bold">Capturing</h6>
                         <p class="status-value mb-0 mt-3">
                             <span v-if="requisition.status_id === 1">
@@ -46,7 +46,7 @@
                     <!-- <div class="col-md-3" v-if="requisition.status_id !== 1">
                         <i class="fa fa-check-circle bg-green" aria-hidden="true"></i>
                     </div> -->
-                    <div class="col-md-3" v-if="requisition.status_id == 2">
+                    <div class="col-md-2" v-if="requisition.status_id == 2">
                         <span class="badge bg-info" v-if="requisition && requisition.deposits && requisition.deposits.length > 0 && requisition.payments && requisition.payments.length > 0">
                             {{requisition.deposits.length + requisition.payments.length}} / {{requisition.deposits.length + requisition.payments.length}}
                         </span>
@@ -58,7 +58,7 @@
                         </span>
                         <span class="badge bg-info" v-else>0 / 0</span>
                     </div>
-                    <div class="col-md-3" v-if="requisition.status_id >= 3">
+                    <div class="col-md-2" v-if="requisition.status_id >= 3">
                         <i class="fa fa-check-circle bg-green" aria-hidden="true"></i>
                     </div>
                     
@@ -66,7 +66,7 @@
             </div>
             <div class="col-md-3 incomplete box" :class="{'current': requisition.status_id == 3, 'complete': requisition.status_id >= 5}">
                 <div class="status-card row pt-2">
-                    <div class="col-md-9">
+                    <div class="col-md-10">
                         <h6 class="fw-bold">Authorization</h6>
                         <div v-if="requisition.status_id == 3">
                             <p class="status-value mb-0 mt-3">&nbsp;</p>
@@ -84,13 +84,13 @@
                         </div>
                         <p v-else class="status-value mb-0 mt-3">{{ authorizationStatus }}</p>
                     </div>
-                    <div class="col-md-3" v-if="requisition.status_id == 3">
+                    <div class="col-md-2" v-if="requisition.status_id == 3">
                         <span class="badge bg-info" v-if="requisition && requisition.payments && requisition.payments.length > 0">
                             0 / {{requisition.payments.length}}
                         </span>
                         <span class="badge bg-info" v-else>0 / 0</span>                                
                     </div>
-                    <div class="col-md-3" v-if="requisition.status_id >= 5">
+                    <div class="col-md-2" v-if="requisition.status_id >= 5">
                         <i class="fa fa-check-circle bg-green" aria-hidden="true"></i>
                     </div>
                 </div>
@@ -98,7 +98,7 @@
             </div>
             <div class="col-md-3 box" :class="{'complete': requisition.funding_status, 'incomplete': !requisition.funding_status, 'current': requisition.deposits && requisition.deposits.length > 0}">
                 <div class="status-card row pt-2">
-                    <div class="col-md-9">
+                    <div class="col-md-10">
                         <h6 class="fw-bold">Funding</h6>
                         <p class="status-value mb-0 mt-3" v-if="requisition.deposits && requisition.deposits.length > 0 && requisition.funding_status">
                             <span>
@@ -116,10 +116,10 @@
                             {{ fundingStatus }}
                         </p> -->
                     </div>
-                    <div class="col-md-3" v-if="requisition.funding_status">
+                    <div class="col-md-2" v-if="requisition.funding_status">
                         <i class="fa fa-check-circle bg-green" aria-hidden="true"></i>
                     </div>
-                    <div class="col-md-3" v-else-if="requisition.deposits && requisition.deposits.length > 0 && !requisition.funding_status">
+                    <div class="col-md-2" v-else-if="requisition.deposits && requisition.deposits.length > 0 && !requisition.funding_status">
                         <span class="badge bg-info">
                             {{requisition.deposits ? requisition.deposits.filter(deposit => deposit.funded).length : 0}}
                             / 
@@ -129,23 +129,33 @@
                     
                 </div>
             </div>
-            <div class="col-md-3 box" :class="{'incomplete': requisition.status_id !== 4, 'almostcomplete': requisition.status_id >= 5}">
+            <div class="col-md-3 box" :class="{'incomplete': requisition.status_id !== 4, 'almostcomplete': requisition.status_id <= 6, 'complete': requisition.status_id == 7}">
                 <div class="status-card row pt-2">
-                    <div class="col-md-9">
+                    <div class="col-md-10">
                         <h6 class="fw-bold">Settlement</h6>
                         <p class="status-value mt-3" v-if="requisition.status_id < 5">{{ settlementStatus }}</p>
-                        <p class="status-value mt-3" v-else-if="requisition.status_id >= 5">Pending payment</p>
+                        <p class="status-value mt-3" v-else-if="requisition.status_id == 5">Pending payment</p>
+                        <p class="status-value mt-3" v-else-if="requisition.status_id == 7">
+                            Completed on: {{ formatDate(requisition.completed_at) }}, in file: 
+                            {{ selectedSourceAccount.institution.short_name }} - {{ selectedSourceAccount.account_number }}
+                        </p>
                     </div>
-                    <div class="col-md-3" v-if="requisition.status_id >= 5">
+                    <div class="col-md-2" v-if="requisition.status_id == 5">
                         <i class="fa fa-hourglass-half text-primary" aria-hidden="true"></i>
+                    </div>
+                    <div class="col-md-2" v-else-if="requisition.status_id == 7">
+                        <i class="fa fa-check-circle bg-green" aria-hidden="true"></i>
                     </div>
                 </div>
             </div>
         </div>
         <div v-if="requisition.status_id == 3 && !requisition.locked"><a class="pull-right btn btn-white btn-default-default btn-sm" @click="lockRequisition(requisition.id)"><i class="fa fa-lock"></i> Lock</a></div>
         <div v-else-if="requisition.locked" style="display:flow-root;background-color: #eee;padding:3px;border-radius: 5px;border-left: solid 5px orange;padding-left: 10px;margin-bottom: 10px;margin-top: -10px;">
-            <span><i class="fa fa-lock"></i><b> This matter is locked.</b> It is pending payment</span>
-            <a class="pull-right btn btn-white btn-primary btn-sm" @click="unlockRequisition(requisition.id)"><i class="fa fa-lock-open"></i> Unlock</a>
+            <span><i class="fa fa-lock"></i><b> This matter is locked.</b> 
+                <span v-if="requisition.status_id < 7"> It is pending payment</span>
+                <span v-else-if="requisition.status_id == 7"> Payment was made successfully and no further changes may be made.</span>
+            </span>
+            <a v-if="requisition.status_id < 7" class="pull-right btn btn-white btn-primary btn-sm" @click="unlockRequisition(requisition.id)"><i class="fa fa-lock-open"></i> Unlock</a>
         </div>
         <!-- Tabs Navigation -->
         <ul class="nav nav-tabs mb-0" id="requisitionTab" role="tablist">
@@ -183,28 +193,28 @@
                             <div class="row mb-3">
                                 <label class="col-sm-2 col-form-label" for="file-reference">File Reference:</label>
                                 <div class="col-sm-10">
-                                    <input type="text" v-model="requisition.file_reference" class="form-control" id="file-reference">
+                                    <input type="text" v-model="requisition.file_reference" class="form-control" :disabled="requisition.locked" id="file-reference">
                                 </div>
                             </div>
                             <!-- Reason -->
                             <div class="row mb-3">
                                 <label class="col-sm-2 col-form-label" for="reason">Reason:</label>
                                 <div class="col-sm-10">
-                                    <input type="text" v-model="requisition.reason" class="form-control" id="reason">
+                                    <input type="text" v-model="requisition.reason" class="form-control" :disabled="requisition.locked" id="reason">
                                 </div>
                             </div>
                             <!-- Parties -->
                             <div class="row mb-3">
                                 <label class="col-sm-2 col-form-label" for="parties">Parties:</label>
                                 <div class="col-sm-10">
-                                    <input type="text" v-model="requisition.parties" class="form-control" id="parties">
+                                    <input type="text" v-model="requisition.parties" class="form-control" :disabled="requisition.locked" id="parties">
                                 </div>
                             </div>
                             <!-- Properties -->
                             <div class="row mb-3">
                                 <label class="col-sm-2 col-form-label" for="properties">Properties:</label>
                                 <div class="col-sm-10">
-                                    <input type="text" v-model="requisition.properties" class="form-control" id="properties">
+                                    <input type="text" v-model="requisition.properties" class="form-control" :disabled="requisition.locked" id="properties">
                                 </div>
                             </div>
                             <!-- Created By (Safely handle if user is undefined) -->
@@ -214,8 +224,14 @@
                                     <div class="form-control" style="border: 0px;">{{ requisition.user.name }}</div>
                                 </div>
                             </div>
+                            <div class="row mb-3" v-if="requisition.locked">
+                                <label class="col-sm-2 col-form-label" for="created-by">Locked By:</label>
+                                <div class="col-sm-10">
+                                    <div class="form-control" style="border: 0px;">{{ requisition.locked_by?.name }} on {{ requisition.locked_at }}</div>
+                                </div>
+                            </div>
                         </form>
-                        <div class="row mb-3">
+                        <div class="row mb-3" v-if="!this.requisition.locked">
                             <div class="col-sm-2"></div>
                             <div class="col-sm-10">
                                 <button class="btn btn-primary" @click="saveRequisition">Save</button>
@@ -303,7 +319,7 @@
                                                     <div class="col-md-3 pl-4">
                                                         R{{ parseFloat(deposit.amount).toFixed(2) }}
 
-                                                        <span class="pull-right"><i class="fa fa-edit text-primary" @click="openEditDepositModal(deposit)"></i></span>
+                                                        <span v-if="requisition && !requisition.locked" class="pull-right"><i class="fa fa-edit text-primary" @click="openEditDepositModal(deposit)"></i></span>
                                                     </div>
                                                 </div>
                                                 <div v-if="!deposit.funded" class="col-md-12 row mb-2 lighthover p-0">
@@ -318,7 +334,7 @@
                                                     <div class="col-md-3 pl-4">
                                                         R{{ parseFloat(deposit.amount).toFixed(2) }}
 
-                                                        <span class="pull-right"><i class="fa fa-edit text-primary" @click="openEditDepositModal(deposit)"></i></span>
+                                                        <span v-if="requisition && !requisition.locked" class="pull-right"><i class="fa fa-edit text-primary" @click="openEditDepositModal(deposit)"></i></span>
                                                     </div>
                                                 </div>
                                             </div>
@@ -368,7 +384,7 @@
                                                 </span>
                                                 {{ payment.description }}
                                             </div>
-                                            <div class="col-md-3" v-bind:style="payment.beneficiary_account.authorised === 1 ? { background: '#f2f2f2', border: '1px solid #ddd', padding: '6px 12px', fontSize: '14px', color: '#666' } : {}">
+                                            <div class="col-md-3" v-bind:style="payment.beneficiary_account && payment.beneficiary_account.authorised === 1 ? { background: '#f2f2f2', border: '1px solid #ddd', padding: '6px 12px', fontSize: '14px'/* , color: '#666' */ } : {}">
                                                 <div>
                                                     <b>{{ payment.beneficiary_account?.account_holder_type === 'natural' 
                                                         ? payment.beneficiary_account?.initials + " " + payment.beneficiary_account?.surname 
@@ -387,12 +403,15 @@
                                             </div>
                                             <div class="col-md-2 pl-4" style="display:flex;justify-content:flex-end;">
                                                 - R{{ parseFloat(payment.amount).toFixed(2) }}
-                                                <span class="pull-right"> &nbsp;&nbsp;
+                                                <span v-if="requisition && !requisition.locked" class="pull-right"> &nbsp;&nbsp;
                                                     <i class="fa fa-edit text-primary" @click="openEditPaymentModal(payment)"></i>
                                                 </span>
-                                            </div>
+                                                <span v-else class="pull-right"> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;
+                                                    
+                                                </span>
                                             </div>
                                         </div>
+                                    </div>
 
                                     <div v-else class="txt-xs">No Payments have been added</div>
                                 
@@ -402,7 +421,7 @@
                                         </div>
                                         <div class="col-md-6">
                                             <div><br/><br/></div>
-                                            <div class="pull-right" v-if="$requisition && !requisition.deposits  && !requisition.deposits.length > 0">Net Balance: </div>
+                                            <div class="pull-right" v-if="requisition && requisition.deposits  && requisition.deposits.length">Net Balance: </div>
                                         </div>
                                         <div class="col-md-3 row pr-0">
 
@@ -476,7 +495,7 @@
                                     <div class="pl-0 pr-0">
                                         <h6>{{ requisition.authorized_by.name }}</h6>
                                         <div class="txt-xs">on {{ requisition.authorized_at }} </div>
-                                        <div class="txt-xs">logged in as {{ requisition.user.email }} </div>
+                                        <div class="txt-xs">logged in as {{ requisition.authorized_by.email }} </div>
                                     </div>
                                     
                                 </div>
@@ -1870,7 +1889,11 @@ export default {
                 ajax: {
                     url: `/api/requisitions/${this.requisitionId}/documents`,  // Your API endpoint to fetch documents
                     type: 'GET',
-                    data: (json) => json // Return full JSON response for DataTables
+                    data: (json) => json, // Return full JSON response for DataTables
+                    error: (xhr, error, thrown) => {
+                        console.error('Error fetching data:', error, thrown);
+                        //alert('An error occurred while fetching the data. Please try again later.');
+                    }
                 },
                 columns: [
                     { data: 'user_name', name: 'user_name' },  // Assuming the API returns `user_name`
@@ -1889,10 +1912,16 @@ export default {
                         data: null,
                         orderable: false,
                         render: (data, type, row) => {
-                            return `
-                                <button class="btn btn-sm btn-primary view-document-btn" data-id="${row.id}">View</button>
-                                <button class="btn btn-sm btn-danger delete-document-btn" data-id="${row.id}">Delete</button>
-                            `;
+                            if (!this.requisition.locked) {
+                                return `
+                                    <button class="btn btn-sm btn-primary view-document-btn" data-id="${row.id}">View</button>
+                                    <button class="btn btn-sm btn-danger delete-document-btn" data-id="${row.id}">Delete</button>
+                                `;
+                            } else {
+                                return `
+                                    <button class="btn btn-sm btn-primary view-document-btn" data-id="${row.id}">View</button>
+                                `;
+                            }
                         }
                     }
                 ],
@@ -2673,7 +2702,7 @@ export default {
                     //console.log('this is the complete data back ===> ', response.data);
 
                      // Add the newly created deposit to the local deposits list
-                     this.requisition.payments.push(response.data);
+                     this.requisition = response.data;
 
                     // Close the modal if "Save" was clicked
                     if (!stayInModal) {

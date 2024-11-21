@@ -54,10 +54,10 @@ class Payment extends Model
     /**
      * A payment has an account type
      */
-   /*  public function accountType()
+    public function accountType()
     {
         return $this->belongsTo(AccountType::class, 'account_type_id');
-    } */
+    } 
 
     /**
      * Relationship with the FirmAccount model.

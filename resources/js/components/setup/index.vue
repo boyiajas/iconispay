@@ -300,8 +300,8 @@
 <script>
 import axios from 'axios';
 import $ from 'jquery';
-import 'datatables.net';
-import 'datatables.net-bs5';
+/* import 'datatables.net';
+import 'datatables.net-bs5'; */
 import { useToast } from 'vue-toastification';
 
 export default {

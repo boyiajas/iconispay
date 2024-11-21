@@ -66,6 +66,7 @@ Route::prefix('api')->middleware(['auth'])->group(function(){
 
 //    Route::get('/home', [HomeController::class, 'index'])->name('home');
 
+    Route::get('/firm-accounts/all-accounts', [FirmAccountController::class, 'getAllFirmAccounts']);
     // User Management Routes
     Route::resource('users', UserController::class);
     Route::get('/recipients', [UserController::class, 'getRecipients']);
@@ -74,9 +75,9 @@ Route::prefix('api')->middleware(['auth'])->group(function(){
     Route::resource('audit-trails', AuditTrailController::class);
     
     Route::get('/beneficiary-accounts/search', [BeneficiaryAccountController::class, 'search']);
-   
-    Route::get('/beneficiary-accounts/{beneficiaryId?}/{accountNumber?}', [BeneficiaryAccountController::class, 'showBeneficiaryAndFirm']);
     Route::resource('/beneficiary-accounts', BeneficiaryAccountController::class);
+    Route::get('/beneficiary-accounts/{beneficiaryId?}/{accountNumber?}', [BeneficiaryAccountController::class, 'showBeneficiaryAndFirm']);
+    
     Route::post('/beneficiary-accounts/{sourceAccountId}/authorize', [BeneficiaryAccountController::class, 'authorise']);
 
     Route::get('/accounts', [FirmAccountController::class, 'getAccounts']);
@@ -85,6 +86,8 @@ Route::prefix('api')->middleware(['auth'])->group(function(){
     Route::get('/firm-accounts/{id}/pending-confirmation-files', [FirmAccountController::class, 'getIndividualAccountPendingConfirmationFiles']);
     Route::get('/firm-accounts/{id}/recently-closed-files', [FirmAccountController::class, 'getIndividualAccountRecentlyClosedFiles']);
     Route::post('/firm-accounts/{sourceAccountId}/authorize', [FirmAccountController::class, 'authorise']);
+    
+
     Route::get('/pending-confirmation-files', [FirmAccountController::class, 'getPendingConfirmationFiles']);
     Route::get('/recently-closed-files', [FirmAccountController::class, 'getRecentlyClosedFiles']);
 
@@ -99,11 +102,15 @@ Route::prefix('api')->middleware(['auth'])->group(function(){
     
     Route::get('/requisitions/ready-for-payment', [RequisitionController::class, 'getReadyForPayment'])->name('api.requisitions.ready-for-payment');
     Route::get('/requisitions/pending-payment-confirmation', [RequisitionController::class, 'getPendingPaymentConfirmation'])->name('api.requisitions.pending-payment-confirmation');
+    Route::get('/requisitions/settled-today', [RequisitionController::class, 'getSettledTodayRequisitions']);
     Route::get('/requisitions/bystatus', [RequisitionController::class, 'getRequisitionsByStatus'])->name('api.requisitions.byStatus');
     Route::put('/requisitions/{requisition?}/approve', [RequisitionController::class, 'approve']);
 
     Route::put('/requisitions/{requisition?}/unlock', [RequisitionController::class, 'unlockRequisition']);
     Route::put('/requisitions/{requisition?}/lock', [RequisitionController::class, 'lockRequisition']);
+
+    Route::post('/requisitions/update-status', [RequisitionController::class, 'updateStatus']);
+
     
 
     Route::post('/deposits/fund-deposits', [DepositController::class, 'fundDeposits']);

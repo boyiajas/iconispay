@@ -89,7 +89,7 @@ export default {
             axios.get(`/api/firm-accounts/${this.$route.params.id}`)
                 .then(response => {
                     this.accountData = response.data;
-                    //console.log(response);
+                    console.log(response);
                 })
                 .catch(error => {
                     console.error("Error fetching account data:", error);
@@ -110,7 +110,7 @@ export default {
                     }
                 },
                 columns: [
-                    { data: 'display_text' },
+                    { data: 'display' },
                     /* { data: 'file_name' }, */
                     { data: 'file_name' },
                     { data: 'payments' },
@@ -118,8 +118,19 @@ export default {
                     { data: 'total_amount', render: $.fn.dataTable.render.number(',', '.', 2, 'R ') },
                     { data: 'status' },
                 ],
-                responsive: true,
-                destroy: true,
+                createdRow: (row, data, dataIndex) => {
+                   
+                   $(row).find('.file-management-btn').on('click', (event) => {
+                       const fileId = $(event.currentTarget).data('file-id');
+                       if (fileId) {
+                           this.navigateToFileManagement(fileId);
+                       }
+                   });
+
+                   $('td', row).css('word-wrap', 'break-word').css('white-space', 'normal');
+               },
+               responsive: true,
+               destroy: true,
             });
         },
 
@@ -162,9 +173,23 @@ export default {
                     { data: 'total_amount', render: $.fn.dataTable.render.number(',', '.', 2, 'R ') },
                     { data: 'status' },
                 ],
+                createdRow: (row, data, dataIndex) => {
+                   
+                   $(row).find('.file-management-btn').on('click', (event) => {
+                       const fileId = $(event.currentTarget).data('file-id');
+                       if (fileId) {
+                           this.navigateToFileManagement(fileId);
+                       }
+                   });
+
+                   $('td', row).css('word-wrap', 'break-word').css('white-space', 'normal');
+                },
                 responsive: true,
                 destroy: true,
             });
+        },
+        navigateToFileManagement(fileId) {
+            this.$router.push({ name: 'filemanagement', params: { id: fileId } });
         },
 
         // Filter Recently Closed Files based on date range

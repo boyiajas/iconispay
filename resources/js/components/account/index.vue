@@ -112,7 +112,7 @@
                         
 
                         <!-- File Details Table -->
-                        <table class="table table-bordered mt-3">
+                        <table class="table table-bordered mt-3 table-striped display nowrap" style="width:100%">
                             <thead>
                                 <tr>
                                     <th>File Reference</th>
@@ -235,11 +235,13 @@ export default {
     methods: {
         // Initialize the Accounts Table
         initializeAccountsTable() {
+            if ($.fn.dataTable.isDataTable('#accounts-table')) {
+                $('#accounts-table').DataTable().destroy(); // Destroy existing instance if already initialized
+            }
+
             this.accountsTable = $('#accounts-table').DataTable({
                 processing: true,
                 serverSide: true,
-                paging: true, // Ensure pagination is enabled
-                pageLength: 10, // Number of records per page
                 ajax: {
                     url: '/api/accounts',
                     type: 'GET',
@@ -281,9 +283,7 @@ export default {
                             //console.log(data.pending_confirmation_files);
                             if (data.pending_confirmation_files && data.pending_confirmation_files.length > 0) {
                                 return data.pending_confirmation_files.map(file => `
-                                   <!-- {{ <a href="/secure-download/${file.file_id}" class="btn btn-link p-0">
-                                    ${data.account_number} (${this.formatDate(file.generated_at)})
-                                    </a> -->
+                                  
                                     <a href="#" class="btn btn-link p-0 file-management-btn" data-file-id="${file.file_id}">
                                         ${data.account_number} (${this.formatDate(file.generated_at)})
                                     </a>
@@ -313,13 +313,17 @@ export default {
                     });
 
                     $('td', row).css('word-wrap', 'break-word').css('white-space', 'normal');
-                },
+                }, 
                 /* createdRow: function(row, data, dataIndex) {
                     // Apply style to all <td> elements
                     $('td', row).css('word-wrap', 'break-word').css('white-space', 'normal');
                 }, */
                 responsive: true,
-                destroy: true,
+                paging: true,
+                pageLength: 10,
+                lengthMenu: [ [10, 25, 50, 100], [10, 25, 50, 100] ],
+                searching: true,
+                autoWidth: true,
                
                 drawCallback: () => {
                     
@@ -365,6 +369,7 @@ export default {
                     });
                     this.accountsTable.ajax.reload();
                     //console.log(response.data.file);
+                    this.pendingConfirmationFilesTable.ajax.reload();
                     this.showFileDetailsModal(response.data.file);
                 })
                 .catch(error => {
@@ -386,7 +391,7 @@ export default {
                     }
                 },
                 columns: [
-                    { data: 'display_text' },
+                    { data: 'display' },
                     { data: 'default_file_name' }, // This will display "Default - {account_number}"
                     { data: 'payments' },
                     { data: 'date_generated'},

@@ -27,6 +27,8 @@ class Requisition extends Model
         'settlement_status',
         'completed_at',
         'created_by',
+        'locked_at',
+        'locked_by',
     ];
 
     /**
@@ -45,6 +47,11 @@ class Requisition extends Model
     public function authorizedBy()
     {
         return $this->belongsTo(User::class, 'authorized_user_id');
+    }
+
+    public function lockedBy()
+    {
+        return $this->belongsTo(User::class, 'locked_by');
     }
 
     public function user()

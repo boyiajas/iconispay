@@ -1,6 +1,7 @@
 import { createRouter, createWebHistory } from 'vue-router';
 import Home from './Home.vue';
 import Matter from './matter/index.vue';
+import Report from './report/index.vue';
 import Account from './account/index.vue';
 import NewRequisition from './requisition/create.vue';
 import DetailsRequisition from './requisition/details.vue';
@@ -12,12 +13,15 @@ import EmailSignatory from './email/emailsignatory.vue';
 import EmailRequestor from './email/emailrequestor.vue';
 import AccountFileEdit from './account/accountfileedit.vue';
 import FileManagement from './account/filemanagement.vue';
+import ReadyForPayment from './report/readyForPayment.vue';
 
 // Define Vue Router routes, excluding the /contact route
 const routes = [
     { path: '/home', name: 'home', component: Home },
     { path: '/matters', name: 'matters', component: Matter },
     { path: '/accounts', name: 'accounts', component: Account },
+    { path: '/reports', name: 'reports', component: Report },
+    { path: '/reports/ready-for-payment', name: 'ready-for-payment', component: ReadyForPayment },
     { path: '/requisition/new', name: 'newrequisition', component: NewRequisition },
     
     // Updated route for requisition details with dynamic parameters

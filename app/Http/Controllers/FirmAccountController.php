@@ -8,6 +8,7 @@ use App\Models\FirmAccount;
 use App\Models\Requisition;
 use DataTables;
 use Illuminate\Http\Request;
+use Carbon\Carbon;
 
 class FirmAccountController extends Controller
 {
@@ -60,7 +61,9 @@ class FirmAccountController extends Controller
 
         // Fetch all FileUploads for the retrieved firm accounts in a single query
         $fileUploads = FileUpload::whereIn('firm_account_id', $firmAccountIds)
-            ->with('requisitions') // Eager load requisitions associated with each FileUpload
+            ->with(['requisitions' => function ($query) {
+                $query->where('status_id', '!=', 7); // Exclude requisitions with status_id 7
+            }])
             ->get();
 
         // Group FileUploads by firm_account_id for easy lookup
@@ -75,8 +78,10 @@ class FirmAccountController extends Controller
             // Retrieve the FileUploads for this firm account
             $accountFileUploads = $fileUploadsGrouped->get($account->id, collect());
 
-            // Count the number of files generated for this firm account
-            $totalGeneratedFiles = $accountFileUploads->count();
+            // Count the number of files generated for this firm account, excluding those with requisitions having status_id 7
+            $totalGeneratedFiles = $accountFileUploads->filter(function ($fileUpload) {
+                return $fileUpload->requisitions->where('status_id', '!=', 7)->isNotEmpty();
+            })->count();
 
             // Collect all requisition IDs that already have generated files
             $requisitionIdsWithFiles = $accountFileUploads->flatMap(function ($fileUpload) {
@@ -90,7 +95,6 @@ class FirmAccountController extends Controller
 
             // Assume we want to use the first requisition's ID as an example
             $requisitionId = $requisitionsReadyForPayment->first()->id ?? null;
-            
 
             return [
                 'method' => ucfirst($account->method),
@@ -114,6 +118,7 @@ class FirmAccountController extends Controller
 
         return response()->json(['data' => $data]);
     }
+
 
     public function filesDetails(Request $request, $sourceAccountId)
     {
@@ -267,6 +272,151 @@ class FirmAccountController extends Controller
 
         foreach ($requisitions as $requisition) {
             foreach ($requisition->payments as $payment) {
+                // Get the payToAccount and its details
+                $payToAccount = $payment->payToAccount;
+                $accountNumber = $payToAccount ? $payToAccount->account_number : 'N/A';
+                $branchCode = $payToAccount ? $payToAccount->branch_code : 'N/A';
+                $recipientReference = $payment->recipient_reference ?? 'N/A';
+
+                // Build the content of the file
+                switch ($bank) {
+                    case 'ABSA':
+                        $fileContent .= "ABSADATA\t" . "3450000" . $absacount . "C" . $company_name . "\t\t";
+                        $fileContent .= $firmAccount->account_number . $firmAccount->branch_code . "3" . $payment->my_reference;
+                        $fileContent .= "\t\t" . $recipientReference;
+                        $fileContent .= "\t\t" . $accountNumber . $branchCode . $recipientReference;
+                        $fileContent .= "\t\t" . number_format($payment->amount, 2, '.', ',');
+                        $fileContent .= Carbon::parse($payment->created_at)->format('ymd') . "N  0000000CNAD HOC\n";
+                        break;
+
+                    default:
+                        // Handle other banks if necessary
+                        break;
+                }
+
+                $absacount += 1000;
+            }
+
+            $requisitionIds[] = $requisition->id; // Add requisition ID to the array
+
+            // Optionally, update each requisition's status_id to 6 (processed)
+            // $requisition->update(['status_id' => 6]);
+        }
+
+        // Write content to the file
+        file_put_contents($filePath, $fileContent);
+
+        // Save a single file record in FileUpload with the requisition_ids as JSON
+        $fileUpload = FileUpload::create([
+            'firm_account_id' => $sourceAccountId, // Associate the file with the firm account
+            'file_name' => $fileName,
+            'file_path' => $filePath,
+            'file_size' => filesize($filePath) / 1024, // File size in KB
+            'user_id' => auth()->user()->id
+        ]);
+
+        // Attach all requisitions to the file upload in a single query
+        $fileUpload->requisitions()->attach($requisitionIds);
+
+        // Retrieve the specified file upload by ID, along with related requisitions and their payments
+        $fileUpload = FileUpload::with([
+            'requisitions' => function ($query) {
+                $query->with('payments', 'payments.payToFirmAccount.institution', 'payments.beneficiaryAccount.institution');
+            },
+            'firmAccount.institution', // Load the firm account and institution details
+            'user'
+        ])->find($fileUpload->id);
+
+        if (!$fileUpload) {
+            return response()->json(['error' => 'File not found'], 404);
+        }
+
+        // Prepare the file details
+        $fileDetails = [
+            'fileId' => $fileUpload->id,
+            'accountName' => $fileUpload->firmAccount->display_text,
+            'accountHolder' => $fileUpload->firmAccount->account_holder,
+            'accountNumber' => $fileUpload->firmAccount->account_number,
+            'status' => 'Generated',
+            'numberOfPayments' => 0,
+            'totalAmount' => 0.00,
+            'totalConfirmed' => 0.00,
+            'timeGenerated' => Carbon::parse($fileUpload->created_at)->format('d M Y Hi'),
+            'createdBy' => $fileUpload->user->name,
+            'institution' => $fileUpload->firmAccount->institution->name,
+            'statusMessage' => 'The Payaway file is ready to download.',
+            'historyLog' => [], // Placeholder for future history log data
+            'payments' => []
+        ];
+
+        // Calculate the number of payments and total amount
+        $fileDetails['numberOfPayments'] = $fileUpload->requisitions->sum(function ($requisition) {
+            return $requisition->payments->count();
+        });
+
+        $fileDetails['totalAmount'] = $fileUpload->requisitions->sum(function ($requisition) {
+            return $requisition->payments->sum('amount');
+        });
+
+        // Collect payments details
+        foreach ($fileUpload->requisitions as $requisition) {
+            foreach ($requisition->payments as $payment) {
+                $payToAccount = $payment->payToAccount;
+                $institution = $payToAccount && $payToAccount->institution ? $payToAccount->institution->name : 'N/A';
+
+                $fileDetails['payments'][] = [
+                    'fileReference' => $requisition->file_reference,
+                    'recipientAccount' => $payToAccount ? $payToAccount->account_number : 'N/A',
+                    'recipientReference' => $payment->recipient_reference ?? 'N/A',
+                    'myReference' => $payment->my_reference ?? 'N/A',
+                    'amount' => number_format($payment->amount, 2, '.', ','),
+                    'status' => $payment->status ?? 'Generated',
+                    'beneficiaryAccount' => $payToAccount,
+                    'institution' => $institution
+                ];
+            }
+        }
+
+        return response()->json([
+            'message' => 'File generated successfully for all new requisitions.',
+            'file' => $fileDetails,
+        ]);
+    }
+
+    public function generateFileOld(Request $request, $sourceAccountId)
+    {
+        $firmAccount = FirmAccount::findOrFail($sourceAccountId);
+
+        // Retrieve all requisitions for the specified source account with status ready for payment
+        $requisitions = Requisition::where('firm_account_id', $sourceAccountId)
+            ->where('status_id', 5)
+            ->whereDoesntHave('fileUploads') // Exclude requisitions that are already attached to a file upload
+            ->with('fileUploads') // Eager load file uploads to avoid N+1 problem
+            ->get();
+
+        if ($requisitions->isEmpty()) {
+            return response()->json(['message' => 'No new requisitions available for payment.'], 400);
+        }
+
+        // Generate a consolidated file for all payments
+        $fileName = "Default-{$firmAccount->account_number} " . now()->format('YmdHis') . '.txt';
+        $filePath = storage_path("app/files/{$fileName}");
+
+        // Ensure the directory exists
+        $directory = storage_path('app/files');
+        if (!is_dir($directory)) {
+            mkdir($directory, 0755, true);
+        }
+
+        // Create the file and add information about each requisition
+        $fileContent = '';
+        $requisitionIds = []; // Collect requisition IDs to save in FileUpload
+        $bank = 'ABSA';
+        $absacount = 1001;
+        $company_name = "STRAUSS DALY INCORPORATED";
+
+        foreach ($requisitions as $requisition) {
+            foreach ($requisition->payments as $payment) {
 
                 //here we building the content of the files
                 switch ($bank) {
@@ -277,7 +427,7 @@ class FirmAccountController extends Controller
                         $fileContent .= "\t\t".$payment->recipient_reference;
                         $fileContent .= "\t\t".$payment->beneficiaryAccount->account_number.$payment->beneficiaryAccount->branch_code.$payment->recipient_reference;
                         $fileContent .= "\t\t". number_format($payment->amount, 2, '.', ',');
-                        $fileContent .= \Carbon\Carbon::parse($payment->create_at)->format('ymd')."N  0000000CNAD HOC\n";
+                        $fileContent .= Carbon::parse($payment->create_at)->format('ymd')."N  0000000CNAD HOC\n";
 
                         //$fileContent .= "Payment for requisition #{$requisition->id}\n";
 
@@ -342,7 +492,7 @@ class FirmAccountController extends Controller
             'numberOfPayments' => 0,
             'totalAmount' => 0.00,
             'totalConfirmed' => 0.00,
-            'timeGenerated' => \Carbon\Carbon::parse($fileUpload->generated_at)->format('d M Y Hi'),
+            'timeGenerated' => Carbon::parse($fileUpload->generated_at)->format('d M Y Hi'),
             'createdBy' => $fileUpload->user->name,
             'institution' => $fileUpload->firmAccount->institution->name,
             'statusMessage' => 'The Payaway file is ready to download.',
@@ -414,14 +564,16 @@ class FirmAccountController extends Controller
                     return $requisition->calculateTransactionValue();
                 });
 
-                $dateGenerated = \Carbon\Carbon::parse($generatedAt)->format('d M Y H:i');
+                $dateGenerated = Carbon::parse($generatedAt)->format('d M Y H:i');
+
+                $fileId = $requisitions->first()->fileUploads->first()->id; // Get the file ID from the first file upload
 
                 // HTML for the edit button
-                $editButton = '<span class="pull-right btn btn-sm btn-default-default py-0 px-1"><i class="fas fa-edit"></i></span>';
+                $editButton = "<span class='pull-right btn btn-sm btn-default-default py-0 px-1 file-management-btn' data-file-id='{$fileId}'><i class='fas fa-edit'></i></span>";
 
                 return [
                     'display' => $account->display_text,
-                    'file_name' => "Default - {$account->account_number} (".\Carbon\Carbon::parse($generatedAt)->format('Y-m-d Hi').")",
+                    'file_name' => "Default - {$account->account_number} (".Carbon::parse($generatedAt)->format('Y-m-d Hi').")",
                     'payments' => $totalPayments,
                     'date_generated' => $dateGenerated,
                     'total_amount' => $totalAmount,
@@ -452,17 +604,19 @@ class FirmAccountController extends Controller
                 // Check if any file uploads exist for this requisition
                 $hasFiles = $requisition->fileUploads->isNotEmpty();
                 $dateGenerated = $hasFiles ? $requisition->fileUploads->max('generated_at')->format('d M Y H:i') : '<span class="badge bg-default">None</span>';
-
-                // HTML for the edit button
-                $editButton = '<span class="pull-right btn btn-sm btn-default-default py-0 px-1"><i class="fas fa-edit"></i></span>';
+                // Ensure that `fileId` is properly handled
+                $fileId = $requisition->fileUploads->first()->id ?? null;
+                 // HTML for the edit button
+                 $editButton = "<span class='pull-right btn btn-sm btn-default-default py-0 px-1 file-management-btn' data-file-id='{$fileId}' ><i class='fas fa-edit'></i></span>";
 
                 return [
-                    'display' => $account->display_text,
+                    'display_text' => $account->display_text,
                     'default_file_name' => "Default - {$account->account_number}",
                     'payments' => $requisition->payments->count(),
                     'date_generated' => $dateGenerated,
+                    'date_completed' => ($requisition && $requisition->completed_at) ? Carbon::parse($requisition->completed_at)->format('d M Y H:i') : '',
                     'total_amount' => $requisition->calculateTransactionValue(),
-                    'status' => ($hasFiles ? '<span class="badge bg-info">Generated</span>' : '<span class="badge bg-default">No open files</span>') . ' ' . $editButton,
+                    'status' => ($hasFiles ? '<span class="badge bg-success" style="width: 95px;border-radius: 3px;height: 20px;">Processed</span>' : '<span class="badge bg-default">No open files</span>') . ' ' . $editButton,
                 
                     'files' => $requisition->fileUploads->map(function ($fileUpload) {
                         return [
@@ -534,24 +688,26 @@ class FirmAccountController extends Controller
     /**
      * Get Recently Closed Files for the Recently Closed Files Table.
      */
+
     public function getRecentlyClosedFiles(Request $request)
     {
-        $fromDate = $request->from_date;
-        $toDate = $request->to_date;
+        // Get the fromDate and toDate from the request, or default to today's date
+        $fromDate = $request->from_date ? Carbon::parse($request->from_date)->startOfDay() : Carbon::today()->startOfDay();
+        $toDate = $request->to_date ? Carbon::parse($request->to_date)->endOfDay() : Carbon::today()->endOfDay();
 
         // Assuming 'status_id' 7 represents 'processed' in requisitions
         $closedFiles = FirmAccount::whereHas('requisitions', function ($query) use ($fromDate, $toDate) {
             $query->where('status_id', 7)
-                  ->whereBetween('updated_at', [$fromDate, $toDate]);
+                ->whereBetween('updated_at', [$fromDate, $toDate]);
         })->with('requisitions', 'institution')->get();
 
         $data = $closedFiles->map(function ($account) {
-            $requisition = $account->requisitions()->where('status_id', 6)->first();
+            $requisition = $account->requisitions()->where('status_id', 7)->first();
             return [
-                'display' => $account->display_text,
+                'display_text' => $account->display_text,
                 'file_name' => "Default - {$account->account_number}",
                 'payments' => $requisition ? $requisition->payments()->count() : 0,
-                'date_completed' => $requisition ? $requisition->updated_at->format('d M Y') : '',
+                'date_completed' => $requisition ? Carbon::parse($requisition->completed_at)->format('d M Y H:i') : '',
                 'total_amount' => $requisition ? $requisition->calculateTransactionValue() : 0,
                 'status' => 'Closed',
             ];
@@ -559,6 +715,7 @@ class FirmAccountController extends Controller
 
         return response()->json(['data' => $data]);
     }
+
 
     /**
      * Show the form for creating a new resource.
@@ -643,6 +800,34 @@ class FirmAccountController extends Controller
         return response()->json($firmAccount->load('institution','deposits.user','payments.user','payments.accountType', 'payments.institution'));
     }
 
+    public function getAllFirmAccounts()
+    { 
+        try {
+            // Fetch all firm accounts with selected fields
+            $accounts = FirmAccount::select('id', 'account_number', 'display_text')
+                ->get()
+                ->map(function ($account) {
+                    return [
+                        'id' => $account->id,
+                        'name' => $account->display_text . ' (' . $account->account_number . ')',
+                    ];
+                });
+    
+            // Return the accounts as JSON
+            return response()->json([
+                'success' => true,
+                'accounts' => $accounts,
+            ], 200);
+    
+        } catch (\Exception $e) {
+            // Handle any unexpected errors
+            return response()->json([
+                'success' => false,
+                'message' => 'Error fetching firm accounts: ' . $e->getMessage(),
+            ], 500);
+        }
+    }
+    
     /**
      * Show the form for editing the specified resource.
      */

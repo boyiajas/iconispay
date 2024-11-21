@@ -45,7 +45,7 @@ class TwoFactorAuthController extends Controller
                 // Mark the user as having passed 2FA
                 $request->session()->put('2fa_passed', true);
                 Toastr::success('2FA verification successful!', 'Success');
-
+                //dd('we suppose to go home');
                 // Redirect to the intended page or home
                 return redirect()->intended('home');
             } else {

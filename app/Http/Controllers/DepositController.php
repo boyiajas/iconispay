@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Deposit;
 use App\Models\Payment;
 use App\Models\Requisition;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 
@@ -45,7 +46,9 @@ class DepositController extends Controller
                  'funding_status' => 1, // true should be a boolean, not a string
                  'capturing_status' => 1,
                  'status_id' => 3, //chainge status to awaiting authorization 
-                 'locked' => 1
+                 'locked' => 1,
+                 'locked_at' => Carbon::now(),
+                 'locked_by' => auth()->id(),
              ]);
          }
 
@@ -60,9 +63,51 @@ class DepositController extends Controller
             'user_id' => auth()->id(),  // Save the authenticated user's ID
         ]);
 
+        // Eager load the relationships
+        $requisition->load(
+            'user',
+            'authorizedBy',
+            'firmAccount.institution',
+            'payments.beneficiaryAccount.institution',
+            'payments.payToFirmAccount.institution',
+            'payments.beneficiaryAccount.accountType',
+            'payments.payToFirmAccount.accountType',
+            //'payments.payToFirmAccount',
+            'payments.sourceFirmAccount',
+            'deposits.firmAccount',
+            'deposits.user'
+        );
+
+        // Transform the requisition data to include payToAccount details
+        $requisitionData = $requisition->toArray();
+
+        // Add payToAccount details for each payment
+        $requisitionData['payments'] = $requisition->payments->map(function ($payment) {
+            $paymentData = $payment->toArray();
+
+            // Get the payToAccount and include its institution details
+            $payToAccount = $payment->payToAccount;
+            $payToAccountData = $payToAccount ? $payToAccount->toArray() : null;
+
+            if ($payToAccount && $payToAccount->institution) {
+                $payToAccountData['institution'] = $payToAccount->institution->toArray();
+            }
+
+            if ($payToAccount && $payToAccount->accountType) {
+                $payToAccountData['account_type'] = $payToAccount->accountType->toArray();
+            }
+
+            // Include the transformed payToAccount in the payment data
+            $paymentData['beneficiary_account'] = $payToAccountData;
+           
+            return $paymentData;
+        });
+
+        return response()->json($requisitionData);
+
        // Eager load the user relationship and return the deposit with user data
         //$deposit->load('user');
-        return response()->json($requisition->load('user', 'authorizedBy', 'firmAccount.institution', 'payments.beneficiaryAccount', 'payments.beneficiaryAccount.institution', 'deposits.firmAccount', 'deposits.user'), 201);
+        //return response()->json($requisition->load('user', 'authorizedBy', 'firmAccount.institution', 'payments.beneficiaryAccount', 'payments.beneficiaryAccount.institution', 'deposits.firmAccount', 'deposits.user'), 201);
         //return response()->json($requisition->load(['deposits.user']), 201); // Return the created deposit with user data
 
     }
@@ -101,9 +146,51 @@ class DepositController extends Controller
             'user_id' => auth()->id(),  // Save the authenticated user's ID
         ]);
 
+        // Eager load the relationships
+        $requisition->load(
+            'user',
+            'authorizedBy',
+            'firmAccount.institution',
+            'payments.beneficiaryAccount.institution',
+            'payments.payToFirmAccount.institution',
+            'payments.beneficiaryAccount.accountType',
+            'payments.payToFirmAccount.accountType',
+            //'payments.payToFirmAccount',
+            'payments.sourceFirmAccount',
+            'deposits.firmAccount',
+            'deposits.user'
+        );
+
+        // Transform the requisition data to include payToAccount details
+        $requisitionData = $requisition->toArray();
+
+        // Add payToAccount details for each payment
+        $requisitionData['payments'] = $requisition->payments->map(function ($payment) {
+            $paymentData = $payment->toArray();
+
+            // Get the payToAccount and include its institution details
+            $payToAccount = $payment->payToAccount;
+            $payToAccountData = $payToAccount ? $payToAccount->toArray() : null;
+
+            if ($payToAccount && $payToAccount->institution) {
+                $payToAccountData['institution'] = $payToAccount->institution->toArray();
+            }
+
+            if ($payToAccount && $payToAccount->accountType) {
+                $payToAccountData['account_type'] = $payToAccount->accountType->toArray();
+            }
+
+            // Include the transformed payToAccount in the payment data
+            $paymentData['beneficiary_account'] = $payToAccountData;
+           
+            return $paymentData;
+        });
+
+        return response()->json($requisitionData);
+
        // Eager load the user relationship and return the deposit with user data
         //$deposit->load('user');
-        return response()->json($requisition->load('user', 'authorizedBy', 'firmAccount.institution', 'payments.beneficiaryAccount', 'payments.beneficiaryAccount.institution', 'deposits.firmAccount', 'deposits.user'), 201);
+        //return response()->json($requisition->load('user', 'authorizedBy', 'firmAccount.institution', 'payments.beneficiaryAccount', 'payments.beneficiaryAccount.institution', 'deposits.firmAccount', 'deposits.user'), 201);
         //return response()->json($requisition->load(['deposits.user']), 201); // Return the created deposit with user data
 
     }
@@ -123,7 +210,48 @@ class DepositController extends Controller
         $requisition = Requisition::find($requisitionId);
         $requisition->update(['funding_status' => true]);
 
-        return response()->json($requisition->load('user', 'authorizedBy', 'firmAccount.institution', 'payments.beneficiaryAccount', 'payments.beneficiaryAccount.institution', 'deposits.firmAccount', 'deposits.user'), 201);
+        // Eager load the relationships
+        $requisition->load(
+            'user',
+            'authorizedBy',
+            'firmAccount.institution',
+            'payments.beneficiaryAccount.institution',
+            'payments.payToFirmAccount.institution',
+            'payments.beneficiaryAccount.accountType',
+            'payments.payToFirmAccount.accountType',
+            //'payments.payToFirmAccount',
+            'payments.sourceFirmAccount',
+            'deposits.firmAccount',
+            'deposits.user'
+        );
+
+        // Transform the requisition data to include payToAccount details
+        $requisitionData = $requisition->toArray();
+
+        // Add payToAccount details for each payment
+        $requisitionData['payments'] = $requisition->payments->map(function ($payment) {
+            $paymentData = $payment->toArray();
+
+            // Get the payToAccount and include its institution details
+            $payToAccount = $payment->payToAccount;
+            $payToAccountData = $payToAccount ? $payToAccount->toArray() : null;
+
+            if ($payToAccount && $payToAccount->institution) {
+                $payToAccountData['institution'] = $payToAccount->institution->toArray();
+            }
+
+            if ($payToAccount && $payToAccount->accountType) {
+                $payToAccountData['account_type'] = $payToAccount->accountType->toArray();
+            }
+
+            // Include the transformed payToAccount in the payment data
+            $paymentData['beneficiary_account'] = $payToAccountData;
+           
+            return $paymentData;
+        });
+
+        return response()->json($requisitionData);
+        //return response()->json($requisition->load('user', 'authorizedBy', 'firmAccount.institution', 'payments.beneficiaryAccount', 'payments.beneficiaryAccount.institution', 'deposits.firmAccount', 'deposits.user'), 201);
         //return response()->json($requisition, 200);
     }
 
@@ -181,9 +309,51 @@ class DepositController extends Controller
             'user_id' => auth()->id(),  // Save the authenticated user's ID
         ]);
 
+        // Eager load the relationships
+        $requisition->load(
+            'user',
+            'authorizedBy',
+            'firmAccount.institution',
+            'payments.beneficiaryAccount.institution',
+            'payments.payToFirmAccount.institution',
+            'payments.beneficiaryAccount.accountType',
+            'payments.payToFirmAccount.accountType',
+            //'payments.payToFirmAccount',
+            'payments.sourceFirmAccount',
+            'deposits.firmAccount',
+            'deposits.user'
+        );
+
+        // Transform the requisition data to include payToAccount details
+        $requisitionData = $requisition->toArray();
+
+        // Add payToAccount details for each payment
+        $requisitionData['payments'] = $requisition->payments->map(function ($payment) {
+            $paymentData = $payment->toArray();
+
+            // Get the payToAccount and include its institution details
+            $payToAccount = $payment->payToAccount;
+            $payToAccountData = $payToAccount ? $payToAccount->toArray() : null;
+
+            if ($payToAccount && $payToAccount->institution) {
+                $payToAccountData['institution'] = $payToAccount->institution->toArray();
+            }
+
+            if ($payToAccount && $payToAccount->accountType) {
+                $payToAccountData['account_type'] = $payToAccount->accountType->toArray();
+            }
+
+            // Include the transformed payToAccount in the payment data
+            $paymentData['beneficiary_account'] = $payToAccountData;
+           
+            return $paymentData;
+        });
+
+        return response()->json($requisitionData);
+
        // Eager load the user relationship and return the deposit with user data
         //$deposit->load('user');
-        return response()->json($requisition->load('user', 'authorizedBy', 'firmAccount.institution', 'payments.beneficiaryAccount', 'payments.beneficiaryAccount.institution', 'deposits.firmAccount', 'deposits.user'), 201);
+        //return response()->json($requisition->load('user', 'authorizedBy', 'firmAccount.institution', 'payments.beneficiaryAccount', 'payments.beneficiaryAccount.institution', 'deposits.firmAccount', 'deposits.user'), 201);
         //return response()->json($deposit, 201); // Return the created deposit with user data
     }
 
@@ -272,7 +442,49 @@ class DepositController extends Controller
                 'authorized_at' => null,
             ]);
         }
-        return response()->json($requisition->load('user', 'authorizedBy', 'firmAccount.institution', 'payments.beneficiaryAccount', 'payments.beneficiaryAccount.institution', 'deposits.firmAccount', 'deposits.user'), 201);
+
+        // Eager load the relationships
+        $requisition->load(
+            'user',
+            'authorizedBy',
+            'firmAccount.institution',
+            'payments.beneficiaryAccount.institution',
+            'payments.payToFirmAccount.institution',
+            'payments.beneficiaryAccount.accountType',
+            'payments.payToFirmAccount.accountType',
+            //'payments.payToFirmAccount',
+            'payments.sourceFirmAccount',
+            'deposits.firmAccount',
+            'deposits.user'
+        );
+
+        // Transform the requisition data to include payToAccount details
+        $requisitionData = $requisition->toArray();
+
+        // Add payToAccount details for each payment
+        $requisitionData['payments'] = $requisition->payments->map(function ($payment) {
+            $paymentData = $payment->toArray();
+
+            // Get the payToAccount and include its institution details
+            $payToAccount = $payment->payToAccount;
+            $payToAccountData = $payToAccount ? $payToAccount->toArray() : null;
+
+            if ($payToAccount && $payToAccount->institution) {
+                $payToAccountData['institution'] = $payToAccount->institution->toArray();
+            }
+
+            if ($payToAccount && $payToAccount->accountType) {
+                $payToAccountData['account_type'] = $payToAccount->accountType->toArray();
+            }
+
+            // Include the transformed payToAccount in the payment data
+            $paymentData['beneficiary_account'] = $payToAccountData;
+           
+            return $paymentData;
+        });
+
+        return response()->json($requisitionData);
+        //return response()->json($requisition->load('user', 'authorizedBy', 'firmAccount.institution', 'payments.beneficiaryAccount', 'payments.beneficiaryAccount.institution', 'deposits.firmAccount', 'deposits.user'), 201);
         //return response()->json($requisition->load(['deposits.user']), 201);
     }
 

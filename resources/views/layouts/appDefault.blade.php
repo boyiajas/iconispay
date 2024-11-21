@@ -23,7 +23,7 @@
    
     <link rel="stylesheet" href="{{URL::to('assets/css/feathericon.min.css')}}">
     
-    <link rel="stylesheet" href="{{URL::to('assets/css/style.css')}}">
+   <!--  <link rel="stylesheet" href="{{URL::to('assets/css/style.css')}}"> -->
     <link rel="stylesheet" href="{{ URL::to('assets/css/toastr.min.css') }}">
     <script src="{{ URL::to('assets/js/toastr_jquery.min.js') }}"></script>
     <script src="{{ URL::to('assets/js/bootstrap.min.js') }}"></script>
@@ -97,26 +97,7 @@
 </head>
 <body>
 
-    <!-- Navbar -->
-   <!--  <nav class="navbar navbar-light bg-light">
-        <div class="container">
-            <!-- First row: navbar-brand on the left, Logged in as / Log out on the right --
-            <div class="navbar-row">
-                <a class="navbar-brand" href="#">Iconis® Pay</a>
-                <div>
-                    <span>Logged in as: Peter Ajakaiye (Strauss Daly Incorporated)</span>
-                    <a href="{{ url('/logout') }}" class="ml-3">Log out</a>
-                </div>
-            </div>
-            <!-- Second row: Home, Matters, Accounts, Reports aligned to the right --
-            <div class="navbar-links-row">
-                <a href="{{ url('/home') }}" class="mr-3">Home</a>
-                <a href="#" class="mr-3">Matters</a>
-                <a href="#" class="mr-3">Accounts</a>
-                <a href="#">Reports</a>
-            </div>
-        </div>
-    </nav> -->
+   
 
     <div class="">
         <!-- Main Content -->

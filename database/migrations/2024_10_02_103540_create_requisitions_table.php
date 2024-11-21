@@ -29,7 +29,9 @@ return new class extends Migration
             $table->string('funding_status')->nullable();  // Status of funding
             $table->string('settlement_status')->nullable();  // Status of settlement
             $table->string('completed_at')->nullable();
-            $table->unsignedBigInteger('created_by')->index(); // User who created the matter
+            $table->foreignId('created_by')->index(); // User who created the matter
+            $table->foreignId('locked_by')->nullable()->index(); // User who created the matter
+            $table->string('locked_at')->nullable();
             $table->timestamps();
         });
     }

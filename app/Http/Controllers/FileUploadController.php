@@ -31,7 +31,7 @@ class FileUploadController extends Controller
             'requisitions' => function ($query) {
                 $query->with('payments'); // Load payments for each requisition
             },
-            'firmAccount.institution' // Load the firm account and institution details
+            'firmAccount.institution', 'user' // Load the firm account and institution details
         ])->find($id);
 
         if (!$fileUpload) {
@@ -41,13 +41,15 @@ class FileUploadController extends Controller
         // Prepare the file details
         $fileDetails = [
             'fileId' => $fileUpload->id,
-            'fileReference' => $fileUpload->firmAccount->institution->short_name ." - ".$fileUpload->firmAccount->account_number . " (".\Carbon\Carbon::parse($fileUpload->generated_at)->format('Y-m-d Hi').")",
+            'fileReference' => $fileUpload->firmAccount->institution->short_name . " - " . $fileUpload->firmAccount->account_number . " (" . \Carbon\Carbon::parse($fileUpload->generated_at)->format('Y-m-d Hi') . ")",
             'status' => 'Generated',
             'numberOfPayments' => 0,
             'totalAmount' => 0.00,
             'totalConfirmed' => 0.00,
+            'numberOfProcessedPayments' => 0, // Add processed payment count
             'historyLog' => [], // Placeholder for future history log data
-            'payments' => []
+            'payments' => [],
+            'createdBy' => $fileUpload->user->name
         ];
 
         // Calculate the number of payments and total amount
@@ -58,13 +60,94 @@ class FileUploadController extends Controller
         $fileDetails['totalAmount'] = $fileUpload->requisitions->sum(function ($requisition) {
             return $requisition->payments->sum('amount');
         });
+
+        // Collect payments details and count processed payments
+        $processedPaymentsCount = 0;
+
+        // Collect payments details
+        foreach ($fileUpload->requisitions as $requisition) {
+            foreach ($requisition->payments as $payment) {
+                // Use the payToAccount accessor to get the correct account details
+                $payToAccount = $payment->payToAccount;
+
+                if ($payment->status === 'processed') {
+                    $processedPaymentsCount++;
+                    $fileDetails['totalConfirmed'] += $payment->amount;
+                }
+
+                $fileDetails['payments'][] = [
+                    'id' => $payment->id,
+                    'requisition_id' => $requisition->id, // Add requisition_id here
+                    'fileReference' => $requisition->file_reference, // Use the file reference from the requisition
+                    'recipientAccount' => $payToAccount->account_number ?? 'N/A',
+                    'recipientReference' => $payment->recipient_reference ?? 'N/A',
+                    'myReference' => $payment->my_reference ?? 'N/A',
+                    'amount' => number_format($payment->amount, 2, '.', ','),
+                    'status' => $payment->status ?? 'Generated',
+                    'payToAccountInstitution' => $payToAccount->institution->name ?? 'N/A' // Include institution name
+                ];
+            }
+        }
+
+        // Update the number of processed payments
+        $fileDetails['numberOfProcessedPayments'] = $processedPaymentsCount;
+
+        return response()->json($fileDetails);
+    }
+
+
+    public function getFileDetailsOld($id)
+    {
+        // Retrieve the specified file upload by ID, along with related requisitions and their payments
+        $fileUpload = FileUpload::with([
+            'requisitions' => function ($query) {
+                $query->with('payments'); // Load payments for each requisition
+            },
+            'firmAccount.institution','user' // Load the firm account and institution details
+        ])->find($id);
+
+        if (!$fileUpload) {
+            return response()->json(['error' => 'File not found'], 404);
+        }
+
+        // Prepare the file details
+        $fileDetails = [
+            'fileId' => $fileUpload->id,
+            'fileReference' => $fileUpload->firmAccount->institution->short_name . " - " . $fileUpload->firmAccount->account_number . " (" . \Carbon\Carbon::parse($fileUpload->generated_at)->format('Y-m-d Hi') . ")",
+            'status' => 'Generated',
+            'numberOfPayments' => 0,
+            'totalAmount' => 0.00,
+            'totalConfirmed' => 0.00,
+            'numberOfProcessedPayments' => 0, // Add processed payment count
+            'historyLog' => [], // Placeholder for future history log data
+            'payments' => [],
+            'createdBy' => $fileUpload->user->name
+        ];
+
+        // Calculate the number of payments and total amount
+        $fileDetails['numberOfPayments'] = $fileUpload->requisitions->sum(function ($requisition) {
+            return $requisition->payments->count();
+        });
+
+        $fileDetails['totalAmount'] = $fileUpload->requisitions->sum(function ($requisition) {
+            return $requisition->payments->sum('amount');
+        });
+
+         // Collect payments details and count processed payments
+        $processedPaymentsCount = 0;
         //dd($fileUpload->firmAccount);
 
         // Collect payments details
         foreach ($fileUpload->requisitions as $requisition) {
             foreach ($requisition->payments as $payment) {
+                if ($payment->status === 'processed') {
+                    $processedPaymentsCount++;
+                    $fileDetails['totalConfirmed'] += $payment->amount;
+                }
+
                 $fileDetails['payments'][] = [
                     'id' => $payment->id,
+                    'requisition_id' => $requisition->id, // Add requisition_id here
                     'fileReference' => $requisition->file_reference, // Use the file reference from the requisition
                     'recipientAccount' => $payment->beneficiaryAccount->account_number ?? 'N/A',
                     'recipientReference' => $payment->recipient_reference ?? 'N/A',
@@ -74,6 +157,9 @@ class FileUploadController extends Controller
                 ];
             }
         }
+
+         // Update the number of processed payments
+        $fileDetails['numberOfProcessedPayments'] = $processedPaymentsCount;
 
         return response()->json($fileDetails);
     }
