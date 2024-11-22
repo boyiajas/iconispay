@@ -1,9 +1,9 @@
 <template>
-    <div>
+    <div class="container mb-5">
         <div class="d-flex justify-content-between align-items-center mb-4">
-            <h4 class="section-title">Matters  
+            <h2 class="section-title">Matters  
                 <router-link to="/requisition/new" class="btn btn-primary btn-sm ml-4">+ New Requisition</router-link>
-            </h4>
+            </h2>
         </div>
 
         <!-- Filters and Options Section -->

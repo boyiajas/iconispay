@@ -23,12 +23,20 @@ class DocumentController extends Controller
     public function getDocuments($id)
     {
         // Get the currently authenticated user ID
-        $userId = Auth::id();
-                                      
-        // Assuming Document has relationships with User and Requisition
-        $documents = Document::where('created_by', $userId)->where('requisition_id', $id)
+        $user = Auth::user();
+         
+        // Check if the user has an 'admin' or 'authorizer' role
+        if ($user->hasRole('admin') || $user->hasRole('authoriser')) {
+        
+            $documents = Document::where('requisition_id', $id)->get();
+        } else {
+            // Assuming Document has relationships with User and Requisition
+            $documents = Document::where('created_by', $user->id)->where('requisition_id', $id)
             ->with('user')
             ->get();
+        }
+                                      
+        
 
         return DataTables::of($documents)
             ->addColumn('user_name', function ($document) {
@@ -99,24 +107,43 @@ class DocumentController extends Controller
     // Method to download the file securely
     public function download(Document $document)
     {
-        // Check if the user is authorized to download the file
-        if ($document->created_by !== auth()->id()) {
-            abort(403, 'Unauthorized access to the file');
-        }
+        // Get the currently authenticated user ID
+        $user = Auth::user();
+         
+        // Check if the user has an 'admin' or 'authorizer' role
+        if ($user->hasRole('admin') || $user->hasRole('authoriser')) {
+            // Serve the file using Storage, making sure it's only accessible to the authenticated user
+            return Storage::download($document->file_path, $document->file_name);
 
-        // Serve the file using Storage, making sure it's only accessible to the authenticated user
-        return Storage::download($document->file_path, $document->file_name);
+        } else {
+            // Check if the user is authorized to download the file
+            if ($document->created_by !== auth()->id()) {
+                abort(403, 'Unauthorized access to the file');
+            }
+            // Serve the file using Storage, making sure it's only accessible to the authenticated user
+            return Storage::download($document->file_path, $document->file_name);
+        }        
     }
     
     public function view(Document $document)
     {
-        // Check if the user is authorized to view the file
-        if ($document->created_by !== auth()->id()) {
-            abort(403, 'Unauthorized access to the file');
-        }
 
-        // Get the file's full path from storage
-        $filePath = Storage::path($document->file_path);
+        // Get the currently authenticated user ID
+        $user = Auth::user();
+         
+        // Check if the user has an 'admin' or 'authorizer' role
+        if ($user->hasRole('admin') || $user->hasRole('authoriser')) {
+             // Get the file's full path from storage
+            $filePath = Storage::path($document->file_path);
+
+        } else {
+            // Check if the user is authorized to download the file
+            if ($document->created_by !== auth()->id()) {
+                abort(403, 'Unauthorized access to the file');
+            }
+             // Get the file's full path from storage
+            $filePath = Storage::path($document->file_path);
+        } 
 
         // Return the file for viewing
         return response()->file($filePath);
@@ -152,11 +179,7 @@ class DocumentController extends Controller
     public function destroy(Document $document)
     {
         try {
-            // Check if the user is authorized to delete the file
-            if ($document->created_by !== auth()->id()) {
-                abort(403, 'Unauthorized action');
-            }
-
+           
             // Delete the file from storage
             if (Storage::exists($document->file_path)) {
                 Storage::delete($document->file_path);

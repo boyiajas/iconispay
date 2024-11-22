@@ -1,12 +1,12 @@
 <template>
-    <div class="mt-4">
+    <div class="mt-4 container">
         
-        <h4 class="section-title">Home  
+        <h2 class="section-title">Home  
             <PermissionControl :roles="['admin', 'authoriser', 'user']">
                     <router-link to="/requisition/new" class="btn btn-primary btn-sm ml-4">+ New Requisition</router-link>
             </PermissionControl>
             
-        </h4>
+        </h2>
         <!-- Status Cards for Matters -->
         <div class="card mb-4">
             <div class="card-header">

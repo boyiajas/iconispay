@@ -1,10 +1,10 @@
 <template>
-    <div class="container mt-4">
-        <h4>File Management <span style="color:#999;font-weight: normal;font-size: 20px;">{{ fileDetails.fileReference }}</span>
+    <div class="container mt-4 mb-5">
+        <h2>File Management <span style="color:#999;font-weight: normal;font-size: 20px;">{{ fileDetails.fileReference }}</span>
             <span>
                 <button class="btn btn-light btn-default-default btn-sm ml-1 pull-right" @click="printPage"><i class="fas fa-print"></i> Print</button>
             </span>
-        </h4>
+        </h2>
         <div class="mb-3">
             <div class="d-flex justify-content-between px-3 py-2 bg-faded rounded">
                 <div><strong>Status:</strong> <span class="badge bg-info" style="border-radius: 3px;">{{ fileDetails.status }}</span></div>

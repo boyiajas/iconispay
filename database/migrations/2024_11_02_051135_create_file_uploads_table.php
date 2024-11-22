@@ -17,6 +17,7 @@ return new class extends Migration
             $table->json('requisition_ids')->nullable();
             $table->string('file_name');
             $table->string('file_path');
+            $table->string('file_hash')->nullable(); // Add file hash column
             $table->decimal('file_size', 10, 2)->nullable(); // File size in KB
             $table->timestamp('generated_at')->useCurrent();
             $table->foreignId('user_id');  // Foreign key to user

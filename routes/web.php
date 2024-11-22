@@ -1,5 +1,6 @@
 <?php
 
+use App\Exports\SimpleExport;
 use App\Http\Controllers\AccountTypeController;
 use App\Http\Controllers\AuditTrailController;
 use App\Http\Controllers\Auth\LoginController;
@@ -17,19 +18,16 @@ use App\Http\Controllers\HomeController;
 use App\Http\Controllers\InstitutionController;
 use App\Http\Controllers\MatterController;
 use App\Http\Controllers\PaymentController;
+use App\Http\Controllers\ReportController;
 use App\Http\Controllers\RequisitionController;
 use App\Http\Controllers\StatusController;
 use App\Http\Controllers\UserController;
+
+
+
+
 use Illuminate\Support\Facades\Route;
-
-
-
-
-
-
-
-
-
+use Maatwebsite\Excel\Facades\Excel;
 
 
 
@@ -112,6 +110,9 @@ Route::prefix('api')->middleware(['auth'])->group(function(){
     Route::post('/requisitions/update-status', [RequisitionController::class, 'updateStatus']);
 
     
+    Route::post('/generate-excel-report', [ReportController::class, 'generateExcelReport']);
+    Route::get('/report-preview', [ReportController::class, 'previewPaymentReport']);
+
 
     Route::post('/deposits/fund-deposits', [DepositController::class, 'fundDeposits']);
     Route::post('/deposits/balance-payment-fund', [DepositController::class, 'balancePaymentFund'])->name('api.deposits.balance-payment-fund');

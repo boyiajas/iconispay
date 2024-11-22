@@ -306,12 +306,15 @@ class FirmAccountController extends Controller
         // Write content to the file
         file_put_contents($filePath, $fileContent);
 
+        $fileHash = hash_file('sha256', $filePath);  // Generate the hash for the file
+
         // Save a single file record in FileUpload with the requisition_ids as JSON
         $fileUpload = FileUpload::create([
             'firm_account_id' => $sourceAccountId, // Associate the file with the firm account
             'file_name' => $fileName,
             'file_path' => $filePath,
             'file_size' => filesize($filePath) / 1024, // File size in KB
+            'file_hash' => $fileHash,
             'user_id' => auth()->user()->id
         ]);
 
@@ -376,156 +379,6 @@ class FirmAccountController extends Controller
                 ];
             }
         }
-
-        return response()->json([
-            'message' => 'File generated successfully for all new requisitions.',
-            'file' => $fileDetails,
-        ]);
-    }
-
-    public function generateFileOld(Request $request, $sourceAccountId)
-    {
-        $firmAccount = FirmAccount::findOrFail($sourceAccountId);
-
-        // Retrieve all requisitions for the specified source account with status ready for payment
-        $requisitions = Requisition::where('firm_account_id', $sourceAccountId)
-            ->where('status_id', 5)
-            ->whereDoesntHave('fileUploads') // Exclude requisitions that are already attached to a file upload
-            ->with('fileUploads') // Eager load file uploads to avoid N+1 problem
-            ->get();
-
-        if ($requisitions->isEmpty()) {
-            return response()->json(['message' => 'No new requisitions available for payment.'], 400);
-        }
-
-        // Generate a consolidated file for all payments
-        $fileName = "Default-{$firmAccount->account_number} " . now()->format('YmdHis') . '.txt';
-        $filePath = storage_path("app/files/{$fileName}");
-
-        // Ensure the directory exists
-        $directory = storage_path('app/files');
-        if (!is_dir($directory)) {
-            mkdir($directory, 0755, true);
-        }
-
-        // Create the file and add information about each requisition
-        $fileContent = '';
-        $requisitionIds = []; // Collect requisition IDs to save in FileUpload
-        $bank = 'ABSA';
-        $absacount = 1001;
-        $company_name = "STRAUSS DALY INCORPORATED";
-
-        foreach ($requisitions as $requisition) {
-            foreach ($requisition->payments as $payment) {
-
-                //here we building the content of the files
-                switch ($bank) {
-                    case 'ABSA':
-                        
-                        $fileContent .= "ABSADATA\t"."3450000".$absacount."C".$company_name."\t\t";
-                        $fileContent .= $firmAccount->account_number."".$firmAccount->branch_code."3".$payment->my_reference;
-                        $fileContent .= "\t\t".$payment->recipient_reference;
-                        $fileContent .= "\t\t".$payment->beneficiaryAccount->account_number.$payment->beneficiaryAccount->branch_code.$payment->recipient_reference;
-                        $fileContent .= "\t\t". number_format($payment->amount, 2, '.', ',');
-                        $fileContent .= Carbon::parse($payment->create_at)->format('ymd')."N  0000000CNAD HOC\n";
-
-                        //$fileContent .= "Payment for requisition #{$requisition->id}\n";
-
-                        break;
-                    
-                    default:
-                        # code...
-                        break;
-                }
-                
-                $absacount += 1000;
-            }
-
-            
-
-
-
-            $requisitionIds[] = $requisition->id; // Add requisition ID to the array
-
-            // Optionally, update each requisition's status_id to 6 (processed)
-            // $requisition->update(['status_id' => 6]);
-        }
-
-        // Write content to the file
-        file_put_contents($filePath, $fileContent);
-
-        // Save a single file record in FileUpload with the requisition_ids as JSON
-        $fileUpload = FileUpload::create([
-            'firm_account_id' => $sourceAccountId, // Associate the file with the firm account
-            'file_name' => $fileName,
-            'file_path' => $filePath,
-            'file_size' => filesize($filePath) / 1024, // File size in KB
-            'user_id' => auth()->user()->id
-        ]);
-
-        // Attach all requisitions to the file upload in a single query
-        $fileUpload->requisitions()->attach($requisitionIds); 
-
-        //====================== the below code is where we get the data based on the uploaded file ===========================//////
-
-        // Retrieve the specified file upload by ID, along with related requisitions and their payments
-        $fileUpload = FileUpload::with([
-            'requisitions' => function ($query) {
-                $query->with('payments','payments.beneficiaryAccount.institution'); // Load payments for each requisition
-            },
-            'firmAccount.institution', // Load the firm account and institution details
-            'user'
-        ])->find($fileUpload->id);
-
-        if (!$fileUpload) {
-            return response()->json(['error' => 'File not found'], 404);
-        }
-       
-
-        // Prepare the file details
-        $fileDetails = [
-            'fileId' => $fileUpload->id,
-            'accountName' => $fileUpload->firmAccount->display_text,
-            'accountHolder' => $fileUpload->firmAccount->account_holder,
-            'accountNumber' => $fileUpload->firmAccount->account_number,
-            'status' => 'Generated',
-            'numberOfPayments' => 0,
-            'totalAmount' => 0.00,
-            'totalConfirmed' => 0.00,
-            'timeGenerated' => Carbon::parse($fileUpload->generated_at)->format('d M Y Hi'),
-            'createdBy' => $fileUpload->user->name,
-            'institution' => $fileUpload->firmAccount->institution->name,
-            'statusMessage' => 'The Payaway file is ready to download.',
-            'historyLog' => [], // Placeholder for future history log data
-            'payments' => []
-        ];
-
-        // Calculate the number of payments and total amount
-        $fileDetails['numberOfPayments'] = $fileUpload->requisitions->sum(function ($requisition) {
-            return $requisition->payments->count();
-        });
-
-        $fileDetails['totalAmount'] = $fileUpload->requisitions->sum(function ($requisition) {
-            return $requisition->payments->sum('amount');
-        });
-        //dd($fileUpload->firmAccount);
-
-        // Collect payments details
-        foreach ($fileUpload->requisitions as $requisition) {
-            foreach ($requisition->payments as $payment) {
-                $fileDetails['payments'][] = [
-                    'fileReference' => $requisition->file_reference, // Use the file reference from the requisition
-                    'recipientAccount' => $payment->beneficiaryAccount->account_number ?? 'N/A',
-                    'recipientReference' => $payment->recipient_reference ?? 'N/A',
-                    'myReference' => $payment->my_reference ?? 'N/A',
-                    'amount' => number_format($payment->amount, 2, '.', ','),
-                    'status' => $payment->status ?? 'Generated',
-                    'beneficiaryAccount' => $payment->beneficiaryAccount
-                ];
-            }
-        }
-
-        //return response()->json($fileDetails);
 
         return response()->json([
             'message' => 'File generated successfully for all new requisitions.',

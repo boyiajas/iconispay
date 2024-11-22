@@ -1,5 +1,5 @@
 <template>
-    <div class="container mt-4">
+    <div class="container mt-4 mb-5">
         <!-- Requisition Header -->
          
         <h4 class="section-title mb-2">

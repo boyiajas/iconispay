@@ -1,6 +1,6 @@
 <template>
-    <div class="container mt-4">
-        <h4 class="section-title">Source Account <small>Create an account</small></h4>
+    <div class="container mt-4 mb-5">
+        <h2 class="section-title">Source Account <small>Create an account</small></h2>
 
         <!-- Beneficiary Account Form -->
         <div class="card">
@@ -410,7 +410,7 @@ export default {
                         this.performAvsVerification();
                         
                     }else{
-                        //this.resetForm();
+                        this.resetForm();
                     }
 
                 })

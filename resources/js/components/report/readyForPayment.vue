@@ -1,14 +1,14 @@
 <template>
     <div class="container mt-4">
       <!-- Page Title -->
-      <h2 class="mb-4 border-bottom pb-2">
-        Payment Report <span class="text-muted">Ready for Payment</span>
+      <h2 class="mb-4 pb-2 section-title">
+        Payment Report <span style="color:#999;font-weight: normal;font-size: 20px;">Ready for Payment</span>
       </h2>
   
       <!-- Source Account Form -->
       <div class="card">
         <div class="card-header">
-            <h5 class="mb-0">Ready for Payment</h5>
+            <h5 class="mb-0">Ready for Payment <span class="pull-right"><router-link to="/reports" class="btn btn-white btn-sm">Back</router-link></span></h5>
         </div>
         <div class="card-body">
           <form @submit.prevent="generateReport">
@@ -68,17 +68,38 @@
             console.error("Error loading source accounts:", error);
           });
       },
-      // Generate report based on selected source account
+
       generateReport() {
-        if (this.selectedSourceAccount) {
-          console.log(
-            `Generating report for source account ID: ${this.selectedSourceAccount}`
-          );
-        } else {
-          console.log("Generating report for all source accounts");
+        axios
+            .post("/api/generate-excel-report", 
+                { firmAccountId: this.selectedSourceAccount }, 
+                { responseType: "blob" } // Important: Expect a binary response
+            )
+            .then((response) => {
+                // Create a URL for the binary data
+                const url = window.URL.createObjectURL(new Blob([response.data]));
+
+                // Extract the filename from the response headers
+                const contentDisposition = response.headers["content-disposition"];
+                const fileName = contentDisposition
+                    ? contentDisposition.split("filename=")[1].replace(/"/g, "")
+                    : "report.xlsx";
+
+                // Create a link element and trigger download
+                const link = document.createElement("a");
+                link.href = url;
+                link.setAttribute("download", fileName);
+                document.body.appendChild(link);
+                link.click();
+                link.remove();
+            })
+            .catch((error) => {
+                console.error("Error generating report:", error.response?.data || error.message);
+            });
+    },
+    cancelButton() {
+            this.$router.go(-1);
         }
-        // Add further logic for report generation
-      },
     },
     mounted() {
       this.loadSourceAccount(); // Load source accounts when the component is mounted
@@ -87,10 +108,6 @@
   </script>
   
   <style scoped>
-  h2 {
-    font-size: 24px;
-    font-weight: bold;
-  }
     
   .form-select {
     width: 100%;

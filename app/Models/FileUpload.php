@@ -16,6 +16,7 @@ class FileUpload extends Model
         'file_name',
         'file_path',
         'file_size',
+        'file_hash',
         'generated_at',
         'user_id',
     ];

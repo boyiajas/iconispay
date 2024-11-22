@@ -1,5 +1,5 @@
 <template>
-    <div class="container mt-4">
+    <div class="container mt-4 mb-5">
         <!-- Accounts Table -->
         <div class="card mb-4">
             <div class="card-header">

@@ -1,6 +1,6 @@
 <template>
     <div class="container mt-4">
-        <h4 class="section-title">Legal Associates Firm Setup</h4>
+        <h2 class="section-title">Legal Associates Firm Setup</h2>
         <!-- Tab Navigation -->
         <ul class="nav nav-tabs mb-0" id="setupTab" role="tablist">
             <li class="nav-item" role="presentation">
@@ -835,10 +835,6 @@ export default {
 </script>
 
 <style scoped>
-.section-title {
-    font-weight: bold;
-    margin-bottom: 20px;
-}
 .card-header h5 {
     font-size: 18px;
     font-weight: bold;

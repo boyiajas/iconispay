@@ -1,8 +1,8 @@
 <template>
-    <div class="container mt-4">
+    <div class="container mt-4 mb-5">
         <!-- Account Header -->
         <div class="account-header mb-4">
-            <h4>Account Files <span style="color:#999;font-weight: normal;font-size: 20px;">{{ accountData.display_text }} - {{ accountData.account_number }} ({{ accountData.branch_code	 }})</span></h4>
+            <h2>Account Files <span style="color:#999;font-weight: normal;font-size: 20px;">{{ accountData.display_text }} - {{ accountData.account_number }} ({{ accountData.branch_code	 }})</span></h2>
             <p>Account Holder: {{ accountData.account_holder }}</p>
         </div>
 
