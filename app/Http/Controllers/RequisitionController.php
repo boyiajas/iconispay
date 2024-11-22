@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Deposit;
+use App\Models\FileHistoryLog;
 use App\Models\FileUpload;
 use App\Models\Payment;
 use App\Models\Requisition;
@@ -10,8 +11,8 @@ use Auth;
 use Carbon\Carbon;
 use DataTables;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Storage;
 
 class RequisitionController extends Controller
 {
@@ -26,10 +27,10 @@ class RequisitionController extends Controller
         // Check if the user has an 'admin' or 'authorizer' role
        if ($user->hasRole('admin') || $user->hasRole('authoriser')) {
            // If the user is an admin or authorizer, get all incomplete requisitions
-           $query = Requisition::with('user','payments','payments.beneficiaryAccount');
+           $query = Requisition::with('user','lockedBy','payments','payments.beneficiaryAccount');
        } else {
            // Otherwise, get incomplete requisitions created by the user
-           $query = Requisition::with('user','payments','payments.beneficiaryAccount')->where('created_by', $user->id)->get();
+           $query = Requisition::with('user','lockedBy','payments','payments.beneficiaryAccount')->where('created_by', $user->id)->get();
            //$matters = Matter::with('status', 'user')::where('created_by', $user->id)->get();
        }
         /* $matters = Requisition::with('user')->get();
@@ -567,7 +568,8 @@ class RequisitionController extends Controller
 
     public function secureDownload($fileId)
     {
-        $fileUpload = FileUpload::findOrFail($fileId);
+        // Find the file upload record and include the associated FirmAccount
+        $fileUpload = FileUpload::with('firmAccount.institution')->findOrFail($fileId);
 
         // Use policy to authorize
         $this->authorize('download', $fileUpload);
@@ -589,6 +591,10 @@ class RequisitionController extends Controller
         if (ob_get_level()) {
             ob_end_clean();
         }
+
+        $firmAccount = $fileUpload->firmAccount;
+
+        FileHistoryLog::logFileHistory($fileUpload->id, 'Downloaded Payaway File', "Downloaded the payaway file {$firmAccount->institution->short_name} - {$firmAccount->account_number} ({$fileUpload->generated_at->format('Ymd Hi')})");
 
         // Stream the file to the browser
         return Storage::disk('local')->download($filePath, $fileUpload->file_name);

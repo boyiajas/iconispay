@@ -3,12 +3,13 @@
 namespace App\Http\Controllers;
 
 use App\Models\Authorizer;
+use App\Models\FileHistoryLog;
 use App\Models\FileUpload;
 use App\Models\FirmAccount;
 use App\Models\Requisition;
+use Carbon\Carbon;
 use DataTables;
 use Illuminate\Http\Request;
-use Carbon\Carbon;
 
 class FirmAccountController extends Controller
 {
@@ -307,6 +308,7 @@ class FirmAccountController extends Controller
         file_put_contents($filePath, $fileContent);
 
         $fileHash = hash_file('sha256', $filePath);  // Generate the hash for the file
+        
 
         // Save a single file record in FileUpload with the requisition_ids as JSON
         $fileUpload = FileUpload::create([
@@ -317,6 +319,11 @@ class FirmAccountController extends Controller
             'file_hash' => $fileHash,
             'user_id' => auth()->user()->id
         ]);
+
+        // Log actions
+        FileHistoryLog::logFileHistory($fileUpload->id, 'Created Payaway File', "Created payaway file {$firmAccount->institution->short_name} - {$firmAccount->account_number} ({$fileUpload->generated_at->format('Ymd Hi')})");
+        FileHistoryLog::logFileHistory($fileUpload->id, 'Created Hash', "Added a hash validation to the file");
+
 
         // Attach all requisitions to the file upload in a single query
         $fileUpload->requisitions()->attach($requisitionIds);
@@ -385,7 +392,6 @@ class FirmAccountController extends Controller
             'file' => $fileDetails,
         ]);
     }
-
 
     public function getIndividualAccountPendingConfirmationFiles($id)
     {

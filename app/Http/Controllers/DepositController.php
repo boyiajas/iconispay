@@ -67,6 +67,7 @@ class DepositController extends Controller
         $requisition->load(
             'user',
             'authorizedBy',
+            'lockedBy',
             'firmAccount.institution',  
             'payments.beneficiaryAccount.institution',
             'payments.payToFirmAccount.institution',

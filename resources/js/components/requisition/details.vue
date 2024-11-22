@@ -471,7 +471,7 @@
                             
                         </div>
                         <div class="card-body">
-                            <div v-if="requisition.status_id == 3">
+                            <div v-if="requisition.status_id == 3 && !requisition.authorized_status">
                                 <PermissionControl :roles="['admin', 'authoriser']">
                                     <div class="approve-box p-2 pull-right" style="border: solid 1px #40b1c5;background: #eafcff;">
                                         <div class="pl-0 pr-0">
@@ -481,7 +481,7 @@
                                         <div class=""><a class="btn btn-sm btn-primary" @click="approveRequisition(requisition.id)">Approve</a></div>
                                     </div>
                                 </PermissionControl>
-                                <PermissionControl :roles="['user']">
+                                <PermissionControl :roles="['user']" v-if="requisition.locked">
                                     <div class="approve-box p-2 pull-right">
                                         <div class="txt-xs">Approval required by Authoriser</div>
                                         <div><a class="btn btn-sm btn-white btn-default-default disabled">Approve</a></div>

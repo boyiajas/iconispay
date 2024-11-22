@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\FileHistoryLog;
 use App\Models\FileUpload;
 use App\Models\FirmAccount;
 use Illuminate\Http\Request;
@@ -38,6 +39,20 @@ class FileUploadController extends Controller
             return response()->json(['error' => 'File not found'], 404);
         }
 
+         // Fetch the file history logs
+        $fileHistory = FileHistoryLog::where('file_upload_id', $fileUpload->id)
+        ->with('user') // Include the user who performed the action
+        ->orderBy('log_date', 'desc') // Order by the log date
+        ->get()
+        ->map(function ($log) {
+            return [
+                'user_name' => $log->user->email ?? 'N/A',
+                'action' => $log->action,
+                'details' => $log->details,
+                'date' => $log->log_date->format('Y-m-d H:i:s'),
+            ];
+        });
+
         // Prepare the file details
         $fileDetails = [
             'fileId' => $fileUpload->id,
@@ -47,7 +62,7 @@ class FileUploadController extends Controller
             'totalAmount' => 0.00,
             'totalConfirmed' => 0.00,
             'numberOfProcessedPayments' => 0, // Add processed payment count
-            'historyLog' => [], // Placeholder for future history log data
+            'historyLog' => $fileHistory, // Placeholder for future history log data
             'payments' => [],
             'createdBy' => $fileUpload->user->name
         ];
