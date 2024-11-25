@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\FileHistoryLog;
 use App\Models\FileUpload;
 use App\Models\FirmAccount;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 
 class FileUploadController extends Controller
@@ -49,14 +50,14 @@ class FileUploadController extends Controller
                 'user_name' => $log->user->email ?? 'N/A',
                 'action' => $log->action,
                 'details' => $log->details,
-                'date' => $log->log_date->format('Y-m-d H:i:s'),
+                'date' => Carbon::parse($log->log_date)->format('Y-m-d H:i:s'),
             ];
         });
 
         // Prepare the file details
         $fileDetails = [
             'fileId' => $fileUpload->id,
-            'fileReference' => $fileUpload->firmAccount->institution->short_name . " - " . $fileUpload->firmAccount->account_number . " (" . \Carbon\Carbon::parse($fileUpload->generated_at)->format('Y-m-d Hi') . ")",
+            'fileReference' => $fileUpload->firmAccount->institution->short_name . " - " . $fileUpload->firmAccount->account_number . " (" . Carbon::parse($fileUpload->generated_at)->format('Y-m-d Hi') . ")",
             'status' => 'Generated',
             'numberOfPayments' => 0,
             'totalAmount' => 0.00,
@@ -128,7 +129,7 @@ class FileUploadController extends Controller
         // Prepare the file details
         $fileDetails = [
             'fileId' => $fileUpload->id,
-            'fileReference' => $fileUpload->firmAccount->institution->short_name . " - " . $fileUpload->firmAccount->account_number . " (" . \Carbon\Carbon::parse($fileUpload->generated_at)->format('Y-m-d Hi') . ")",
+            'fileReference' => $fileUpload->firmAccount->institution->short_name . " - " . $fileUpload->firmAccount->account_number . " (" . Carbon::parse($fileUpload->generated_at)->format('Y-m-d Hi') . ")",
             'status' => 'Generated',
             'numberOfPayments' => 0,
             'totalAmount' => 0.00,

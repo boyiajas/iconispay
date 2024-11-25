@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\PaidByDateReportExport;
 use App\Exports\PaymentReportExport;
 use App\Models\BeneficiaryAccount;
 use App\Models\FirmAccount;
@@ -33,6 +34,30 @@ class ReportController extends Controller
         // Use the PaymentReportExport to generate the Excel file and return it for download
         return Excel::download(new PaymentReportExport($firmAccount), $fileName);
     }
+
+    public function generatePaidByDateReport(Request $request)
+    {
+        // Validate the incoming request
+        $request->validate([
+            'fromDate' => 'required|date',
+            'toDate' => 'required|date|after_or_equal:fromDate',
+        ]);
+
+        $fromDate = $request->fromDate;
+        $toDate = $request->toDate;
+
+        // Clean output buffer to avoid corruption
+        if (ob_get_contents()) {
+            ob_end_clean();
+        }
+
+        // Define the file name for the Excel report
+        $fileName = 'Paid_By_Date_Report_' . now()->format('Ymd_His') . '.xlsx';
+
+        // Generate and return the Excel report
+        return Excel::download(new PaidByDateReportExport($fromDate, $toDate), $fileName);
+    }
+
 
     public function previewPaymentReport()
     { 

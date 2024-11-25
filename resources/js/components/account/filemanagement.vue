@@ -53,13 +53,13 @@
                                     <td>{{ payment.myReference }}</td>
                                     <td>R{{ payment.amount }}</td>
                                     <td>
-                                        <span
+                                        <span 
                                             :class="{
-                                                'bg-info': payment.status === 'generated',
+                                                'badge-info': payment.status === 'Generated',
                                                 'badge-success': payment.status === 'processed',
                                                 'badge-warning': payment.status === 'failed'
                                             }"
-                                            class="badge"
+                                            class="badge "
                                             style="border-radius: 3px;"
                                         >
                                             {{ payment.status }}
@@ -121,7 +121,7 @@
                     </thead>
                     <tbody>
                         <tr v-for="(log, index) in fileDetails.historyLog" :key="index">
-                            <td>{{ log.userName }}</td>
+                            <td>{{ log.user_name }}</td>
                             <td>{{ log.action }}</td>
                             <td>{{ log.details }}</td>
                             <td>{{ log.date }}</td>
@@ -149,15 +149,9 @@ export default {
                 totalConfirmed: 0.00,
                 historyLog: [
                     {
-                        userName: "Brian@LegalAssoc",
+                        user_name: "Brian@LegalAssoc",
                         action: "Downloaded Payaway File",
                         details: "Downloaded the pay away file FNB - 446578856",
-                        date: "2018-12-19 07:53 AM"
-                    },
-                    {
-                        userName: "Brian@LegalAssoc",
-                        action: "Created Hash",
-                        details: "Added a hash validation to the file",
                         date: "2018-12-19 07:53 AM"
                     }
                 ],
@@ -208,7 +202,7 @@ export default {
             // Format the number with two decimal places and add commas
             return number.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
         },
-        fetchFileDetails() {
+        fetchFileDetails() { 
             axios.get(`/api/file-management/${this.fileId}`)
                 .then(response => {
                     const data = response.data;
@@ -429,7 +423,7 @@ export default {
                                 .map(
                                     log => `
                                     <tr>
-                                        <td style="padding: 8px; border: 1px solid #ddd;">${log.userName}</td>
+                                        <td style="padding: 8px; border: 1px solid #ddd;">${log.user_name}</td>
                                         <td style="padding: 8px; border: 1px solid #ddd;">${log.action}</td>
                                         <td style="padding: 8px; border: 1px solid #ddd;">${log.details}</td>
                                         <td style="padding: 8px; border: 1px solid #ddd;">${log.date}</td>

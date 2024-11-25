@@ -317,11 +317,12 @@ class FirmAccountController extends Controller
             'file_path' => $filePath,
             'file_size' => filesize($filePath) / 1024, // File size in KB
             'file_hash' => $fileHash,
-            'user_id' => auth()->user()->id
+            'user_id' => auth()->user()->id,
+            'generated_at' => now(),
         ]);
 
         // Log actions
-        FileHistoryLog::logFileHistory($fileUpload->id, 'Created Payaway File', "Created payaway file {$firmAccount->institution->short_name} - {$firmAccount->account_number} ({$fileUpload->generated_at->format('Ymd Hi')})");
+        FileHistoryLog::logFileHistory($fileUpload->id, 'Created Payaway File', "Created payaway file {$firmAccount->institution->short_name} - {$firmAccount->account_number} ({$fileUpload->created_at->format('Ymd Hi')})");
         FileHistoryLog::logFileHistory($fileUpload->id, 'Created Hash', "Added a hash validation to the file");
 
 
@@ -541,9 +542,6 @@ class FirmAccountController extends Controller
         return response()->json(['data' => $data]);
     }
 
-
-    
-
     /**
      * Get Recently Closed Files for the Recently Closed Files Table.
      */
@@ -555,11 +553,15 @@ class FirmAccountController extends Controller
         $toDate = $request->to_date ? Carbon::parse($request->to_date)->endOfDay() : Carbon::today()->endOfDay();
 
         // Assuming 'status_id' 7 represents 'processed' in requisitions
-        $closedFiles = FirmAccount::whereHas('requisitions', function ($query) use ($fromDate, $toDate) {
-            $query->where('status_id', 7)
-                ->whereBetween('updated_at', [$fromDate, $toDate]);
-        })->with('requisitions', 'institution')->get();
-
+        $closedFiles = FirmAccount::whereHas('requisitions', function ($query) {
+            $query->where('status_id', 7);
+        })
+        ->with(['requisitions' => function ($query) use ($fromDate, $toDate) {
+            $query->where('status_id', 7)->whereBetween('updated_at', [$fromDate, $toDate])
+                ->with('fileUploads', 'payments'); // Load related file uploads and payments
+        }, 'institution'])
+        ->get();
+        /*
         $data = $closedFiles->map(function ($account) {
             $requisition = $account->requisitions()->where('status_id', 7)->first();
             return [
@@ -571,6 +573,40 @@ class FirmAccountController extends Controller
                 'status' => 'Closed',
             ];
         });
+
+        return response()->json(['data' => $data]); */
+        // Flatten and map each account's requisitions and file uploads
+        $data = $closedFiles->flatMap(function ($account) {
+            return $account->requisitions->map(function ($requisition) use ($account) {
+                // Check if any file uploads exist for this requisition
+                $hasFiles = $requisition->fileUploads->isNotEmpty();
+                $dateGenerated = $hasFiles ? $requisition->fileUploads->max('generated_at')->format('d M Y H:i') : '<span class="badge bg-default">None</span>';
+                // Ensure that `fileId` is properly handled
+                $fileId = $requisition->fileUploads->first()->id ?? null;
+                 // HTML for the edit button
+                 $editButton = "<span class='pull-right btn btn-sm btn-default-default py-0 px-1 file-management-btn' data-file-id='{$fileId}' ><i class='fas fa-edit'></i></span>";
+
+                return [
+                    'display_text' => $account->display_text,
+                    'default_file_name' => "Default - {$account->account_number}",
+                    'payments' => $requisition->payments->count(),
+                    'date_generated' => $dateGenerated,
+                    'date_completed' => ($requisition && $requisition->completed_at) ? Carbon::parse($requisition->completed_at)->format('d M Y H:i') : '',
+                    'total_amount' => $requisition->calculateTransactionValue(),
+                    'status' => ($hasFiles ? '<span class="badge bg-success" style="width: 95px;border-radius: 3px;height: 20px;">Processed</span>' : '<span class="badge bg-default">No open files</span>') . ' ' . $editButton,
+                
+                    'files' => $requisition->fileUploads->map(function ($fileUpload) {
+                        return [
+                            'file_name' => $fileUpload->file_name, // Name of the generated file
+                            'file_id' => $fileUpload->id,
+                            'download_url' => route('secure.download', ['fileId' => $fileUpload->id]), // Secure download route
+                            'date_generated' => $fileUpload->generated_at->format('d M Y H:i'), // File generation date
+                        ];
+                    })->all()
+                
+                ];
+            });
+        })->all(); // Convert entire result to array format for JSON response
 
         return response()->json(['data' => $data]);
     }

@@ -10,7 +10,7 @@
                 <div class="table-responsive">
                     <table id="accounts-table" class="table table-bordered table-striped display nowrap" style="width:100%">
                         <thead>
-                            <tr class="table-secondary">
+                            <tr>
                                 <th>Method</th>
                                 <th width="20%">Account</th>
                                 <th>Institution</th>
@@ -33,7 +33,7 @@
                 <div class="table-responsive">
                     <table id="pending-confirmation-files-table" class="table table-bordered table-striped display nowrap" style="width:100%">
                         <thead>
-                            <tr class="table-secondary">
+                            <tr>
                                 <th>Account</th>
                                 <th>File</th>
                                 <th>Payments</th>
@@ -66,10 +66,10 @@
                             <tr class="table-secondary">
                                 <th width="20%">Account</th>
                                 <th>File</th>
-                                <th>Payments</th>
-                                <th>Date Completed</th>
-                                <th>Total Amount</th>
-                                <th>Status</th>
+                                <th width="10%">Payments</th>
+                                <th width="15%">Date Completed</th>
+                                <th width="15%">Total Amount</th>
+                                <th width="12%">Status</th>
                             </tr>
                         </thead>
                     </table>
@@ -241,7 +241,7 @@ export default {
 
             this.accountsTable = $('#accounts-table').DataTable({
                 processing: true,
-                serverSide: true,
+                serverSide: false,
                 ajax: {
                     url: '/api/accounts',
                     type: 'GET',
@@ -381,7 +381,7 @@ export default {
     
             this.pendingConfirmationFilesTable = $('#pending-confirmation-files-table').DataTable({
                 processing: true,
-                serverSide: true,
+                serverSide: false,
                 ajax: {
                     url: '/api/pending-confirmation-files',
                     type: 'GET',
@@ -416,7 +416,7 @@ export default {
         },
 
         // Initialize the Recently Closed Files Table
-        initializeRecentlyClosedFilesTable() {
+        /* initializeRecentlyClosedFilesTableOld() {
             this.recentlyClosedFilesTable = $('#recently-closed-files-table').DataTable({
                 processing: true,
                 serverSide: true,
@@ -443,6 +443,62 @@ export default {
                 responsive: true,
                 destroy: true,
             });
+        }, */
+        initializeRecentlyClosedFilesTable() {
+            this.recentlyClosedFilesTable = $('#recently-closed-files-table').DataTable({
+                processing: true,
+                serverSide: false,
+                ajax: {
+                    url: '/api/recently-closed-files',
+                    type: 'GET',
+                    data: (d) => {
+                        d.from_date = this.fromDate;
+                        d.to_date = this.toDate;
+                    },
+                    error: (xhr, error, thrown) => {
+                        console.error('Error fetching data:', error, thrown);
+                        //alert('An error occurred while fetching the data. Please try again later.');
+                    }
+                },
+                columns: [
+                    { data: 'display_text' },
+                    {
+                        data: 'files',
+                        render: (data, row) => {
+                            console.log(data);
+                             if (data && data.length > 0) {
+                                return data.map(file => `
+                                    <a href="/secure-download/${file.file_id}" class="btn btn-link">
+                                        ${file.file_name}
+                                    </a>
+                                `).join('');
+                            } else {
+                                return `No open files`;
+                            } 
+                        }
+                    },
+                    { data: 'payments' },
+                    { data: 'date_completed' },
+                    { data: 'total_amount', render: $.fn.dataTable.render.number(',', '.', 2, 'R ') },
+                    { data: 'status' },
+                ],
+                createdRow: (row, data, dataIndex) => {
+                   
+                   $(row).find('.file-management-btn').on('click', (event) => {
+                       const fileId = $(event.currentTarget).data('file-id');
+                       if (fileId) {
+                           this.navigateToFileManagement(fileId);
+                       }
+                   });
+
+                   $('td', row).css('word-wrap', 'break-word').css('white-space', 'normal');
+                },
+                responsive: true,
+                destroy: true,
+            });
+        },
+        navigateToFileManagement(fileId) {
+            this.$router.push({ name: 'filemanagement', params: { id: fileId } });
         },
         closeModal() {
             //const newUserModal = bootstrap.Modal.getInstance(document.getElementById('newUserModal'));

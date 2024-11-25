@@ -14,6 +14,7 @@ import EmailRequestor from './email/emailrequestor.vue';
 import AccountFileEdit from './account/accountfileedit.vue';
 import FileManagement from './account/filemanagement.vue';
 import ReadyForPayment from './report/readyForPayment.vue';
+import PaidByDate from './report/paidByDate.vue';
 
 // Define Vue Router routes, excluding the /contact route
 const routes = [
@@ -22,6 +23,7 @@ const routes = [
     { path: '/accounts', name: 'accounts', component: Account },
     { path: '/reports', name: 'reports', component: Report },
     { path: '/reports/ready-for-payment', name: 'ready-for-payment', component: ReadyForPayment },
+    { path: '/reports/paid-by-date', name: 'paid-by-date', component: PaidByDate },
     { path: '/requisition/new', name: 'newrequisition', component: NewRequisition },
     
     // Updated route for requisition details with dynamic parameters
