@@ -6,6 +6,7 @@ use App\Models\User;
 use DataTables;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Hash;
 
 class UserController extends Controller
 {
@@ -60,8 +61,36 @@ class UserController extends Controller
      * Store a newly created resource in storage.
      */
     public function store(Request $request)
-    {
-        //
+    { 
+        $request->validate([
+            'name'         => 'required|string|max:255',
+            'email'        => 'required|string|email|max:255|unique:users',
+            'password'     => 'required|string|min:8|confirmed',
+            'password_confirmation' => 'required',
+        ]);
+
+        $user = new User();
+        $user->name      = $request->name;
+        $user->email     = $request->email;
+        $user->status    = 'active';
+        $user->password  = Hash::make($request->password);
+        $user->syncRoles('user');
+
+        if($request->input('is_admin')){
+            $user->syncRoles('admin');
+        }
+        if($request->input('authoriser_role')){
+            $user->syncRoles('authoriser');
+        }
+        if($request->input('bookkeeper_role')){
+            $user->syncRoles('bookkeeper');
+        }
+
+        $user->save();
+
+        // Return the created requisition details
+        return response()->json($user, 201);
+
     }
 
     /**
@@ -93,6 +122,7 @@ class UserController extends Controller
      */
     public function destroy(User $user)
     {
-        //
+        $user->delete();
+        return response()->json(['message' => 'User deleted successfully.']);
     }
 }

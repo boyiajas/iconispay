@@ -56,7 +56,7 @@
                 <div class="card mb-4">
                     <div class="card-header d-flex justify-content-between">
                         <h5>Users List</h5>
-                        <button class="btn btn-white btn-sm" @click="addUser">+ New User</button>
+                        <button class="btn btn-white btn-sm" title="Create New User" @click="addUser"><i class="fas fa-user-plus"></i> New User</button>
                     </div>
                     <div class="card-body">
                         <table id="users-list-table" class="table table-bordered table-striped display nowrap" style="width:100%">
@@ -188,12 +188,16 @@
                                 <input type="email" v-model="newUser.email" class="form-control" id="email" placeholder="Enter email used for user communication" required>
                             </div>
                             <div class="form-group mb-3">
-                                <label for="username">Username:</label>
-                                <input type="text" v-model="newUser.username" class="form-control" id="username" placeholder="Enter unique username (defaults to email)">
+                                <label for="name">Full Name:</label>
+                                <input type="text" v-model="newUser.name" class="form-control" id="name" placeholder="Enter full name" required>
                             </div>
                             <div class="form-group mb-3">
-                                <label for="full_name">Full Name:</label>
-                                <input type="text" v-model="newUser.full_name" class="form-control" id="full_name" placeholder="Enter full name" required>
+                                <label for="password">Password:</label>
+                                <input type="password" v-model="newUser.password" class="form-control" id="password" placeholder="Enter password">
+                            </div>
+                            <div class="form-group mb-3">
+                                <label for="password_confirmation">Confirm Password:</label>
+                                <input type="password" v-model="newUser.password_confirmation" class="form-control" id="password_confirmation" placeholder="Enter confirm password">
                             </div>
                             <div class="form-group mb-3">
                                 <label for="cell_number">Cell Number:</label>
@@ -294,6 +298,30 @@
             </div>
         </div>
 
+        <!-- Register Certificate Modal -->
+        <div class="modal fade" id="registerCertificateModal" tabindex="-1" aria-labelledby="registerCertificateModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="registerCertificateModalLabel">Register Certificate</h5>
+                        <button type="button" class="btn-close" @click="closeModal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form @submit.prevent="registerCertificate">
+                            <div class="form-group mb-3">
+                                <label for="certificateFile">Upload Certificate:</label>
+                                <input type="file" id="certificateFile" ref="certificateFile" class="form-control" accept=".pem" required>
+                            </div>
+                            <div class="form-group d-flex justify-content-end">
+                                <button type="submit" class="btn btn-primary btn-sm">Submit</button>
+                                <button type="button" class="btn btn-secondary ms-2 btn-sm" @click="closeModal">Cancel</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
     </div>
 </template>
 
@@ -315,9 +343,10 @@ export default {
             deactivatedUsersTable: [],
             newUser: {
                 email: '',
-                username: '',
-                full_name: '',
+                name: '',
                 cell_number: '',
+                password: '',
+                password_confirmation: '',
                 is_admin: false,
                 authoriser_role: false,
                 bookkeeper_role: false
@@ -367,12 +396,27 @@ export default {
                         data: null,
                         render: function (data) {
                             return `
-                                <button class="btn btn-outline-info btn-sm me-2"><i class="fas fa-edit"></i></button>
-                                <button class="btn btn-outline-danger btn-sm"><i class="fas fa-trash"></i></button>
+                                <button class="btn btn-outline-info btn-sm me-2" title="Edit User"><i class="fas fa-user-edit" ></i></button>
+                                <button class="btn btn-outline-info btn-sm me-2 register-certificate-btn" data-user-id="${data.id}" title="Register Certificate"><i class="fas fa-certificate"></i></button>
+                                <button class="btn btn-outline-danger btn-sm delete-user-btn" data-user-id="${data.id}" title="Delete User"><i class="fas fa-user-times" ></i></button>
                             `;
                         }
                     }
                 ],
+                createdRow: (row, data, dataIndex) => {
+                    $(row).find('.register-certificate-btn').on('click', (event) => {
+                        const userId = $(event.currentTarget).data('user-id');
+                        if (userId) {
+                            this.openCertificateModal(userId);
+                        }
+                    });
+                    $(row).find('.delete-user-btn').on('click', (event) => {
+                        const userId = $(event.currentTarget).data('user-id');
+                        if (userId) {
+                            this.confirmUserDelete(userId);
+                        }
+                    });
+                }, 
                 responsive: true,
                 paging: true,
                 pageLength: 10,
@@ -381,16 +425,79 @@ export default {
                 autoWidth: true
             });
         },
+
+        openCertificateModal(userId) {
+            this.selectedUserId = userId; // Store the user ID for the certificate
+            this.modalInstance = new bootstrap.Modal(document.getElementById('registerCertificateModal'));
+            this.modalInstance.show();
+        },
+
+        async registerCertificate() {
+            // Get the selected file
+            const fileInput = this.$refs.certificateFile;
+            if (!fileInput.files.length) {
+                this.toast.error('Please select a certificate file.');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('certificate', fileInput.files[0]);
+
+            try {
+                const response = await axios.post(`/api/register-certificate/${this.selectedUserId}`, formData, {
+                    headers: { 'Content-Type': 'multipart/form-data' },
+                });
+                this.toast.success(response.data.message || 'Certificate registered successfully!');
+                this.closeModal();
+            } catch (error) {
+                this.toast.error(error.response.data.message || 'An error occurred while registering the certificate.');
+            }
+        },
+        confirmUserDelete(id) {
+            if (confirm('Are you sure you want to delete this account?')) {
+                this.deleteUser(id);
+            }
+        },
+
+        deleteUser(userId){
+            axios.delete(`/api/users/${userId}`)
+                .then(response => {
+                    if (response.data) {
+                        this.toast.success('User deleted successfully!', {
+                            title: 'Success'
+                        });
+                    }
+                    //this.modalInstance.hide();
+                    this.loadUsers(); // Reload table data
+                })
+                .catch(error => {
+                    this.toast.error(error.response ? error.response.data : 'Error deleting user', {
+                        title: 'Error'
+                    });
+                    console.error('Error saving user:', error);
+                });
+            
+        },        
         // Save new user to the database
         saveUser() {
             axios.post('/api/users', this.newUser)
                 .then(response => {
-                    this.users.push(response.data);
+                    //this.newUser.push(response.data);
+                    if (response.data) {
+                        this.toast.success('User created successfully!', {
+                            title: 'Success'
+                        });
+                    }
+                    console.log("feedback", response.data);
                     //this.modalInstance = new bootstrap.Modal(document.getElementById('newUserModal'));
                     this.modalInstance.hide();
                     this.resetNewUser();
+                    this.loadUsers();
                 })
                 .catch(error => {
+                    this.toast.error(error.response ? error.response.data : 'Error saving user', {
+                        title: 'Error'
+                    });
                     console.error('Error saving user:', error);
                 });
         },

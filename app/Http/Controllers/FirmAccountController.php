@@ -55,7 +55,7 @@ class FirmAccountController extends Controller
         // Use eager loading to fetch related data in one query
         $accounts = FirmAccount::with(['institution', 'requisitions' => function ($query) {
             $query->whereIn('status_id', [5, 6]);
-        }])->get();
+        }])->orderBy('created_at', 'desc')->get();
 
         // Collect all firm account IDs to perform a single query for FileUpload records
         $firmAccountIds = $accounts->pluck('id');
@@ -241,7 +241,7 @@ class FirmAccountController extends Controller
 
     public function generateFile(Request $request, $sourceAccountId)
     {
-        $firmAccount = FirmAccount::findOrFail($sourceAccountId);
+        $firmAccount = FirmAccount::with('institution')->findOrFail($sourceAccountId);
 
         // Retrieve all requisitions for the specified source account with status ready for payment
         $requisitions = Requisition::where('firm_account_id', $sourceAccountId)
@@ -267,9 +267,10 @@ class FirmAccountController extends Controller
         // Create the file and add information about each requisition
         $fileContent = '';
         $requisitionIds = []; // Collect requisition IDs to save in FileUpload
-        $bank = 'ABSA';
+        $bank = $firmAccount->institution->short_name;
         $absacount = 1001;
         $company_name = "STRAUSS DALY INCORPORATED";
+        $increment = 1;
 
         foreach ($requisitions as $requisition) {
             foreach ($requisition->payments as $payment) {
@@ -282,6 +283,10 @@ class FirmAccountController extends Controller
                 // Build the content of the file
                 switch ($bank) {
                     case 'ABSA':
+                    case 'Capitec':
+                    case 'FNB':
+                    case 'Standard':
+                    case 'Capitec Business':
                         $fileContent .= "ABSADATA\t" . "3450000" . $absacount . "C" . $company_name . "\t\t";
                         $fileContent .= $firmAccount->account_number . $firmAccount->branch_code . "3" . $payment->my_reference;
                         $fileContent .= "\t\t" . $recipientReference;
@@ -289,6 +294,17 @@ class FirmAccountController extends Controller
                         $fileContent .= "\t\t" . number_format($payment->amount, 2, '.', ',');
                         $fileContent .= Carbon::parse($payment->created_at)->format('ymd') . "N  0000000CNAD HOC\n";
                         break;
+                    
+                    case 'Nedbank':
+                        $rowType = $increment < $requisition->payments->count() ? '10' : '12';
+
+                        $fileContent .= $rowType . $firmAccount->branch_code . '0' . $firmAccount->account_number;
+                        $fileContent .= '000000000' . str_pad($increment, 2, '0', STR_PAD_LEFT);
+                        $fileContent .= $branchCode . $accountNumber;
+                        $fileContent .= '10000' . $payment->amount . Carbon::parse($payment->created_at)->format('ymd') . ($rowType === '10' ? '000000 ' : '100000');
+                        $fileContent .= str_pad($recipientReference, 30);
+                        $fileContent .= str_pad($payment->recipient_name, 30);
+                        $fileContent .= '00000000000000000000                21' . PHP_EOL;
 
                     default:
                         // Handle other banks if necessary

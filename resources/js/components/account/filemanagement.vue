@@ -37,7 +37,7 @@
                         <table class="table table-bordered">
                             <thead>
                                 <tr>
-                                    <th>File Reference</th>
+                                    <th width="20%">File Reference</th>
                                     <th>Recipient Account</th>
                                     <th>Recipient Reference</th>
                                     <th>My Reference</th>
@@ -47,7 +47,7 @@
                             </thead>
                             <tbody>
                                 <tr v-for="(payment, index) in fileDetails.payments" :key="index">
-                                    <td>{{ payment.fileReference }}</td>
+                                    <td><div>{{ payment.fileReference }} </br><span style="color:#999;">Created By {{ payment.requisitionCreatedBy.name }}</span></div></td>
                                     <td>{{ payment.recipientAccount }}</td>
                                     <td>{{ payment.recipientReference }}</td>
                                     <td>{{ payment.myReference }}</td>
@@ -144,6 +144,7 @@ export default {
             fileDetails: {
                 fileReference: "",
                 status: "",
+                createdBy: "",
                 numberOfPayments: 0,
                 totalAmount: 0.00,
                 totalConfirmed: 0.00,
@@ -373,7 +374,7 @@ export default {
                                 .map(
                                     payment => `
                                     <tr style="background: #f2f2f2; text-align: left;">
-                                        <td style="width:15%;padding:10px;">${payment.fileReference}</td>
+                                        <td style="width:15%;padding:10px;">${payment.fileReference} </br><span style="color:#aaa;"><i>Created By ${payment.requisitionCreatedBy.name }</i></span></td>
                                         <td style="width:15%;padding:10px;">${payment.recipientAccount}</td>
                                         <td style="width:15%;padding:10px;">${payment.recipientReference}</td>
                                         <td style="width:25%;padding:10px;">${payment.myReference}</td>

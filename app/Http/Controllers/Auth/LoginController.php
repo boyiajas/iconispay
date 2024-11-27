@@ -3,13 +3,14 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
-use Illuminate\Foundation\Auth\AuthenticatesUsers;
-use Illuminate\Http\Request;
+use App\Models\Certificate;
+use App\Models\User;
 use Auth;
 use Brian2694\Toastr\Facades\Toastr;
-use Session;
-use App\Models\User;
 use Carbon\Carbon;
+use Illuminate\Foundation\Auth\AuthenticatesUsers;
+use Illuminate\Http\Request;
+use Session;
 
 class LoginController extends Controller
 {
@@ -55,6 +56,48 @@ class LoginController extends Controller
         $password = $request->password;
 
         if (Auth::attempt(['email'=>$email,'password'=>$password])) {
+            $user = Auth::user();
+            /** the certificate request process start here */
+
+            // Retrieve the client certificate from the request (via $_SERVER)
+            $clientCert = $_SERVER['SSL_CLIENT_CERT'] ?? null; //dd($request);
+           
+            if ($clientCert) { 
+                // Extract the certificate fingerprint
+                $fingerprint = openssl_x509_fingerprint($clientCert);
+
+                // Validate the fingerprint against the database
+                $certificate = Certificate::where('user_id', $user->id)
+                    ->where('certificate_hash', $fingerprint)
+                    ->first();
+
+                if (!$certificate) {
+                    //Auth::logout(); // Log out the user
+                    //update the user role to a normal user
+                    //return redirect('login')->withErrors(['certificate' => 'Invalid client certificate.']);
+                    // Remove all roles and assign only 'user' role
+                    //$user->syncRoles(['user']);
+                }
+
+                // Optional: Check if the certificate is expired
+                if ($certificate->expires_at < now()) {
+                    //Auth::logout();
+                    //return redirect('login')->withErrors(['certificate' => 'Client certificate has expired.']);
+                    //update to user role to a normal user 
+                    // Remove all roles and assign only 'user' role
+                    //$user->syncRoles(['user']);
+                }
+
+            }else if($user->hasRole('admin')){
+               //dd('we are here');
+            }else{
+                 //update the user role to a normal user
+                // Remove all roles and assign only 'user' role
+                //$user->syncRoles(['user']);
+            }
+
+            /** the certificate request process ends here */
+
             /** last login updage*/
             $lastUpdate = [
                 'last_login' => Carbon::now(),

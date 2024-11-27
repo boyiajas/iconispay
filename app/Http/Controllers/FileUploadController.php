@@ -100,6 +100,7 @@ class FileUploadController extends Controller
                     'myReference' => $payment->my_reference ?? 'N/A',
                     'amount' => number_format($payment->amount, 2, '.', ','),
                     'status' => $payment->status ?? 'Generated',
+                    'requisitionCreatedBy' => $requisition->user,
                     'payToAccountInstitution' => $payToAccount->institution->name ?? 'N/A' // Include institution name
                 ];
             }

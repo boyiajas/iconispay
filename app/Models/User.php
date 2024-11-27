@@ -68,4 +68,23 @@ class User extends Authenticatable
             set: fn($value) => $value ? encrypt($value) : null  // Only encrypt if the value is not null or empty
         );
     }
+
+    /**
+     * Define a one-to-many relationship with the Certificate model.
+     * Returns all certificates for the user.
+     */
+    public function certificates()
+    {
+        return $this->hasMany(Certificate::class);
+    }
+
+    /**
+     * Get the latest certificate for the user.
+     *
+     * @return \Illuminate\Database\Eloquent\Relations\HasOne
+     */
+    public function latestCertificate()
+    {
+        return $this->hasOne(Certificate::class)->latestOfMany();
+    }
 }

@@ -9,6 +9,7 @@ use App\Http\Controllers\Auth\TwoFactorAuthController;
 use App\Http\Controllers\AvsController;
 use App\Http\Controllers\BeneficiaryAccountController;
 use App\Http\Controllers\CategoryController;
+use App\Http\Controllers\CertificateController;
 use App\Http\Controllers\DepositController;
 use App\Http\Controllers\DocumentController;
 use App\Http\Controllers\EmailController;
@@ -21,14 +22,15 @@ use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\ReportController;
 use App\Http\Controllers\RequisitionController;
 use App\Http\Controllers\StatusController;
+
+
+
+
 use App\Http\Controllers\UserController;
-
-
-
-
 use App\Http\Middleware\RedirectIfAuthenticated;
 use Illuminate\Support\Facades\Route;
 use Maatwebsite\Excel\Facades\Excel;
+
 
 
 
@@ -156,6 +158,9 @@ Route::group(['middleware' => 'no_cache'], function (){
         Route::get('/requisitions/{id}/documents', [DocumentController::class, 'getDocuments']);
 
         Route::post('/avs/verify', [AvsController::class, 'verify']);
+
+        Route::post('/register-certificate/{user}', [CertificateController::class, 'register']);
+
 
     });
 
