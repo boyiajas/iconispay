@@ -161,6 +161,8 @@ Route::group(['middleware' => 'no_cache'], function (){
 
         Route::post('/register-certificate/{user}', [CertificateController::class, 'register']);
 
+        Route::post('/generate-certificate/{userId}', [CertificateController::class, 'generateClientCertificate'])->name('certificates.generate');
+        Route::get('/certificates/{id}/download', [CertificateController::class, 'downloadCertificate'])->name('certificates.download');
 
     });
 

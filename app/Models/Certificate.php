@@ -19,7 +19,8 @@ class Certificate extends Model
         'user_id',
         'certificate_hash',
         'expires_at',
-    ];
+        'file_path',
+    ]; 
 
     /**
      * The attributes that should be cast to native types.

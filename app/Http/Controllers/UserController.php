@@ -16,7 +16,7 @@ class UserController extends Controller
     public function index()
     {
         // Get only active users with their roles
-        $users = User::where('status', 'active')->with('roles')->get();
+        $users = User::where('status', 'active')->with('roles', 'latestCertificate')->get();
 
         // Use the DataTables facade to format the data
         return DataTables::of($users)

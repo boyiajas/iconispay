@@ -16,6 +16,7 @@ return new class extends Migration
             $table->foreignId('user_id');
             $table->string('certificate_hash')->unique();
             $table->timestamp('expires_at');
+            $table->string('file_path');
             $table->timestamps();
         });
     }

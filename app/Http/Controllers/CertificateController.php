@@ -4,7 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Models\Certificate;
 use App\Models\User;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Storage;
 
 class CertificateController extends Controller
 {
@@ -49,9 +52,34 @@ class CertificateController extends Controller
             ],
         ]);
 
+        $certificateDirectory = storage_path('app/certificates'); // Define certificate directory
+
+        // Ensure the directory exists
+        if (!is_dir($certificateDirectory)) {
+            mkdir($certificateDirectory, 0755, true); // Create directory with appropriate permissions
+        }
+
+        $uploadedFile = $request->file('certificate');
+
+        // Store the uploaded file securely in storage
+        $certificatePath = $uploadedFile->storeAs('certificates', $uploadedFile->getClientOriginalName());
+
+        //$absolutePath = Storage::path($certificatePath);
+
+        // Extract fingerprint and expiration date using OpenSSL
+        $absolutePath = Storage::path($certificatePath);
+        $output = shell_exec("openssl x509 -in {$absolutePath} -noout -fingerprint -dates 2>&1");
+
+        // Check for errors in OpenSSL output
+        if (empty($output)) {
+            Storage::delete($certificatePath);
+            return response()->json(['message' => 'Failed to parse the certificate.'], 400);
+        }
+
+
         
-        $certificatePath = $request->file('certificate')->getPathname();
-        $output = shell_exec("openssl x509 -in {$certificatePath} -noout -fingerprint -dates");
+        //$certificatePath = $request->file('certificate')->getPathname();
+        //$output = shell_exec("openssl x509 -in {$certificatePath} -noout -fingerprint -dates");
         
         preg_match('/Fingerprint=(.*)/', $output, $fingerprintMatch);
         preg_match('/notAfter=(.*)/', $output, $notAfterMatch);
@@ -60,13 +88,15 @@ class CertificateController extends Controller
         $notAfter = $notAfterMatch[1] ?? null; 
 
         if (!$fingerprint || !$notAfter) {
+            Storage::delete($certificatePath);
             return response()->json(['message' => 'Invalid certificate.'], 400);
         }
 
         try {
             // Parse the notAfter date correctly
-            $expiresAt = \Carbon\Carbon::createFromFormat('M d H:i:s Y T', trim($notAfter));
+            $expiresAt = Carbon::createFromFormat('M d H:i:s Y T', trim($notAfter));
         } catch (\Exception $e) {
+            Storage::delete($certificatePath); // Cleanup invalid file
             return response()->json(['message' => 'Invalid expiration date format.'], 400);
         }
 
@@ -74,9 +104,100 @@ class CertificateController extends Controller
             'user_id' => $user->id,
             'certificate_hash' => $fingerprint,
             'expires_at' => $expiresAt,
+            'file_path' => $certificatePath,
         ]);
 
         return response()->json(['message' => 'Certificate registered successfully.']);
+    }
+
+    public function downloadCertificate($certificateId)
+    {
+        // Get the currently authenticated user ID
+        $user = Auth::user();
+         
+        // Check if the user has an 'admin' or 'authorizer' role
+        if ($user->hasRole('admin') || $user->hasRole('authoriser')) {
+            // Serve the file using Storage, making sure it's only accessible to the authenticated user
+            $certificate = Certificate::findOrFail($certificateId);
+
+            $filePath = storage_path('app/' . $certificate->file_path);
+
+            if (!file_exists($filePath)) {
+                return response()->json(['message' => 'Certificate file not found.'], 404);
+            }
+
+            return response()->download($filePath, "client_certificate_{$certificate->user_id}.p12");
+
+        }
+            
+        abort(403, 'Unauthorized access to the file');
+           
+        
+    }
+
+    public function generateClientCertificate($userId)
+    {
+        // Paths for CA files
+        $caKeyPath = storage_path('app/payiconis.key');
+        $caCertPath = storage_path('app/payiconis.crt');
+        $certDir = storage_path('app/certificates');
+
+        // Generate a timestamped directory for this certificate
+        $timestamp = now()->format('Ymd_His');
+        $certSubDir = "{$certDir}/{$timestamp}";
+
+        // Ensure the directory exists
+        if (!is_dir($certSubDir)) {
+            mkdir($certSubDir, 0755, true);
+        }
+
+        // Fetch the user
+        $user = User::findOrFail($userId);
+
+        // Generate unique filenames for the client's key, CSR, and certificate
+        $keyPath = "{$certSubDir}/user_{$user->id}.key";
+        $csrPath = "{$certSubDir}/user_{$user->id}.csr";
+        $crtPath = "{$certSubDir}/user_{$user->id}.crt";
+        $p12Path = "{$certSubDir}/user_{$user->id}.p12";
+
+        // Generate private key
+        shell_exec("openssl genrsa -out {$keyPath} 2048");
+
+        // Generate Certificate Signing Request (CSR)
+        $subject = "/CN={$user->name}";
+        shell_exec("openssl req -new -key {$keyPath} -out {$csrPath} -subj \"{$subject}\"");
+
+        // Generate the client certificate signed by the CA
+        shell_exec("openssl x509 -req -in {$csrPath} -CA {$caCertPath} -CAkey {$caKeyPath} -CAcreateserial -out {$crtPath} -days 365 -sha256");
+
+        // Bundle the client certificate and private key into a .p12 file
+        shell_exec("openssl pkcs12 -export -out {$p12Path} -inkey {$keyPath} -in {$crtPath} -name \"Client Certificate\" -password pass:secret");
+
+        // Extract certificate fingerprint and expiration date
+        $output = shell_exec("openssl x509 -in {$crtPath} -noout -fingerprint -dates");
+        
+        preg_match('/Fingerprint=(.*)/', $output, $fingerprintMatch);
+        preg_match('/notAfter=(.*)/', $output, $notAfterMatch);
+
+        $fingerprint = $fingerprintMatch[1] ?? null;
+        $notAfter = $notAfterMatch[1] ?? null;
+
+        if (!$fingerprint || !$notAfter) {
+            throw new \Exception('Failed to parse certificate details.');
+        }
+
+        // Convert expiration date to Carbon
+        $expiresAt = Carbon::createFromFormat('M d H:i:s Y T', trim($notAfter));
+
+        // Save the certificate in the database
+        $certificate = Certificate::create([
+            'user_id' => $user->id,
+            'certificate_hash' => $fingerprint,
+            'expires_at' => $expiresAt,
+            'file_path' => "certificates/{$timestamp}/user_{$user->id}.p12", // Relative path for download
+        ]);
+
+        return $certificate;
     }
 
 

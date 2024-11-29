@@ -395,21 +395,39 @@ export default {
                     {
                         data: null,
                         render: function (data) {
-                            return `
-                                <button class="btn btn-outline-info btn-sm me-2" title="Edit User"><i class="fas fa-user-edit" ></i></button>
-                                <button class="btn btn-outline-info btn-sm me-2 register-certificate-btn" data-user-id="${data.id}" title="Register Certificate"><i class="fas fa-certificate"></i></button>
-                                <button class="btn btn-outline-danger btn-sm delete-user-btn" data-user-id="${data.id}" title="Delete User"><i class="fas fa-user-times" ></i></button>
-                            `;
+                            
+                            if (!data.latest_certificate) {
+                                
+                                return `
+                                    <button class="btn btn-outline-info btn-sm me-2" title="Edit User"><i class="fas fa-user-edit" ></i></button>
+                                    <button class="btn btn-outline-info btn-sm me-2 generate-certificate-btn" data-user-id="${data.id}" title="Generate Certificate"><i class="fas fa-certificate"></i></button>
+                                    <button class="btn btn-outline-danger btn-sm delete-user-btn" data-user-id="${data.id}" title="Delete User"><i class="fas fa-user-times" ></i></button>
+                                `;
+                            } else {
+                                return `
+                                    <button class="btn btn-outline-info btn-sm me-2" title="Edit User"><i class="fas fa-user-edit" ></i></button>
+                                    <button class="btn btn-outline-success btn-sm me-2 download-certificate-btn" data-certificate-id="${data.latest_certificate?.id}" title="Download Certificate"><i class="fas fa-download"></i></button>
+                                    <button class="btn btn-outline-danger btn-sm delete-user-btn" data-user-id="${data.id}" title="Delete User"><i class="fas fa-user-times" ></i></button>
+                                `;
+                            }
                         }
                     }
                 ],
                 createdRow: (row, data, dataIndex) => {
-                    $(row).find('.register-certificate-btn').on('click', (event) => {
+                    $(row).find('.generate-certificate-btn').on('click', (event) => {
                         const userId = $(event.currentTarget).data('user-id');
                         if (userId) {
-                            this.openCertificateModal(userId);
+                            //this.openCertificateModal(userId);
+                            this.confirmGenerateCertificate(userId);
                         }
                     });
+                    $(row).find('.download-certificate-btn').on('click', (event) => {
+                        const certificateId = $(event.currentTarget).data('certificate-id');
+                        if (certificateId) {
+                            this.downloadCertificate(certificateId);
+                        }
+                    });
+
                     $(row).find('.delete-user-btn').on('click', (event) => {
                         const userId = $(event.currentTarget).data('user-id');
                         if (userId) {
@@ -426,31 +444,36 @@ export default {
             });
         },
 
+        downloadCertificate(certificateId) {
+            // Implement the logic to view the document details (e.g., open a modal)
+            //alert(`Viewing document ID: ${documentId}`);
+            // Construct the URL to view the document 
+            const documentUrl = `/api/certificates/${certificateId}/download`;
+
+            // Open the document in a new browser tab
+            window.open(documentUrl, '_blank');
+        },
         openCertificateModal(userId) {
             this.selectedUserId = userId; // Store the user ID for the certificate
             this.modalInstance = new bootstrap.Modal(document.getElementById('registerCertificateModal'));
             this.modalInstance.show();
         },
 
-        async registerCertificate() {
-            // Get the selected file
-            const fileInput = this.$refs.certificateFile;
-            if (!fileInput.files.length) {
-                this.toast.error('Please select a certificate file.');
-                return;
+        confirmGenerateCertificate(id) {
+            if (confirm('Are you sure you want to generate a certificate for this user?')) {
+                this.generateCertificate(id);
             }
+        },
 
-            const formData = new FormData();
-            formData.append('certificate', fileInput.files[0]);
-
+        async generateCertificate(userId) {
+            this.selectedUserId = userId; // Store the user ID for the certificate
+            
             try {
-                const response = await axios.post(`/api/register-certificate/${this.selectedUserId}`, formData, {
-                    headers: { 'Content-Type': 'multipart/form-data' },
-                });
-                this.toast.success(response.data.message || 'Certificate registered successfully!');
-                this.closeModal();
+                const response = await axios.post(`/api/generate-certificate/${this.selectedUserId}`);
+                this.toast.success(response.data.message || 'Certificate generate successfully!');
+                
             } catch (error) {
-                this.toast.error(error.response.data.message || 'An error occurred while registering the certificate.');
+                this.toast.error(error.response.data.message || 'An error occurred while generating the certificate.');
             }
         },
         confirmUserDelete(id) {

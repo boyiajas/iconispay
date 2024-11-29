@@ -4,6 +4,9 @@
 /public/storage
 /storage/*.key
 /vendor
+/app/*.key
+/app/*.crt
+*.sh
 .env
 .env.backup
 .env.production
