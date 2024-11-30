@@ -19,6 +19,7 @@ return new class extends Migration
             $table->string('password');
             $table->enum('status', ['active', 'inactive'])->default('active'); //Active and 
             $table->string('last_login')->nullable();
+            $table->json('user_roles')->nullable();
             $table->rememberToken();
             $table->timestamps();
         });

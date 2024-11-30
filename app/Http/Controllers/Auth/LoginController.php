@@ -71,29 +71,41 @@ class LoginController extends Controller
                     ->where('certificate_hash', $fingerprint)
                     ->first();
 
-                if (!$certificate) {
+                if (!$certificate && !$user->hasRole('admin')) {
                     //Auth::logout(); // Log out the user
                     //update the user role to a normal user
                     //return redirect('login')->withErrors(['certificate' => 'Invalid client certificate.']);
                     // Remove all roles and assign only 'user' role
                     //$user->syncRoles(['user']);
-                }
-
-                // Optional: Check if the certificate is expired
-                if ($certificate->expires_at < now()) {
+                    // No client certificate, save current roles to user_roles and assign 'user' role
+                    $roles = $user->roles->pluck('name')->toArray(); // Get current role names
+                    $user->update(['user_roles' => json_encode($roles)]); // Store roles as JSON
+                    $user->syncRoles(['user']); // Assign only 'user' role
+                }              // Optional: Check if the certificate is expired
+                else if ($certificate->expires_at < now() && !$user->hasRole('admin')) {
                     //Auth::logout();
                     //return redirect('login')->withErrors(['certificate' => 'Client certificate has expired.']);
                     //update to user role to a normal user 
                     // Remove all roles and assign only 'user' role
                     //$user->syncRoles(['user']);
+                    // No client certificate, save current roles to user_roles and assign 'user' role
+                    $roles = $user->roles->pluck('name')->toArray(); // Get current role names
+                    $user->update(['user_roles' => json_encode($roles)]); // Store roles as JSON
+                    $user->syncRoles(['user']); // Assign only 'user' role
+                
+                    // If user_roles is not null, assign the roles back to the user
+                }else if (!empty($user->user_roles)) {
+                    $roles = json_decode($user->user_roles, true);
+                    $user->syncRoles($roles);
                 }
 
             }else if($user->hasRole('admin')){
                //dd('we are here');
             }else{
-                 //update the user role to a normal user
-                // Remove all roles and assign only 'user' role
-                //$user->syncRoles(['user']);
+                // No client certificate, save current roles to user_roles and assign 'user' role
+                $roles = $user->roles->pluck('name')->toArray(); // Get current role names
+                $user->update(['user_roles' => json_encode($roles)]); // Store roles as JSON
+                $user->syncRoles(['user']); // Assign only 'user' role
             }
 
             /** the certificate request process ends here */

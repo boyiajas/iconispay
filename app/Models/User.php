@@ -27,6 +27,7 @@ class User extends Authenticatable
         'status',
         'last_login',
         'google2fa_secret',
+        'user_roles',
     ];
 
     /**
@@ -47,6 +48,7 @@ class User extends Authenticatable
     protected $casts = [
         'email_verified_at' => 'datetime',
         'password' => 'hashed',
+        'user_roles' => 'array',
     ];
 
         /** 
