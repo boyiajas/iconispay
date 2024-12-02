@@ -8,6 +8,7 @@ use App\Models\User;
 use Auth;
 use Brian2694\Toastr\Facades\Toastr;
 use Carbon\Carbon;
+use Exception;
 use Illuminate\Foundation\Auth\AuthenticatesUsers;
 use Illuminate\Http\Request;
 use Session;
@@ -63,53 +64,85 @@ class LoginController extends Controller
             $clientCert = $_SERVER['SSL_CLIENT_CERT'] ?? null; //dd($request);
            
             if ($clientCert) { 
-                // Extract the certificate fingerprint
-                $fingerprint = openssl_x509_fingerprint($clientCert);
+                //dd($clientCert);
 
-                // Validate the fingerprint against the database
-                $certificate = Certificate::where('user_id', $user->id)
-                    ->where('certificate_hash', $fingerprint)
-                    ->first();
+                try {
 
-                if (!$certificate && !$user->hasRole('admin')) {
-                    //Auth::logout(); // Log out the user
-                    //update the user role to a normal user
-                    //return redirect('login')->withErrors(['certificate' => 'Invalid client certificate.']);
-                    // Remove all roles and assign only 'user' role
-                    //$user->syncRoles(['user']);
-                    // No client certificate, save current roles to user_roles and assign 'user' role
-                    $roles = $user->roles->pluck('name')->toArray(); // Get current role names
-                    $user->update(['user_roles' => json_encode($roles)]); // Store roles as JSON
-                    $user->syncRoles(['user']); // Assign only 'user' role
-                }              // Optional: Check if the certificate is expired
-                else if ($certificate->expires_at < now() && !$user->hasRole('admin')) {
-                    //Auth::logout();
-                    //return redirect('login')->withErrors(['certificate' => 'Client certificate has expired.']);
-                    //update to user role to a normal user 
-                    // Remove all roles and assign only 'user' role
-                    //$user->syncRoles(['user']);
-                    // No client certificate, save current roles to user_roles and assign 'user' role
-                    $roles = $user->roles->pluck('name')->toArray(); // Get current role names
-                    $user->update(['user_roles' => json_encode($roles)]); // Store roles as JSON
-                    $user->syncRoles(['user']); // Assign only 'user' role
-                
-                    // If user_roles is not null, assign the roles back to the user
-                }else if (!empty($user->user_roles)) {
-                    $roles = json_decode($user->user_roles, true);
-                    $user->syncRoles($roles);
+                     // Decode the client certificate (assumes PKCS#12 format)
+                   
+                    // Clean and reformat the certificate
+                    $clientCert = str_replace(["\r", "\n", "\t"], '', $clientCert);
+                    $clientCert = preg_replace('/(-----BEGIN CERTIFICATE-----)(.*)(-----END CERTIFICATE-----)/', "$1\n$2\n$3", $clientCert);
+                    $clientCert = wordwrap($clientCert, 64, "\n", true);
+
+                    // Verify the formatting
+                    if (!preg_match('/-----BEGIN CERTIFICATE-----.*-----END CERTIFICATE-----/s', $clientCert)) {
+                        //dd("Invalid certificate format still ....God");
+                        return response()->json(['error' => 'Invalid certificate format'], 400);
+                    }
+                    
+                    // Parse the certificate to extract details
+                    $certInfo = openssl_x509_parse($clientCert);
+                    if (!$certInfo) {
+                       // dd("Invalid certificate unable to read ---> clientCert output ", $clientCert);
+                        return response()->json(['error' => 'Invalid certificate'], 400);
+                    }
+                    
+                    // Optional debug: check the cleaned certificate format
+                   
+                    // Extract the certificate fingerprint
+                    $rawFingerprint = openssl_x509_fingerprint($clientCert, 'sha1'); 
+                  
+                    if (!$rawFingerprint) {
+                        throw new Exception('Invalid certificate fingerprint');
+                    }
+
+                    // Format the fingerprint to colon-separated hex (matches `generateClientCertificate`)
+                    $fingerprint = strtoupper(implode(':', str_split($rawFingerprint, 2))); //dd($fingerprint);
+
+                     // Validate the fingerprint against the database
+                    $certificate = Certificate::where('user_id', $user->id)
+                        ->where('certificate_hash', $fingerprint)
+                        ->first();//dd($certificate);
+                        //$user->syncRoles(['authoriser','bookkeeper']);
+
+                        //dd("1", $user->hasRole('admin'), $certificate, $fingerprint);
+                    if ((!$certificate || ($certificate->expires_at < now())) && !$user->hasRole('admin')) {// dd("1", $user->hasRole('admin'), $certificate, $fingerprint);
+                        // Save roles, downgrade to 'user', and redirect
+                        if(empty($user->user_roles)){ //this is to avoid overwriting the roles already saved again
+                            $roles = $user->roles->pluck('name')->toArray();
+                            $user->update(['user_roles' => json_encode($roles)]);
+                            $user->syncRoles(['user']);
+                        }
+                        
+                        
+                    }else if (!empty($user->user_roles)) { //dd("2"); // If user_roles is not null, assign the roles back to the user
+                        $roles = json_decode($user->user_roles, true);
+                        //$user->syncRoles(['authoriser','bookkeeper']); //dd($user->roles->pluck('name')->toArray());
+                        $user->syncRoles($roles);
+                        $user->update(['user_roles' => null]);
+                        //dd($roles, $user->roles->pluck('name')->toArray());
+                    }
+
+                    //dd("finger print successfully extracted ", $certInfo, $fingerprint);
+                } catch (Exception $e) {
+                    //dd($e->getMessage());
+                    return redirect('login')->withErrors(['certificate' => $e->getMessage()]);
                 }
 
             }else if($user->hasRole('admin')){
-               //dd('we are here');
-            }else{
+               //dd('we are here admin');
+            }else{ //dd("we are here no certificate ");
                 // No client certificate, save current roles to user_roles and assign 'user' role
-                $roles = $user->roles->pluck('name')->toArray(); // Get current role names
-                $user->update(['user_roles' => json_encode($roles)]); // Store roles as JSON
-                $user->syncRoles(['user']); // Assign only 'user' role
+                if(empty($user->user_roles)){ //this is to avoid overwriting the roles already saved again
+                    $roles = $user->roles->pluck('name')->toArray();
+                    $user->update(['user_roles' => json_encode($roles)]);
+                    $user->syncRoles(['user']);
+                }
             }
 
             /** the certificate request process ends here */
-
+            //dd('we are here');
             /** last login updage*/
             $lastUpdate = [
                 'last_login' => Carbon::now(),
@@ -135,15 +168,10 @@ class LoginController extends Controller
             if (empty($user->google2fa_secret)) {
                 // Redirect to the 2FA setup page if 2FA is not set up
                 return redirect()->route('setup.2fa'); 
-            } else {  
-                // Redirect to the 2FA verification page if 2FA is set up
-                return redirect()->route('2fa.verify'); 
             }
-
-           /*  if(Auth::user()->hasRole('user')){
-                return redirect()->intended('customer/dashboard');
-            } */
-           
+            // Redirect to the 2FA verification page if 2FA is set up
+            return redirect()->route('2fa.verify'); 
+            
             //return redirect()->intended('home');
 
         } else {
