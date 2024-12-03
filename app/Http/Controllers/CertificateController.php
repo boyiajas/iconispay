@@ -7,6 +7,7 @@ use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Storage;
 
@@ -273,6 +274,41 @@ class CertificateController extends Controller
     ]);
 
     return $certificate;
+}
+
+public function deleteClientCertificate($userId)
+{
+    // Fetch the user's certificate record from the Certificate model
+    $certificate = Certificate::where('user_id', $userId)->first();
+
+    if (!$certificate) {
+        return response()->json(['message' => 'Certificate not found for the user.'], 404);
+    }
+
+    // Get the directory containing the certificate files
+    $filePath = storage_path('app/' . $certificate->file_path); // Path to the .pem file
+    $certDir = dirname($filePath); // Parent directory of the certificate files
+
+    // List of expected file extensions
+    $expectedFiles = ['key', 'csr', 'crt', 'p12'];
+
+    // Delete the files
+    foreach ($expectedFiles as $extension) {
+        $file = "{$certDir}/user_{$userId}.{$extension}";
+        if (File::exists($file)) {
+            File::delete($file);
+        }
+    }
+
+    // Check if the directory is empty and remove it
+    if (File::isDirectory($certDir) && count(File::files($certDir)) === 0) {
+        File::deleteDirectory($certDir);
+    }
+
+    // Delete the certificate record from the database
+    $certificate->delete();
+
+    return response()->json(['message' => 'Certificate and associated files deleted successfully.'], 200);
 }
 
 

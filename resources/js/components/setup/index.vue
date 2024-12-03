@@ -394,20 +394,25 @@ export default {
                     { data: 'last_login' },
                     {
                         data: null,
-                        render: function (data) {
+                        render: function (data) { 
+
+                             // Check if the user has only the 'user' role
+                            const hasOnlyUserRole = data.roles.length === 1 && data.roles[0].name === "user";
                             
                             if (!data.latest_certificate) {
                                 
                                 return `
-                                    <button class="btn btn-outline-info btn-sm me-2" title="Edit User"><i class="fas fa-user-edit" ></i></button>
-                                    <button class="btn btn-outline-info btn-sm me-2 generate-certificate-btn" data-user-id="${data.id}" title="Generate Certificate"><i class="fas fa-certificate"></i></button>
-                                    <button class="btn btn-outline-danger btn-sm delete-user-btn" data-user-id="${data.id}" title="Delete User"><i class="fas fa-user-times" ></i></button>
+                                    <button class="btn btn-outline-info btn-sm me-2" title="Edit User"><i class="fas fa-user-edit"></i></button>
+                                    ${!hasOnlyUserRole ? `
+                                    <button class="btn btn-outline-info btn-sm me-2 generate-certificate-btn" data-user-id="${data.id}" title="Generate Certificate"><i class="fas fa-certificate"></i></button>` : ''}
+                                    <button class="btn btn-outline-danger btn-sm delete-user-btn" data-user-id="${data.id}" title="Delete user"><i class="fas fa-trash" ></i></button>
                                 `;
                             } else {
                                 return `
                                     <button class="btn btn-outline-info btn-sm me-2" title="Edit User"><i class="fas fa-user-edit" ></i></button>
                                     <button class="btn btn-outline-success btn-sm me-2 download-certificate-btn" data-certificate-id="${data.latest_certificate?.id}" title="Download Certificate"><i class="fas fa-download"></i></button>
-                                    <button class="btn btn-outline-danger btn-sm delete-user-btn" data-user-id="${data.id}" title="Delete User"><i class="fas fa-user-times" ></i></button>
+                                    <button class="btn btn-outline-danger btn-sm delete-user-cert-btn" data-user-id="${data.id}" title="Delete user certificate"><i class="fas fa-user-times" ></i></button>
+                                    <button class="btn btn-outline-danger btn-sm delete-user-btn" data-user-id="${data.id}" title="Delete user"><i class="fas fa-trash" ></i></button>
                                 `;
                             }
                         }
@@ -427,6 +432,13 @@ export default {
                             this.downloadCertificate(certificateId);
                         }
                     });
+                    $(row).find('.delete-user-cert-btn').on('click', (event) => {
+                        const userId = $(event.currentTarget).data('user-id');
+                        if (userId) {
+                            this.confirmDeleteCertificate(userId);
+                        }
+                    });
+                    
 
                     $(row).find('.delete-user-btn').on('click', (event) => {
                         const userId = $(event.currentTarget).data('user-id');
@@ -458,10 +470,27 @@ export default {
             this.modalInstance = new bootstrap.Modal(document.getElementById('registerCertificateModal'));
             this.modalInstance.show();
         },
+        confirmDeleteCertificate(userId) {
+            if (confirm('Are you sure you want to delete this user certificate?')) {
+                this.deleteCertificate(userId);
+            }
+        },
 
         confirmGenerateCertificate(id) {
             if (confirm('Are you sure you want to generate a certificate for this user?')) {
                 this.generateCertificate(id);
+            }
+        },
+
+        async deleteCertificate(userId) {
+            this.selectedUserId = userId; // Store the user ID for the certificate
+            
+            try {
+                const response = await axios.post(`/api/delete-certificate/${this.selectedUserId}`);
+                this.toast.success(response.data.message || 'Certificate deleted successfully!');
+                
+            } catch (error) {
+                this.toast.error(error.response.data.message || 'An error occurred while generating the certificate.');
             }
         },
 
