@@ -37,18 +37,18 @@
                         <table class="table table-bordered">
                             <thead>
                                 <tr>
-                                    <th width="20%">File Reference</th>
-                                    <th>Recipient Account</th>
-                                    <th>Recipient Reference</th>
-                                    <th>My Reference</th>
+                                    <th width="15%">File Reference</th>
+                                    <th width="20%">Recipient Account</th>
+                                    <th width="20%">Recipient Reference</th>
+                                    <th width="20%">My Reference</th>
                                     <th>Amount</th>
-                                    <th>Status</th>
+                                    <th width="12%">Status</th>
                                 </tr>
                             </thead>
                             <tbody>
                                 <tr v-for="(payment, index) in fileDetails.payments" :key="index">
                                     <td><div>{{ payment.fileReference }} </br><span style="color:#999;font-size:14px;">Created By {{ payment.requisitionCreatedBy.name }}</span></div></td>
-                                    <td>{{ payment.recipientDisplayText }}    </br>    -  {{ payment.payToAccountInstitution || 'N/A' }}
+                                    <td>{{ payment.recipientDisplayText }}  -  {{ payment.payToAccountInstitution || 'N/A' }}
                                     <br/> ({{ payment.recipientBranchCode || 'N/A' }})
                                     - {{ payment.recipientAccount || 'N/A' }}
                                     </td>
