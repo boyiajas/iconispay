@@ -47,8 +47,11 @@
                             </thead>
                             <tbody>
                                 <tr v-for="(payment, index) in fileDetails.payments" :key="index">
-                                    <td><div>{{ payment.fileReference }} </br><span style="color:#999;">Created By {{ payment.requisitionCreatedBy.name }}</span></div></td>
-                                    <td>{{ payment.recipientAccount }}</td>
+                                    <td><div>{{ payment.fileReference }} </br><span style="color:#999;font-size:14px;">Created By {{ payment.requisitionCreatedBy.name }}</span></div></td>
+                                    <td>{{ payment.recipientDisplayText }}    </br>    -  {{ payment.payToAccountInstitution || 'N/A' }}
+                                    <br/> ({{ payment.recipientBranchCode || 'N/A' }})
+                                    - {{ payment.recipientAccount || 'N/A' }}
+                                    </td>
                                     <td>{{ payment.recipientReference }}</td>
                                     <td>{{ payment.myReference }}</td>
                                     <td>R{{ payment.amount }}</td>
@@ -338,6 +341,7 @@ export default {
         }, */
         // Print the current page
         printPage() {
+            console.log("this is our data", this.fileDetails);
             // Create the print-friendly content dynamically
             const printContent = `
                 <div style="font-family: Arial, sans-serif; margin: 20px;">
@@ -374,11 +378,11 @@ export default {
                                 .map(
                                     payment => `
                                     <tr style="background: #f2f2f2; text-align: left;">
-                                        <td style="width:15%;padding:10px;">${payment.fileReference} </br><span style="color:#aaa;"><i>Created By ${payment.requisitionCreatedBy.name }</i></span></td>
-                                        <td style="width:15%;padding:10px;">${payment.recipientAccount}</td>
+                                        <td style="width:15%;padding:10px;">${payment.fileReference} </br><span style="color:#aaa;font-size:10px;"><i>Created By ${payment.requisitionCreatedBy.name }</i></span></td>
+                                        <td style="width:15%;padding:10px;">${payment.recipientDisplayText} - ${payment.payToAccountInstitution} (${payment.recipientBranchCode}) - ${payment.recipientAccount}</td>
                                         <td style="width:15%;padding:10px;">${payment.recipientReference}</td>
                                         <td style="width:25%;padding:10px;">${payment.myReference}</td>
-                                        <td style="width:15%;padding:10px;">R${this.formatNumberWithCommas(payment.amount)}</td>
+                                        <td style="width:15%;padding:10px;">R${payment.amount}</td>
                                         <td style="width:10%;padding:10px;"><span style="border:solid 1px #999;font-size:10px;padding-left:5px; padding-right: 5px;">${payment.status}</span></td>
                                     </tr>
                                 `

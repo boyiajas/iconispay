@@ -22,6 +22,13 @@ a{
     background-color: #fafafa;
 }
 
+.nav-link{
+    color: rgb(0, 151, 157);
+}
+.nav-link:hover{
+    color: #333;
+}
+
 .btn-primary{
     background-color: #0097b2bf !important;
     border: solid 1px rgb(0, 151, 157) !important;

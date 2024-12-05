@@ -89,19 +89,21 @@ class FileUploadController extends Controller
                 if ($payment->status === 'processed') {
                     $processedPaymentsCount++;
                     $fileDetails['totalConfirmed'] += $payment->amount;
-                }
+                }//dd("output contnet", $payment->payToAccount);
 
                 $fileDetails['payments'][] = [
                     'id' => $payment->id,
                     'requisition_id' => $requisition->id, // Add requisition_id here
                     'fileReference' => $requisition->file_reference, // Use the file reference from the requisition
+                    'recipientDisplayText' => $payToAccount->display_text,
                     'recipientAccount' => $payToAccount->account_number ?? 'N/A',
+                    'recipientBranchCode' => $payToAccount->branch_code ?? 'N/A',
                     'recipientReference' => $payment->recipient_reference ?? 'N/A',
                     'myReference' => $payment->my_reference ?? 'N/A',
                     'amount' => number_format($payment->amount, 2, '.', ','),
                     'status' => $payment->status ?? 'Generated',
                     'requisitionCreatedBy' => $requisition->user,
-                    'payToAccountInstitution' => $payToAccount->institution->name ?? 'N/A' // Include institution name
+                    'payToAccountInstitution' => $payToAccount->institution->short_name ?? 'N/A' // Include institution name
                 ];
             }
         }

@@ -291,8 +291,9 @@ class FirmAccountController extends Controller
                         $fileContent .= $firmAccount->account_number . $firmAccount->branch_code . "3" . $payment->my_reference;
                         $fileContent .= "\t\t" . $recipientReference;
                         $fileContent .= "\t\t" . $accountNumber . $branchCode . $recipientReference;
-                        $fileContent .= "\t\t" . number_format($payment->amount, 2, '.', ',');
-                        $fileContent .= Carbon::parse($payment->created_at)->format('ymd') . "N  0000000CNAD HOC\n";
+                        //$fileContent .= "\t\t" . number_format($payment->amount, 2, '.', ',');
+                        $fileContent .= "\t\t" . number_format($payment->amount, 2, '.', '');
+                        $fileContent .= Carbon::parse($payment->created_at)->format('ymd') . "N  0000000CNAD HOC\t I\n";
                         break;
                     
                     case 'Nedbank':
