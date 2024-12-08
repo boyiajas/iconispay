@@ -272,7 +272,7 @@ class FirmAccountController extends Controller
         $company_name = "STRAUSS DALY INCORPORATED";
         $increment = 1;
 
-        foreach ($requisitions as $requisition) {
+        /* foreach ($requisitions as $requisition) {
             foreach ($requisition->payments as $payment) {
                 // Get the payToAccount and its details
                 $payToAccount = $payment->payToAccount;
@@ -319,6 +319,55 @@ class FirmAccountController extends Controller
 
             // Optionally, update each requisition's status_id to 6 (processed)
             // $requisition->update(['status_id' => 6]);
+        } */
+
+        foreach ($requisitions as $requisition) {
+            foreach ($requisition->payments as $payment) {
+                // Retrieve required data
+                $payToAccount = $payment->payToAccount;
+                $accountNumber = $payToAccount ? $payToAccount->account_number : '';
+                $branchCode = $payToAccount ? $payToAccount->branch_code : '';
+                $recipientReference = $payment->recipient_reference ?? '';
+                $amount = number_format($payment->amount, 2, '.', '');
+                $recipientReference2 = $recipientReference;
+
+                // Specify the words with their desired start positions
+                $wordsWithIndices = [
+                    0 => "ABSADATA",
+                    12 => "3450000" . $absacount . "C" . $company_name,
+                    59 => $firmAccount->account_number,
+                    69 => $firmAccount->branch_code . "3",
+                    76 => $payment->my_reference,
+                    107 => $recipientReference,
+                    137 => $accountNumber,
+                    153 => $branchCode . "3",
+                    160 => $recipientReference,
+                    198 => $amount . Carbon::parse($payment->created_at)->format('ymd') . "N  0000000CNAD HOC\t I",
+                ];
+
+                // Format the sentence
+                $fileContent .= $this->formatSentenceFixedColumns($wordsWithIndices) . "\n";
+
+        
+                // Construct formatted output
+                /* $fileContent .= sprintf(
+                    //"ABSADATA %-20s%-10s%-20s%-30s%-6s%-16s%-20s%-20s%-11s%-8s%-15s\n",
+                    "ABSADATA %-12s%-60s%-70s%-77s%-108s%-138s%-154s%-161s%-199s\n",
+                    "3450000" . $absacount . "C" . $company_name, // ABSADATA  12
+                    $firmAccount->account_number, // FromAccountNumber 60
+                    $firmAccount->branch_code . "3", // FromAccountBranchCode  70
+                    $payment->my_reference, // FromAccountName  77
+                    $recipientReference, // 108
+                    $accountNumber, // ToAccountNumber 138
+                    $branchCode . "3", // ToAccountBranchCode 154
+                    $recipientReference, // ToAccountName  161
+                    $amount . Carbon::parse($payment->created_at)->format('ymd') . "N  0000000CNAD HOC\t I", // Amount 199
+                ); */
+        
+                $absacount += 1000; // Increment counter for unique identifiers
+            }
+        
+            $requisitionIds[] = $requisition->id; // Track requisition IDs
         }
 
         // Write content to the file
@@ -410,6 +459,25 @@ class FirmAccountController extends Controller
             'file' => $fileDetails,
         ]);
     }
+
+    private function formatSentenceFixedColumns(array $wordsWithIndices)
+    {
+        // Initialize an empty string with enough spaces to accommodate the maximum index
+        $maxIndex = max(array_keys($wordsWithIndices));
+        $sentence = str_repeat(" ", $maxIndex + 50); // Buffer for safety
+    
+        foreach ($wordsWithIndices as $targetIndex => $word) {
+            // Ensure $targetIndex is an integer
+            $targetIndex = (int) $targetIndex;
+            //$targetIndex = ($targetIndex == 0) ? 0 : $targetIndex + 1;
+    
+            // Insert the word at the exact target index
+            $sentence = substr_replace($sentence, $word, $targetIndex, strlen($word));
+        }
+    
+        return $sentence;
+    }
+    
 
     public function getIndividualAccountPendingConfirmationFiles($id)
     {
