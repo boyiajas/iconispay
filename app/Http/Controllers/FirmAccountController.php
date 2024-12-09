@@ -350,14 +350,14 @@ class FirmAccountController extends Controller
                         $wordsWithIndices = [
                             0 => "ABSADATA",
                             12 => strtoupper("3450000" . $absacount . "C" . $company_name),
-                            59 => $firmAccount->account_number,
+                            60 => $firmAccount->account_number,
                             69 => $firmAccount->branch_code . "3",
-                            76 => strtoupper($payment->my_reference),
-                            107 => strtoupper($recipientReference),
-                            137 => $accountNumber,
-                            153 => $branchCode . "3",
-                            160 => strtoupper($recipientReference),
-                            198 => $amount . Carbon::parse($payment->created_at)->format('ymd') . "N  0000000CNAD HOC\t I",
+                            77 => strtoupper($payment->my_reference),
+                            108 => strtoupper($recipientReference),
+                            143 => $accountNumber,
+                            154 => $branchCode . "3",
+                            162 => strtoupper($recipientReference),
+                            203 => $amount . Carbon::parse($payment->created_at)->format('ymd') . "N  0000000CNAD HOC\t I",
                         ];
                         // Format the sentence
                         $fileContent .= $this->formatSentenceFixedColumns($wordsWithIndices) . "\n";
@@ -368,32 +368,36 @@ class FirmAccountController extends Controller
                     case 'Standard':
 
                         // Define the lines with their index positions
-                        // SB line
-                        $sbLine = $this->formatSentenceFixedColumns([
-                            0 => "SB" . Carbon::parse($payment->created_at)->format('Ymd') . $firmAccount->account_number . " (" . Carbon::parse($payment->created_at)->format('Ymd Hi') . ")",
-                        ]);
-                        $standardBankFirstRowFileContent .= $sbLine . "\n";
+                        if($standardBankFirstRowFileContent === ''){
+                            // SB line
+                            $sbLine = $this->formatSentenceFixedColumns([
+                                0 => "SB" . Carbon::parse($payment->created_at)->format('Ymd') . $firmAccount->account_number . " (" . Carbon::parse($payment->created_at)->format('Ymd Hi') . ")",
+                            ]);
+                            $standardBankFirstRowFileContent .= $sbLine . "\n";
+                        }
 
                         // SD line
                         $sdLine = $this->formatSentenceFixedColumns([
-                            0 => "SD".$this->padNumber(3, $increment++) . "0000000000C" . $branchCode . $this->padNumber(13, $accountNumber) . $TodisplayName,
-                            82 => $this->padNumber(15, str_replace('.', '', $amount)) . $recipientReference,
+                            0 => "SD".$this->padNumber(3, $increment++) . "0000000000C" .  $this->padNumber(6, $branchCode) . $this->padNumber(13, $accountNumber) . $TodisplayName,
+                            81 => $this->padNumber(15, str_replace('.', '', $amount)) . $recipientReference,
                         ]);
                         $fileContent .= $sdLine . "\n";
 
-                        // SC line
-                        $scLine = $this->formatSentenceFixedColumns([
-                            0 => "SC001",
-                            36 => "D051001" . $this->padNumber(13, $firmAccount->account_number) . "PX " . Carbon::parse($payment->created_at)->format('Ymd'),
-                            86 => strtoupper($company_name),
-                        ]);
-                        $standardBankLastRowFileContent .= $scLine . "\n";
+                        if($standardBankLastRowFileContent === ''){
+                            // SC line
+                            $scLine = $this->formatSentenceFixedColumns([
+                                0 => "SC001",
+                                35 => "D051001" . $this->padNumber(13, $firmAccount->account_number) . "PX " . Carbon::parse($payment->created_at)->format('Ymd'),
+                                85 => strtoupper($company_name),
+                            ]);
+                            $standardBankLastRowFileContent .= $scLine . "\n";
 
-                        // ST line
-                        $stLine = $this->formatSentenceFixedColumns([
-                            0 => "ST0000001" . $this->padNumber(7, $requisition->payments->count()) . "001" . $this->padNumber(15, $totalAmountFinal) . $this->padNumber(15, $totalAmountFinal),
-                        ]);
-                        $standardBankLastRowFileContent .= $stLine . "\n";
+                            // ST line
+                            $stLine = $this->formatSentenceFixedColumns([
+                                0 => "ST0000001" . $this->padNumber(7, $requisition->payments->count()) . "00100" . $this->padNumber(15, $totalAmountFinal) . $this->padNumber(15, $totalAmountFinal),
+                            ]);
+                            $standardBankLastRowFileContent .= $stLine . "\n";
+                        }
 
                         break;
 

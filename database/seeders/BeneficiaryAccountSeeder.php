@@ -45,7 +45,7 @@ class BeneficiaryAccountSeeder extends Seeder
                 'account_number' => '4657645646',
                 'account_type_id' => 4,
                 'institution_id' => 2, // Assuming 2 refers to FNB
-                'branch_code' => '44450',
+                'branch_code' => '444500',
                 'authorised' => true,
                 'verified' => true,
                 'verification_status' => 'successful',
@@ -94,7 +94,7 @@ class BeneficiaryAccountSeeder extends Seeder
                 'account_number' => '003456789',
                 'account_type_id' => 3,
                 'institution_id' => 3, // Assuming 3 refers to Standard Bank
-                'branch_code' => '66001',
+                'branch_code' => '660010',
                 'authorised' => true,
                 'verified' => true,
                 'verification_status' => 'successful',
