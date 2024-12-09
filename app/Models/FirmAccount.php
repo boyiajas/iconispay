@@ -20,6 +20,8 @@ class FirmAccount extends Model
         'account_type_id',
         'institution_id',
         'branch_code',
+        'branch_name',
+        'swift_code',
         'initials',
         'surname',
         'company_name',

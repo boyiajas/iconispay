@@ -272,6 +272,7 @@ class FirmAccountController extends Controller
         $company_name = "STRAUSS DALY INCORPORATED";
         $increment = 1;
         $standardBankLastRowFileContent = '';
+        $standardBankFirstRowFileContent = '';
 
         /* foreach ($requisitions as $requisition) {
             foreach ($requisition->payments as $payment) {
@@ -369,10 +370,9 @@ class FirmAccountController extends Controller
                         // Define the lines with their index positions
                         // SB line
                         $sbLine = $this->formatSentenceFixedColumns([
-                            0 => "SB" . Carbon::parse($payment->created_at)->format('Ymd') . $firmAccount->account_number,
-                            43 => " (" . Carbon::parse($payment->created_at)->format('Y-m-d Hi') . ")",
+                            0 => "SB" . Carbon::parse($payment->created_at)->format('Ymd') . $firmAccount->account_number . " (" . Carbon::parse($payment->created_at)->format('Ymd Hi') . ")",
                         ]);
-                        $fileContent .= $sbLine . "\n";
+                        $standardBankFirstRowFileContent .= $sbLine . "\n";
 
                         // SD line
                         $sdLine = $this->formatSentenceFixedColumns([
@@ -421,6 +421,7 @@ class FirmAccountController extends Controller
         }
 
         if($bank === 'Standard'){ //here we want to add the last part of the rows to the standard bank file
+            $fileContent = $standardBankFirstRowFileContent . $fileContent;
             $fileContent .= $standardBankLastRowFileContent;
         }       
 

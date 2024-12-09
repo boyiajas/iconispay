@@ -22,6 +22,8 @@ class BeneficiaryAccount extends Model
         'account_type_id',
         'institution_id',
         'branch_code',
+        'branch_name',
+        'swift_code',
         'my_reference',
         'recipient_reference',
         'authorised',

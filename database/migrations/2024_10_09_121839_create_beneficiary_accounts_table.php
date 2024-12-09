@@ -25,6 +25,8 @@ return new class extends Migration
             $table->foreignId('account_type_id'); // Type of account
             $table->foreignId('institution_id');
             $table->string('branch_code')->nullable(); // Branch code
+            $table->string('branch_name')->nullable();
+            $table->string('swift_code')->nullable();
             $table->string('my_reference')->nullable(); // My reference for aggregated payments
             $table->string('recipient_reference')->nullable(); // Recipient's reference for aggregated payments
             $table->boolean('authorised')->default(false); // Whether the account is authorised

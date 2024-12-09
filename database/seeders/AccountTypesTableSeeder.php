@@ -21,6 +21,8 @@ class AccountTypesTableSeeder extends Seeder
             ['name' => 'Bond account'],
             ['name' => 'Credit card'],
             ['name' => 'Subscription share'],
+            ['name' => 'Trust'],
+            ['name' => 'Attorneys Trust Account'],
         ];
 
         foreach ($categories as $category) {

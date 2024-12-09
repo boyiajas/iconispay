@@ -11,173 +11,143 @@ class SourceAccountSeeder extends Seeder
     {
         $sourceAccounts = [
             [
-                'display_text' => 'Legal Assoc Absa Trust Account',
-                'account_holder_type' => 'natural',//juristic
-                'category_id' => 4,
-                'account_holder' => 'Legal Associates',
-                'account_number' => '8078393939',
-                'account_type_id' => 3,
+                'display_text' => 'STRAUSS DALY INCORPORATED TRUST',
+                'account_holder_type' => 'juristic',//juristic
+                'category_id' => 14,
+                'account_holder' => 'STRAUSS DALY TRUST',
+                'registration_number' => '1992/006281/21',
+                'account_number' => '4043442457',
+                'account_type_id' => 8,
                 'institution_id' => 1, // Assuming 1 refers to ABSA Bank in the institutions table
-                'branch_code' => '180050',
+                'branch_code' => '632005',
+                'branch_name' => 'ABSA NORTH DBN GR',
                 'aggregated' => true,
                 'authorised' => true,
                 'mandated' => true,
                 'user_id' => 2
             ],
             [
-                'display_text' => 'Legal Assoc FNB Trust Account',
+                'display_text' => 'STRAUSS DALY INCORPORATED T',
                 'account_holder_type' => 'juristic',//juristic
-                'category_id' => 3,
-                'account_holder' => 'Legal Assoc',
-                'account_number' => '446578856',
-                'account_type_id' => 2,
-                'institution_id' => 2, // Assuming 2 refers to FNB in the institutions table
-                'branch_code' => '787650',
+                'category_id' => 14,
+                'account_holder' => 'STRAUSS DALY T',
+                'registration_number' => '1992/006281/21',
+                'account_number' => '4053763681',
+                'account_type_id' => 8,
+                'institution_id' => 1, // Assuming 2 refers to FNB in the institutions table
+                'branch_code' => '632005',
+                'branch_name' => 'ABSA NORTH DBN GR',
+                'swift_code' => 'ABSAZAJJ',
                 'aggregated' => true,
                 'authorised' => true,
                 'mandated' => true,
                 'user_id' => 2
             ],
             [
-                'display_text' => 'Legal Assoc Standard Bank Trust Account',
+                'display_text' => 'STRAUSS DALY INCORPORATED STD',
                 'account_holder_type' => 'juristic',//juristic
-                'category_id' => 4,
-                'account_holder' => 'Legal Assoc',
-                'account_number' => '093554755',
-                'account_type_id' => 2,
-                'institution_id' => 3, // Assuming 3 refers to Standard Bank
-                'branch_code' => '500050',
+                'category_id' => 14,
+                'account_holder' => 'TRUST ACCOUNT',
+                'registration_number' => '1992/006281/21',
+                'account_number' => '050220748',
+                'account_type_id' => 9,
+                'institution_id' => 4, // Assuming 3 refers to Standard Bank
+                'branch_code' => '040026',
+                'branch_name' => 'KINGSMEAD',
+                'swift_code' => 'SBZAZAJJ',
                 'aggregated' => true,
                 'authorised' => true,
                 'mandated' => true,
                 'user_id' => 2
             ],
             [
-                'display_text' => 'Legal Assoc Nedbank Trust Account',
+                'display_text' => 'STRAUSS DALY INCORPORATED STD 2',
                 'account_holder_type' => 'juristic',//juristic
-                'category_id' => 2,
-                'account_holder' => 'Legal Assoc',
-                'account_number' => '9876543210',
-                'account_type_id' => 4,
-                'institution_id' => 4, // Assuming 4 refers to Nedbank
-                'branch_code' => '80044',
+                'category_id' => 14,
+                'account_holder' => 'TRUST ACCOUNT',
+                'registration_number' => '1992/006281/21',
+                'account_number' => '332654885',
+                'account_type_id' => 9,
+                'institution_id' => 4, // Assuming 3 refers to Standard Bank
+                'branch_code' => '018105',
+                'branch_name' => 'SANDTON CITY',
+                'swift_code' => 'SBZAZAJJ',
                 'aggregated' => true,
-                'authorised' => false,
-                'mandated' => false,
-                'user_id' => 2
-            ],
-            [
-                'display_text' => 'Legal Assoc ABSA General Account',
-                'account_holder_type' => 'natural',//juristic
-                'category_id' => 1,
-                'account_holder' => 'Legal Associates',
-                'account_number' => '8078393999',
-                'account_type_id' => 2,
-                'institution_id' => 1, // Assuming 1 refers to ABSA Bank
-                'branch_code' => '089650',
-                'aggregated' => false,
-                'authorised' => false,
-                'mandated' => true,
-                'user_id' => 2
-            ],
-            [
-                'display_text' => 'Legal Assoc FNB Business Account',
-                'account_holder_type' => 'natural',//juristic
-                'category_id' => 4,
-                'account_holder' => 'Legal Associates',
-                'account_number' => '446578886',
-                'account_type_id' => 4,
-                'institution_id' => 2, // Assuming 2 refers to FNB
-                'branch_code' => '50650',
-                'aggregated' => false,
                 'authorised' => true,
                 'mandated' => true,
                 'user_id' => 2
             ],
             [
-                'display_text' => 'Legal Assoc Standard Bank Current Account',
-                'account_holder_type' => 'natural',//juristic
-                'category_id' => 6,
-                'account_holder' => 'Legal Assoc',
-                'account_number' => '093554799',
-                'account_type_id' => 3,
-                'institution_id' => 3, // Assuming 3 refers to Standard Bank
-                'branch_code' => '780001',
-                'aggregated' => true,
-                'authorised' => false,
-                'mandated' => false,
-                'user_id' => 2
-            ],
-            [
-                'display_text' => 'Legal Assoc Nedbank Savings Account',
-                'account_holder_type' => 'natural',//juristic
-                'category_id' => 4,
-                'account_holder' => 'Legal Associates',
-                'account_number' => '6549873210',
-                'account_type_id' => 3,
-                'institution_id' => 4, // Assuming 4 refers to Nedbank
-                'branch_code' => '50150',
-                'aggregated' => false,
-                'authorised' => true,
-                'mandated' => false,
-                'user_id' => 2
-            ],
-            [
-                'display_text' => 'Capitec Savings Account',
+                'display_text' => 'STRAUSS DALY INC',
                 'account_holder_type' => 'juristic',//juristic
-                'category_id' => 4,
-                'account_holder' => 'Legal Associates',
-                'account_number' => '6549003210',
-                'account_type_id' => 4,
-                'institution_id' => 5, // Assuming 4 refers to Nedbank
-                'branch_code' => '10150',
-                'aggregated' => false,
-                'authorised' => true,
-                'mandated' => false,
-                'user_id' => 2
-            ],
-            [
-                'display_text' => 'Legal Assoc Fnb Cheque Account',
-                'account_holder_type' => 'juristic',//juristic
-                'category_id' => 3,
-                'account_holder' => 'In2assets Property Auctions',
-                'account_number' => '3549000210',
-                'account_type_id' => 2,
-                'institution_id' => 2, // Assuming 4 refers to Nedbank
-                'branch_code' => '50050',
-                'aggregated' => true,
-                'authorised' => true,
-                'mandated' => false,
-                'user_id' => 2
-            ],
-            [
-                'display_text' => 'Nedbank Savings Account',
-                'account_holder_type' => 'natural',//juristic
-                'category_id' => 4,
-                'account_holder' => 'Legal Associates',
-                'account_number' => '6549873210',
-                'account_type_id' => 1,
-                'institution_id' => 4, // Assuming 4 refers to Nedbank
-                'branch_code' => '50150',
+                'category_id' => 14,
+                'account_holder' => 'STRAUSS DALY INC',
+                'registration_number' => '199200628121',
+                'account_number' => '1006529101',
+                'account_type_id' => 8,
+                'institution_id' => 5, // Assuming 1 refers to ABSA Bank
+                'branch_code' => '198765',
+                'branch_name' => 'SANDTON',
+                'swift_code' => 'NEDSZAJJ',
                 'aggregated' => false,
                 'authorised' => false,
-                'mandated' => false,
+                'mandated' => true,
                 'user_id' => 2
             ],
             [
-                'display_text' => 'Legal Assoc Fnb Bussiness Account',
+                'display_text' => 'STRAUSS DALY INCORPORATED NED',
                 'account_holder_type' => 'juristic',//juristic
-                'category_id' => 4,
-                'account_holder' => 'Xpress Home',
-                'account_number' => '6500173210',
-                'account_type_id' => 3,
-                'institution_id' => 4, // Assuming 4 refers to Nedbank
-                'branch_code' => '50150',
+                'category_id' => 14,
+                'account_holder' => 'STRAUSS DALY INC',
+                'registration_number' => '199200628121',
+                'account_number' => '1305724747',
+                'account_type_id' => 8,
+                'institution_id' => 5, // Assuming 1 refers to ABSA Bank
+                'branch_code' => '198765',
+                'branch_name' => 'KZN DURBAN',
+                'swift_code' => 'NEDSZAJJ',
                 'aggregated' => false,
-                'authorised' => true,
-                'mandated' => false,
-                'user_id' => 1
-            ]
+                'authorised' => false,
+                'mandated' => true,
+                'user_id' => 2
+            ],
+
+            [
+                'display_text' => 'STRAUSS DALY INCORPORATED FNB',
+                'account_holder_type' => 'juristic',//juristic
+                'category_id' => 14,
+                'account_holder' => 'STRAUSS DALY INC',
+                'registration_number' => '1992/006281/21',
+                'account_number' => '62559303244',
+                'account_type_id' => 8,
+                'institution_id' => 3, // Assuming 1 refers to ABSA Bank
+                'branch_code' => '220629',
+                'branch_name' => 'UMHLANGA CRESCENT 501',
+                'swift_code' => 'FIRNZAJJ',
+                'aggregated' => false,
+                'authorised' => false,
+                'mandated' => true,
+                'user_id' => 2
+            ],
+
+            [
+                'display_text' => 'STRAUSS DALY INCORPORATED FNB 2',
+                'account_holder_type' => 'juristic',//juristic
+                'category_id' => 14,
+                'account_holder' => 'STRAUSS DALY INC',
+                'registration_number' => '1992/006281/21',
+                'account_number' => '62161858512',
+                'account_type_id' => 8,
+                'institution_id' => 3, // Assuming 1 refers to ABSA Bank
+                'branch_code' => '220629',
+                'branch_name' => 'UMHLANGA CRESCENT 501',
+                'swift_code' => 'FIRNZAJJ',
+                'aggregated' => false,
+                'authorised' => false,
+                'mandated' => true,
+                'user_id' => 2
+            ],
+            
         ];
 
         foreach ($sourceAccounts as $account) {

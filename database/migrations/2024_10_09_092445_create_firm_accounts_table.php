@@ -23,6 +23,8 @@ return new class extends Migration
             $table->foreignId('account_type_id'); // Type of account
             $table->foreignId('institution_id'); // Foreign key to Institution model
             $table->string('branch_code')->nullable(); // Branch code
+            $table->string('branch_name')->nullable();
+            $table->string('swift_code')->nullable();
             $table->string('initials')->nullable(); // Initials for natural persons
             $table->string('surname')->nullable(); // Surname for natural persons
             $table->string('company_name')->nullable(); // Company name for juristic persons
