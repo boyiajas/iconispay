@@ -271,6 +271,7 @@ class FirmAccountController extends Controller
         $absacount = 1001;
         $company_name = "STRAUSS DALY INCORPORATED";
         $increment = 1;
+        $standardBankLastRowFileContent = '';
 
         /* foreach ($requisitions as $requisition) {
             foreach ($requisition->payments as $payment) {
@@ -322,6 +323,7 @@ class FirmAccountController extends Controller
         } */
 
         foreach ($requisitions as $requisition) {
+            
             foreach ($requisition->payments as $payment) {
                 // Retrieve required data
                 $payToAccount = $payment->payToAccount;
@@ -330,45 +332,97 @@ class FirmAccountController extends Controller
                 $recipientReference = $payment->recipient_reference ?? '';
                 $amount = number_format($payment->amount, 2, '.', '');
                 $recipientReference2 = $recipientReference;
+                $TodisplayName = $payToAccount ? $payToAccount->display_text : '';
 
-                // Specify the words with their desired start positions
-                $wordsWithIndices = [
-                    0 => "ABSADATA",
-                    12 => "3450000" . $absacount . "C" . $company_name,
-                    59 => $firmAccount->account_number,
-                    69 => $firmAccount->branch_code . "3",
-                    76 => $payment->my_reference,
-                    107 => $recipientReference,
-                    137 => $accountNumber,
-                    153 => $branchCode . "3",
-                    160 => $recipientReference,
-                    198 => $amount . Carbon::parse($payment->created_at)->format('ymd') . "N  0000000CNAD HOC\t I",
-                ];
+                $totalAmount =  $requisition->payments->sum('amount');
+                $totalAmountDecimal = number_format($totalAmount, 2, '.', '');
+                // Remove the decimal point by replacing '.' with ''
+                $totalAmountFinal = str_replace('.', '', $totalAmountDecimal);
+                 // Build the content of the file
+                switch ($bank) {
+                    case 'ABSA':
+                    case 'Capitec':
+                    case 'FNB':
+                    case 'Capitec Business':
 
-                // Format the sentence
-                $fileContent .= $this->formatSentenceFixedColumns($wordsWithIndices) . "\n";
+                        // Specify the words with their desired start positions
+                        $wordsWithIndices = [
+                            0 => "ABSADATA",
+                            12 => strtoupper("3450000" . $absacount . "C" . $company_name),
+                            59 => $firmAccount->account_number,
+                            69 => $firmAccount->branch_code . "3",
+                            76 => strtoupper($payment->my_reference),
+                            107 => strtoupper($recipientReference),
+                            137 => $accountNumber,
+                            153 => $branchCode . "3",
+                            160 => strtoupper($recipientReference),
+                            198 => $amount . Carbon::parse($payment->created_at)->format('ymd') . "N  0000000CNAD HOC\t I",
+                        ];
+                        // Format the sentence
+                        $fileContent .= $this->formatSentenceFixedColumns($wordsWithIndices) . "\n";
+                        $absacount += 1000; // Increment counter for unique identifiers
 
-        
-                // Construct formatted output
-                /* $fileContent .= sprintf(
-                    //"ABSADATA %-20s%-10s%-20s%-30s%-6s%-16s%-20s%-20s%-11s%-8s%-15s\n",
-                    "ABSADATA %-12s%-60s%-70s%-77s%-108s%-138s%-154s%-161s%-199s\n",
-                    "3450000" . $absacount . "C" . $company_name, // ABSADATA  12
-                    $firmAccount->account_number, // FromAccountNumber 60
-                    $firmAccount->branch_code . "3", // FromAccountBranchCode  70
-                    $payment->my_reference, // FromAccountName  77
-                    $recipientReference, // 108
-                    $accountNumber, // ToAccountNumber 138
-                    $branchCode . "3", // ToAccountBranchCode 154
-                    $recipientReference, // ToAccountName  161
-                    $amount . Carbon::parse($payment->created_at)->format('ymd') . "N  0000000CNAD HOC\t I", // Amount 199
-                ); */
-        
-                $absacount += 1000; // Increment counter for unique identifiers
+                        break;
+                    
+                    case 'Standard':
+
+                        // Define the lines with their index positions
+                        // SB line
+                        $sbLine = $this->formatSentenceFixedColumns([
+                            0 => "SB" . Carbon::parse($payment->created_at)->format('Ymd') . $firmAccount->account_number,
+                            43 => " (" . Carbon::parse($payment->created_at)->format('Y-m-d Hi') . ")",
+                        ]);
+                        $fileContent .= $sbLine . "\n";
+
+                        // SD line
+                        $sdLine = $this->formatSentenceFixedColumns([
+                            0 => "SD".$this->padNumber(3, $increment++) . "0000000000C" . $branchCode . $this->padNumber(13, $accountNumber) . $TodisplayName,
+                            82 => $this->padNumber(15, str_replace('.', '', $amount)) . $recipientReference,
+                        ]);
+                        $fileContent .= $sdLine . "\n";
+
+                        // SC line
+                        $scLine = $this->formatSentenceFixedColumns([
+                            0 => "SC001",
+                            36 => "D051001" . $this->padNumber(13, $firmAccount->account_number) . "PX " . Carbon::parse($payment->created_at)->format('Ymd'),
+                            86 => strtoupper($company_name),
+                        ]);
+                        $standardBankLastRowFileContent .= $scLine . "\n";
+
+                        // ST line
+                        $stLine = $this->formatSentenceFixedColumns([
+                            0 => "ST0000001" . $this->padNumber(7, $requisition->payments->count()) . "001" . $this->padNumber(15, $totalAmountFinal) . $this->padNumber(15, $totalAmountFinal),
+                        ]);
+                        $standardBankLastRowFileContent .= $stLine . "\n";
+
+                        break;
+
+                    case 'Nedbank':
+                        $rowType = $increment < $requisition->payments->count() ? '10' : '12';
+
+                        $fileContent .= $rowType . $firmAccount->branch_code . '0' . $firmAccount->account_number;
+                        $fileContent .= '000000000' . str_pad($increment, 2, '0', STR_PAD_LEFT);
+                        $fileContent .= $branchCode . $accountNumber;
+                        $fileContent .= '10000' . $payment->amount . Carbon::parse($payment->created_at)->format('ymd') . ($rowType === '10' ? '000000 ' : '100000');
+                        $fileContent .= str_pad($recipientReference, 30);
+                        $fileContent .= str_pad($payment->recipient_name, 30);
+                        $fileContent .= '00000000000000000000                21' . PHP_EOL;
+                        break;
+    
+                    default:
+                        // Handle other banks if necessary
+                        break;
+                }
+
+
             }
         
             $requisitionIds[] = $requisition->id; // Track requisition IDs
         }
+
+        if($bank === 'Standard'){ //here we want to add the last part of the rows to the standard bank file
+            $fileContent .= $standardBankLastRowFileContent;
+        }       
 
         // Write content to the file
         file_put_contents($filePath, $fileContent);
@@ -476,6 +530,12 @@ class FirmAccountController extends Controller
         }
     
         return $sentence;
+    }
+
+    // Private function to pad a number with leading zeros
+    private function padNumber($length, $value)
+    {
+        return str_pad($value, $length, '0', STR_PAD_LEFT);
     }
     
 
