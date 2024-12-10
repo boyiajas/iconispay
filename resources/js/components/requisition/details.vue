@@ -832,7 +832,7 @@
                                 <span v-html="highlightMatch(account.display_text, paymentForm.search)"></span> |
 
                                 <!-- Render institution.short_name with highlighted search term -->
-                                <span v-html="highlightMatch(account.institution.short_name, paymentForm.search)"></span> -
+                                <span v-html="highlightMatch(account?.institution?.short_name, paymentForm.search)"></span> -
 
                                 <!-- Render account_number with highlighted search term -->
                                 <span v-html="highlightMatch(account.account_number, paymentForm.search)"></span>
@@ -916,9 +916,9 @@
                                             <div class="d-flex align-items-center">
                                                 <i class="fa fa-check mr-2 text-success"></i>
                                                 <div class="pl-0 pr-0">
-                                                    <h6>{{ authorizer.user.name }}</h6>
-                                                    <div class="txt-xs">on {{ formatDate(authorizer.created_at) }}</div>
-                                                    <div class="txt-xs">logged in as {{ authorizer.user.email }}</div>
+                                                    <h6>{{ authorizer?.user?.name }}</h6>
+                                                    <div class="txt-xs">on {{ formatDate(authorizer?.created_at) }}</div>
+                                                    <div class="txt-xs">logged in as {{ authorizer?.user?.email }}</div>
                                                 </div>
                                             </div>
                                         </div>

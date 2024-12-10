@@ -23,7 +23,8 @@ class DatabaseSeeder extends Seeder
             RequisitionSeeder::class,
             CategoriesTableSeeder::class,
             StatusSeeder::class,
-            AccountTypesTableSeeder::class
+            AccountTypesTableSeeder::class,
+            AuthorizersTableSeeder::class,
         ]);
     }
 }

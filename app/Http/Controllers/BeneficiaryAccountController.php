@@ -266,7 +266,7 @@ class BeneficiaryAccountController extends Controller
             // Query beneficiaries based on the account number or account holder name
             $beneficiaries = BeneficiaryAccount::where('account_number', 'LIKE', "%{$query}%")
             ->orWhere('company_name', 'LIKE', "%{$query}%")
-            ->orWhere('display_text', 'LIKE', "%{$query}%")->with('institution','category','accountType','payments')
+            ->orWhere('display_text', 'LIKE', "%{$query}%")->with('institution','category','accountType','payments','authorizers.user')
             ->take(10)  // Limit to 10 results
             //->get(['account_number', 'company_name', 'display_text', 'id', 'institution_id']);  // Only return relevant fields
             ->get();
@@ -276,7 +276,7 @@ class BeneficiaryAccountController extends Controller
                 ->orWhere('account_holder', 'LIKE', "%{$query}%")
                 ->orWhere('company_name', 'LIKE', "%{$query}%")
                 ->orWhere('display_text', 'LIKE', "%{$query}%")
-                ->with('institution', 'category', 'accountType','payments')
+                ->with('institution', 'category', 'accountType','payments','authorizers.user')
                 ->take(10) // Limit to 10 results
                 ->get();
 
