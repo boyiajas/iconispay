@@ -273,6 +273,8 @@ class FirmAccountController extends Controller
         $increment = 1;
         $standardBankLastRowFileContent = '';
         $standardBankFirstRowFileContent = '';
+        $nedBankLastRowFileContent = '';
+        $nedBankFirstRowFileContent = '';
 
         /* foreach ($requisitions as $requisition) {
             foreach ($requisition->payments as $payment) {
@@ -343,7 +345,6 @@ class FirmAccountController extends Controller
                 switch ($bank) {
                     case 'ABSA':
                     case 'Capitec':
-                    case 'FNB':
                     case 'Capitec Business':
 
                         // Specify the words with their desired start positions
@@ -402,15 +403,79 @@ class FirmAccountController extends Controller
                         break;
 
                     case 'Nedbank':
-                        $rowType = $increment < $requisition->payments->count() ? '10' : '12';
 
-                        $fileContent .= $rowType . $firmAccount->branch_code . '0' . $firmAccount->account_number;
-                        $fileContent .= '000000000' . str_pad($increment, 2, '0', STR_PAD_LEFT);
-                        $fileContent .= $branchCode . $accountNumber;
-                        $fileContent .= '10000' . $payment->amount . Carbon::parse($payment->created_at)->format('ymd') . ($rowType === '10' ? '000000 ' : '100000');
-                        $fileContent .= str_pad($recipientReference, 30);
-                        $fileContent .= str_pad($payment->recipient_name, 30);
-                        $fileContent .= '00000000000000000000                21' . PHP_EOL;
+                        // Define the lines with their index positions
+                        if($nedBankFirstRowFileContent === ''){
+                            // SB line
+                            $sbLine = $this->formatSentenceFixedColumns([
+                                0 => "0210010000000000000021" . Carbon::parse($payment->created_at)->format('ymd') . Carbon::parse($payment->created_at)->format('ymd') . "000118000180MAGTAPE",
+                            ]);
+                            $nedBankFirstRowFileContent .= $sbLine . "\n";
+                            // SB line
+                            $sbLine = $this->formatSentenceFixedColumns([
+                                0 => "040000" . 
+                                    Carbon::parse($payment->created_at)->format('ymd') . 
+                                    Carbon::parse($payment->created_at)->format('ymd') . 
+                                    Carbon::parse($payment->created_at)->format('ymd'). 
+                                    Carbon::parse($payment->created_at)->format('ymd') ."0000010001ONE DAY",
+                            ]);
+                            $nedBankFirstRowFileContent .= $sbLine . "\n";
+                        }
+
+                        // SD line
+                        $sdLine = $this->formatSentenceFixedColumns([
+                            0 => "10".$firmAccount->branch_code . 
+                                $this->padNumber(11, $firmAccount->account_number) .
+                                $this->padNumber(10, $increment++) .  
+                                $this->padNumber(6, $branchCode) . 
+                                $this->padNumber(11, $accountNumber) . "1" . 
+                                $this->padNumber(11, number_format($amount, 2, '', '')) .  
+                                Carbon::parse($payment->created_at)->format('ymd') . "000000 " . $recipientReference, 
+                            100 => $TodisplayName,
+                            130 => "00000000000000000000",
+                            166 => "21",
+                        ]);
+
+                        $fileContent .= $sdLine . "\n";
+
+                        if($nedBankLastRowFileContent === '' && $increment > $requisition->payments->count()){
+                            // SC line
+                            $scLine = $this->formatSentenceFixedColumns([
+                                0 => "12".$firmAccount->branch_code . 
+                                    $this->padNumber(11, $firmAccount->account_number) .
+                                    $this->padNumber(10, $increment) .  
+                                    $this->padNumber(6, $branchCode) . 
+                                    $this->padNumber(11, $accountNumber) . "1" . 
+                                    $this->padNumber(11, $totalAmountFinal) . Carbon::parse($payment->created_at)->format('ymd') . "100000" . $firmAccount->account_holder, 
+                                100 => $company_name,
+                            ]);
+                            $nedBankLastRowFileContent .= $scLine . "\n";
+
+                            // ST line
+                            $stLine = $this->formatSentenceFixedColumns([
+                                0 => "920000000001" . 
+                                    $this->padNumber(6, $increment) . 
+                                    Carbon::parse($payment->created_at)->format('ymd') .
+                                    Carbon::parse($payment->created_at)->format('ymd') . 
+                                    $this->padNumber(7, $requisition->payments->count()) . "000001000001" .
+                                    $this->padNumber(12, $totalAmountFinal).
+                                    $this->padNumber(12, $totalAmountFinal).
+                                    "069225840312"
+                            ]);
+                            $nedBankLastRowFileContent .= $stLine . "\n";
+
+                            // ST line
+                            $stLine = $this->formatSentenceFixedColumns([
+                                0 => "9410010000000000000021" . Carbon::parse($payment->created_at)->format('ymd') . Carbon::parse($payment->created_at)->format('ymd') . "000118000180MAGTAPE",
+                                56 => "000001000008000002",
+                            ]);
+                            $nedBankLastRowFileContent .= $stLine . "\n";
+                        }
+
+                        break;
+
+                    case 'FNB':
+
                         break;
     
                     default:
@@ -427,6 +492,11 @@ class FirmAccountController extends Controller
         if($bank === 'Standard'){ //here we want to add the last part of the rows to the standard bank file
             $fileContent = $standardBankFirstRowFileContent . $fileContent;
             $fileContent .= $standardBankLastRowFileContent;
+        }       
+
+        if($bank === 'Nedbank'){ //here we want to add the last part of the rows to the standard bank file
+            $fileContent = $nedBankFirstRowFileContent . $fileContent;
+            $fileContent .= $nedBankLastRowFileContent;
         }       
 
         // Write content to the file

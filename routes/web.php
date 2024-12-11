@@ -32,6 +32,10 @@ use Illuminate\Support\Facades\Route;
 use Maatwebsite\Excel\Facades\Excel;
 
 
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
+
+
 
 
 
@@ -45,6 +49,37 @@ use Maatwebsite\Excel\Facades\Excel;
 | be assigned to the "web" middleware group. Make something great!
 |
 */
+
+Route::post('/api/avs-callback', function (Request $request) { 
+    // Basic authentication
+    $username = $request->header('PHP_AUTH_USER');
+    $password = $request->header('PHP_AUTH_PW');
+
+    // Replace these with your desired credentials
+    $validUsername = 'iconis';
+    $validPassword = 'test123';
+
+    if ($username !== $validUsername || $password !== $validPassword) {
+        $response = ['error' => 'Unauthorized'];
+        Log::info('Callback unauthorized access attempt', ['username' => $username]);
+
+        return response()->json($response, 401);
+    }
+
+    // Process the request
+    $data = $request->all();
+
+    // Prepare the response
+    $response = [
+        'message' => 'Callback received',
+        'data' => $data
+    ];
+
+    // Log the response
+    Log::info('Callback response', ['response' => $response]);
+
+    return response()->json($response, 200);
+});
 
 Route::group(['middleware' => 'no_cache'], function (){
 
@@ -202,3 +237,4 @@ Route::group(['middleware' => 'no_cache'], function (){
     })->where('any', '.*')->middleware(['auth','2fa']);
 
 });//no cache route
+
