@@ -1036,7 +1036,7 @@
                         <div class="mb-2 row">
                             <label for="amount" class="form-label col-sm-3">Amount: *</label>
                             <div class="col-sm-9">
-                                <input type="number" v-model="paymentForm.amount" class="form-control" required placeholder="Enter the amount available for the transaction">
+                                <input type="number" step="0.01" v-model="paymentForm.amount" class="form-control" required placeholder="Enter the amount available for the transaction">
                             </div>
                         </div>
                         <div class="mb-2 row">
@@ -1054,7 +1054,7 @@
                         
                         <div class="modal-footer">
                             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" @click="closeModal">Cancel</button>
-                            <button type="submit" class="btn btn-primary">Save</button>
+                            <button type="button" class="btn btn-primary" @click="createAndNewPayment">Save</button>
                             <button type="button" class="btn btn-primary" @click="createAndNewPayment">Save & New</button>
                         </div>
                     </form>
