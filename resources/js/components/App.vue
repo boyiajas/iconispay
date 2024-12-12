@@ -3,7 +3,7 @@
       <!-- Navbar -->
       <nav class="navbar navbar-light bg-light" v-if="user">
         <div class="container">
-          <div class="navbar-row">
+          <div class="mr-3 navbar-row">
             <router-link to="/" class="navbar-brand">Iconis® Pay</router-link>
             <div>
               <span>Logged in as: {{ user.name }} (Strauss Daly Incorporated)</span>
@@ -119,7 +119,7 @@
   <style scoped>
   /* Styles for the App component */
   .navbar {
-    border-bottom: 3px solid red;
+    border-bottom: 3px solid #40b1c5;;
   }
   .navbar-row {
     display: flex;
@@ -141,6 +141,9 @@
     margin-left: 20px;
     color: rgb(0, 151, 178);
     text-decoration: none;
+  }
+  a{
+    color: #0097b2bf;
   }
   </style>
   
