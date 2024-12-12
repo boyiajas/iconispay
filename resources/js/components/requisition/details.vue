@@ -36,10 +36,10 @@
                                 <span v-else>No entries captured</span>
                             </span>
                             <span v-else-if="requisition.status_id === 3">
-                                Transaction value: R{{ totalDepositAmount }}  
+                                Transaction value: R{{ parseFloat(totalDepositAmount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}
                             </span>
                             <span v-else-if="requisition.status_id >= 5">
-                                Transaction value: R{{ totalPaymentAmount }}
+                                Transaction value: R{{ parseFloat(totalDepositAmount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}
                             </span>
                         </p>
                     </div>
@@ -317,7 +317,7 @@
                                                         <div class="bg-light p-1 rounded txt-xs" style="background-color: #e0ffe0 !important;border: solid 1px #a5f2a5;">Marked as received by {{ deposit.user ? deposit.user.name : 'Unknown User' }} on {{ formatDate(deposit.created_at) }}</div>
                                                     </div>
                                                     <div class="col-md-3 pl-4">
-                                                        R{{ parseFloat(deposit.amount).toFixed(2) }}
+                                                        R{{ parseFloat(deposit.amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}
 
                                                         <span v-if="requisition && !requisition.locked" class="pull-right"><i class="fa fa-edit text-primary" @click="openEditDepositModal(deposit)"></i></span>
                                                     </div>
@@ -331,9 +331,9 @@
                                                         <!-- Display the user's name who made the deposit -->
                                                         <div class="bg-light p-1 rounded txt-xs" style="background-color: #f2f2f2 !important;border: solid 1px #f2f2f2;"> Not funded</div>
                                                     </div>
-                                                    <div class="col-md-3 pl-4">
+                                                    <div class="col-md-3 pl-4"> 
                                                         R{{ parseFloat(deposit.amount).toFixed(2) }}
-
+                                                        
                                                         <span v-if="requisition && !requisition.locked" class="pull-right"><i class="fa fa-edit text-primary" @click="openEditDepositModal(deposit)"></i></span>
                                                     </div>
                                                 </div>
@@ -402,7 +402,8 @@
                                                 <div><span class="text-secondary">Recipient Ref:</span> {{ payment.recipient_reference }}</div>
                                             </div>
                                             <div class="col-md-2 pl-4" style="display:flex;justify-content:flex-end;">
-                                                - R{{ parseFloat(payment.amount).toFixed(2) }}
+                                                                                               
+                                                - R{{ parseFloat(payment.amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}
                                                 <span v-if="requisition && !requisition.locked" class="pull-right"> &nbsp;&nbsp;
                                                     <i class="fa fa-edit text-primary" @click="openEditPaymentModal(payment)"></i>
                                                 </span>
@@ -429,7 +430,7 @@
                                                 <hr class="mb-1"/>
                                                 <div style="display:flex;justify-content:flex-end;">
 
-                                                       &nbsp; R{{ totalDepositAmount }}                                                    
+                                                       &nbsp; R{{ parseFloat(totalDepositAmount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}                                                  
                                                     
                                                 </div>
                                                 <hr class="mb-0 mt-1"/>
@@ -442,11 +443,11 @@
                                                     class="mr-4"
                                                 >
 
-                                                    <div  v-if="requisition.deposits  && requisition.deposits.length > 0">&nbsp; R{{ totalDepositAmount }} </div>   <div v-if="requisition.payments && requisition.payments.length > 0">-  R{{ totalPaymentAmount }}</div>
+                                                    <div  v-if="requisition.deposits  && requisition.deposits.length > 0">&nbsp; R{{ parseFloat(totalDepositAmount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }} </div>   <div v-if="requisition.payments && requisition.payments.length > 0">-  R{{ parseFloat(totalDepositAmount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }} </div>
                                                     
                                                 </div>
                                                 <hr class="mb-0 mt-1"/>
-                                                <span class="pull-right mr-4" v-if="requisition.payments  && requisition.payments.length > 0" :class="netBalance > 0 ? 'orange' : null">&nbsp; R {{ netBalance }}</span>
+                                                <span class="pull-right mr-4" v-if="requisition.payments  && requisition.payments.length > 0" :class="netBalance > 0 ? 'orange' : null">&nbsp; R {{ parseFloat(totalDepositAmount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</span>
                                                 <div v-if="requisition.payments  && requisition.payments.length > 0  && requisition.status_id === 2" class="btn btn-white btn-default-default btn-sm mt-1" data-toggle="tooltip" data-placement="bottom" title="Balance the matter by adding a default source / deposit entry" @click="balancePaymentAndFund"><i class="fas fa-balance-scale"></i> Balance and Fund</div>
                                             </div>
                                             

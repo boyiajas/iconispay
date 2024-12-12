@@ -108,7 +108,7 @@ export default {
         generateUrl() {
             const matterId = 300316;  // Example matter ID, replace with dynamic value
             const requisitionId = 3;  // Example requisition ID, replace with dynamic value
-            return `https://app.lexispay.co.za/matters/${matterId}/requisition/payments/${requisitionId}/authorise`;
+            return `https://pay.iconis.co.za/matters/${matterId}/requisition/payments/${requisitionId}/authorise`;
         },
 
         // Send email via Axios
@@ -155,5 +155,8 @@ h4 {
 
 textarea {
     resize: none;
+}
+a{
+    color: #0097b2bf !important;
 }
 </style>

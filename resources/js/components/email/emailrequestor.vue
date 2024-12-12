@@ -61,9 +61,9 @@ export default {
         return {
             emailForm: {
                 recipient: '',
-                subject: 'Matter requiring attention ( HG )',
-                greeting: '',
-                message: 'A matter with file reference: HG requires your attention.',
+                subject: '',
+                greeting: 'Dear',
+                message: '',
             },
             recipients: [],
             url: '',
@@ -73,10 +73,12 @@ export default {
     },
     mounted() {
         this.loadRecipients();
+        this.loadRequisitionDetails();
         this.url = this.generateUrl();
     },
     methods: {
-        loadRecipients() {
+         // Fetch recipients from the API
+         loadRecipients() {
             axios.get('/api/recipients')
                 .then(response => {
                     this.recipients = response.data;
@@ -85,8 +87,20 @@ export default {
                     console.error('Error fetching recipients:', error);
                 });
         },
+        loadRequisitionDetails() {
+            axios.get(`/api/requisitions/${this.requisitionId}`)
+                .then(response => {
+                    this.requisition = response.data || {};  // Set requisition data or empty object
+                    // Set subject and message after requisition is loaded
+                    this.emailForm.subject = `Matter ready for authorisation (${this.requisition.file_reference})`;
+                    this.emailForm.message = `A matter with file reference: ${this.requisition.file_reference} is ready for authorisation.`;
+                })
+                .catch(error => {
+                    console.error('Error loading requisition details:', error);
+                });
+        },
         generateUrl() {
-            return `https://app.lexispay.co.za/matters/305633/requisition/payments/to/review`;
+            return `https://pay.iconis.co.za/matters/305633/requisition/payments/to/review`;
         },
         sendEmail() {
             axios.post('/api/send-email/requestor-notification', this.emailForm)
@@ -127,5 +141,9 @@ h4 {
 
 textarea {
     resize: none;
+}
+
+a{
+    color: #0097b2bf !important;
 }
 </style>
