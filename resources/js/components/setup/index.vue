@@ -1008,6 +1008,14 @@ export default {
     text-overflow: ellipsis; 
 }
 
+.nav-link{
+    color: #0097b2bf !important;
+}
+
+.nav-link.active{
+    color: #333 !important;
+}
+
 
 tbody tr td {
     text-wrap: wrap !important;
