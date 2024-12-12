@@ -1020,4 +1020,8 @@ export default {
 tbody tr td {
     text-wrap: wrap !important;
 }
+
+div.dt-processing>div:last-child {
+    color: #0097b2bf !important;
+}
 </style>

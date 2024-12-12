@@ -13,9 +13,11 @@
           <div class="navbar-links-row">
             <router-link to="/home" class="mr-3">Home</router-link>
             <router-link to="/matters" class="mr-3">Matters</router-link>
-            <PermissionControl :roles="['admin', 'authoriser']">
+            <PermissionControl :roles="['admin', 'authoriser', 'bookkeeper']">
               <router-link to="/accounts" class="mr-3">Accounts</router-link>
               <router-link to="/reports" class="mr-3">Reports</router-link>
+            </PermissionControl>
+            <PermissionControl :roles="['admin', 'authoriser']">
               <router-link to="/setup" class="mr-3">Setup</router-link>
             </PermissionControl>
             <!-- Use a regular link for Contact since it's a Laravel route -->
