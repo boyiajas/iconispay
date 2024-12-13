@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Mail\RequestorNotificationMail;
+use App\Mail\SignatoryNotificationMail;
 use App\Models\Email;
 use App\Models\User;
 use Illuminate\Http\Request;
@@ -21,25 +23,28 @@ class EmailController extends Controller
     public function sendRequestorNotificationEmail(Request $request)
     {
         $request->validate([
-            'recipient' => 'required|exists:recipients,id',
+            'recipient' => 'required|exists:users,id',
             'subject' => 'required|string|max:255',
             'greeting' => 'nullable|string|max:255',
             'message' => 'required|string',
         ]);
 
         $recipient = User::find($request->recipient);
+        $baseUrl = config('app.url'); // Use environment variable for base URL
+        $url = "{$baseUrl}/matters/requisitions/{$recipient->id}/details";
+        
         $emailData = [
             'subject' => $request->subject,
-            'greeting' => $request->greeting,
-            'message' => $request->message,
-            'url' => 'https://app.lexispay.co.za/matters/305633/requisition/payments/to/review',
-            'senderName' => auth()->user()->name,
+            'greeting' => $request->greeting ?? 'Dear Signatory,',
+            'message' => $request->message ?? '',
+            'url' => (string) $url,
+            'senderName' => (string) auth()->user()->name,
+            'unsubscribeLink' => (string) "{$baseUrl}/unsubscribe/{$recipient->id}",
+            'preferencesLink' => (string) "{$baseUrl}/preferences/{$recipient->id}",
         ];
-
-        Mail::send('emails.notification', $emailData, function ($message) use ($recipient, $request) {
-            $message->to($recipient->email)
-                    ->subject($request->subject);
-        });
+        //dd($emailData['subject']);
+        // Send email using the Mailable
+        Mail::to($recipient->email)->send(new RequestorNotificationMail($emailData));
 
         return response()->json(['message' => 'Email sent successfully!']);
     }
@@ -47,25 +52,28 @@ class EmailController extends Controller
     public function sendSignatoryNotificationEmail(Request $request)
     {
         $request->validate([
-            'recipient' => 'required|exists:recipients,id',
+            'recipient' => 'required|exists:users,id',
             'subject' => 'required|string|max:255',
             'greeting' => 'nullable|string|max:255',
             'message' => 'required|string',
         ]);
-
+        
         $recipient = User::find($request->recipient);
+        $baseUrl = config('app.url'); // Use environment variable for base URL
+        $url = "{$baseUrl}/matters/requisitions/{$recipient->id}/details";
+        
         $emailData = [
             'subject' => $request->subject,
-            'greeting' => $request->greeting,
-            'message' => $request->message,
-            'url' => 'https://app.lexispay.co.za/matters/305633/requisition/payments/to/review',
-            'senderName' => auth()->user()->name,
+            'greeting' => $request->greeting ?? 'Dear Signatory,',
+            'message' => $request->message ?? '',
+            'url' => (string) $url,
+            'senderName' => (string) auth()->user()->name,
+            'unsubscribeLink' => (string) "{$baseUrl}/unsubscribe/{$recipient->id}",
+            'preferencesLink' => (string) "{$baseUrl}/preferences/{$recipient->id}",
         ];
-
-        Mail::send('emails.notification', $emailData, function ($message) use ($recipient, $request) {
-            $message->to($recipient->email)
-                    ->subject($request->subject);
-        });
+        //dd($emailData['subject']);
+        // Send email using the Mailable
+        Mail::to($recipient->email)->send(new SignatoryNotificationMail($emailData));
 
         return response()->json(['message' => 'Email sent successfully!']);
     }

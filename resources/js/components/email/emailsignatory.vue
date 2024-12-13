@@ -40,7 +40,7 @@
 
             <div class="d-flex justify-content-between mt-4">
                 <button type="button" class="btn btn-secondary" @click="cancel">Cancel</button>
-                <button type="submit" class="btn btn-primary">Send</button>
+                <button type="submit" class="btn btn-primary"> <span id="buttonSpinner" class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span> Send</button>
             </div>
         </form>
     </div>
@@ -48,6 +48,7 @@
 
 <script>
 import axios from 'axios';
+import { useToast } from 'vue-toastification';
 
 export default {
     name: 'EmailSignatory',
@@ -77,6 +78,11 @@ export default {
         this.loadRequisitionDetails();
         this.loadRecipients();  // Fetch recipients when component is mounted
         this.url = this.generateUrl();  // Generate URL dynamically based on file reference
+    },
+    setup() {
+        // Initialize toast
+        const toast = useToast();
+        return { toast };
     },
     methods: {
 
@@ -108,21 +114,35 @@ export default {
         generateUrl() {
             const matterId = 300316;  // Example matter ID, replace with dynamic value
             const requisitionId = 3;  // Example requisition ID, replace with dynamic value
-            return `https://pay.iconis.co.za/matters/${matterId}/requisition/payments/${requisitionId}/authorise`;
+            /*testing env*///return `http://127.0.0.1:8000/matters/requisitions/${requisitionId}/details`;
+            /*live env*/return `https://pay.iconis.co.za/matters/requisitions/${requisitionId}/details`;
         },
 
         // Send email via Axios
         sendEmail() {
+
+            const buttonSpinner = document.getElementById('buttonSpinner');
+            buttonSpinner.classList.remove('d-none');
+
             axios.post('/api/send-email/signatory-notification', this.emailForm)
                 .then(response => {
-                    alert('Email sent successfully!');
+                    buttonSpinner.classList.add('d-none');
+                    //alert('Email sent successfully!');
+                    this.toast.success(response.data.message, {
+                        title: 'Success'
+                    });
                 })
                 .catch(error => {
                     if (error.response && error.response.data.errors) {
-                        this.errors = error.response.data.errors;
+                        //this.errors = error.response.data.errors;
+                        this.toast.error(error.response ? error.response.data : 'No response data', {
+                        title: 'Error'
+                    });
                     } else {
                         console.error('Error sending email:', error);
                     }
+
+                    buttonSpinner.classList.add('d-none');
                 });
         },
 

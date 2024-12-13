@@ -27,6 +27,7 @@ use App\Http\Controllers\StatusController;
 
 
 use App\Http\Controllers\UserController;
+use App\Http\Controllers\EmailPreviewController;
 use App\Http\Middleware\RedirectIfAuthenticated;
 use Illuminate\Support\Facades\Route;
 use Maatwebsite\Excel\Facades\Excel;
@@ -49,6 +50,16 @@ use Illuminate\Support\Facades\Log;
 | be assigned to the "web" middleware group. Make something great!
 |
 */
+
+
+//build email
+Route::get('/email-preview/signatory', [EmailPreviewController::class, 'signatoryNotificationPreview']);
+Route::get('/unsubscribe/{encoded}', function ($encoded) {
+    return 'Unsubscribe Link with encoded data: ' . $encoded;
+})->name('unsubscribe');
+Route::get('/preferences/{encoded}', function ($encoded) {
+    return 'Preferences Link with encoded data: ' . $encoded;
+})->name('preferences');
 
 Route::post('/api/avs-callback', function (Request $request) { 
     // Basic authentication
