@@ -155,7 +155,10 @@
                 <span v-if="requisition.status_id < 7"> It is pending payment</span>
                 <span v-else-if="requisition.status_id == 7"> Payment was made successfully and no further changes may be made.</span>
             </span>
-            <a v-if="requisition.status_id < 7" class="pull-right btn btn-white btn-primary btn-sm" @click="unlockRequisition(requisition.id)"><i class="fa fa-lock-open"></i> Unlock</a>
+            <PermissionControl :roles="['admin','authoriser']">
+                <a v-if="requisition.status_id < 7" class="pull-right btn btn-white btn-primary btn-sm" @click="unlockRequisition(requisition.id)"><i class="fa fa-lock-open"></i> Unlock</a>
+            </PermissionControl>
+            
         </div>
         <!-- Tabs Navigation -->
         <ul class="nav nav-tabs mb-0" id="requisitionTab" role="tablist">
@@ -1686,6 +1689,34 @@ export default {
             //console.log(deposit);
         },
 
+        updatePayment() {
+            axios.put(`/api/payments/${this.editPaymentForm.id}`, this.editPaymentForm)
+                .then(response => {
+                   // Response contains the updated payment
+                    if(response.data){
+                        this.requisition = response.data.requisitionData;
+                        // Find the index of the payment in the payments array
+                        this.toast.success(response.data.message, {
+                            title: 'Success'
+                        });
+                    }else{
+                        this.toast.error(error.response ? error.response.data : 'No response data', {
+                            title: 'Error'
+                        });
+                    }
+                    // Close the modal
+                    this.closeModal();
+                })
+                .catch(error => {
+                    if (error.response && error.response.data.errors) {
+                        //this.errors = error.response.data.errors;
+                        this.toast.error(error.response ? error.response.data : 'No response data', {
+                            title: 'Error'
+                        });
+                    }
+                });
+        },
+
 
         updateDeposit() {
             axios.put(`/api/deposits/${this.editDepositForm.id}`, this.editDepositForm)
@@ -1701,12 +1732,18 @@ export default {
                         // Replace the old deposit with the updated one
                         this.selectedSourceAccount.deposits.splice(index, 1, updatedDeposit);
                     }
+                    this.toast.success(response.data.message, {
+                        title: 'Success'
+                    });
                     // Close the modal
                     this.closeModal();
                 })
                 .catch(error => {
                     if (error.response && error.response.data.errors) {
-                        this.errors = error.response.data.errors;
+                        //this.errors = error.response.data.errors;
+                        this.toast.error(error.response ? error.response.data : 'No response data', {
+                            title: 'Error'
+                        });
                     }
                 });
         },

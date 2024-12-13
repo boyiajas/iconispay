@@ -262,54 +262,153 @@ class PaymentController extends Controller
      */
     public function update(Request $request, Payment $payment)
     {
-        // Validate the request data
-        $validated = $request->validate([
-            'category_id' => 'required|exists:categories,id',
-            'account_holder_type' => 'required|in:natural,juristic',
-            'initials' => 'nullable|string|max:10',
-            'surname' => 'nullable|string|max:255',
-            'company_name' => 'nullable|string|max:255',
-            'registration_number' => 'nullable|string|max:255',
-            'account_number' => 'nullable|string|max:50',
-            'account_holder' => 'nullable|string|max:255',
-            'description' => 'required|string|max:255',
-            'amount' => 'required|numeric|min:0',
-            'my_reference' => 'required|string|max:255',
-            'recipient_reference' => 'nullable|string|max:255',
-            'institution_id' => 'required|exists:institutions,id',
-            'account_type_id' => 'required|exists:account_types,id',
-            'branch_code' => 'nullable|string|max:10',
-            'id_number' => 'nullable|string|max:255',
-            'verified' => 'boolean',
-        ]);
+        try {
+            // Validate the request data
+            $validated = $request->validate([
+                //'firm_account_id' => 'required|exists:firm_accounts,id',
+                'category' => 'required|exists:categories,id',
+                'initials' => 'nullable|string|max:10',
+                'surname' => 'nullable|string|max:255',
+                'company_name' => 'nullable|string|max:255',
+                'registration_number' => 'nullable|string|max:255',
+                'account_number' => 'required|string|max:50',
+                'institution_id' => 'nullable|exists:institutions,id',
+                'description' => 'required|string|max:255',
+                'amount' => 'required|numeric|min:0',
+                'my_reference' => 'required|string|max:255',
+                'recipient_reference' => 'nullable|string|max:255',
+                'branch_code' => 'nullable|string|max:10',
+                'id_number' => 'nullable|string|max:255',
+                'verified' => 'nullable|boolean',
+                'authorised' => 'nullable|boolean',
+            ]);
 
-        // Update the payment record
-        $payment->update([
-            'category_id' => $validated['category_id'],
-            'account_holder_type' => $validated['account_holder_type'],
-            'initials' => $validated['initials'],
-            'surname' => $validated['surname'],
-            'company_name' => $validated['company_name'],
-            'registration_number' => $validated['registration_number'],
-            'account_number' => $validated['account_number'],
-            'account_holder' => $validated['account_holder'],
-            'description' => $validated['description'],
-            'amount' => $validated['amount'],
-            'my_reference' => $validated['my_reference'],
-            'recipient_reference' => $validated['recipient_reference'],
-            'institution_id' => $validated['institution_id'],
-            'account_type_id' => $validated['account_type_id'],
-            'branch_code' => $validated['branch_code'],
-            'id_number' => $validated['id_number'],
-            'user_id' => auth()->id(),  // Associate the current authenticated user
-            'verified' => $validated['verified'] ?? false,
-        ]);
+            // Step 1: Check if the account number exists in FirmAccount
+            $firmAccount = FirmAccount::where('account_number', $validated['account_number'])->first();
+            if ($firmAccount) {
+                // Update payment to link with the existing firm account
+                $payment->update([
+                    //'firm_account_id' => $payment->firm_account_id,
+                    'beneficiary_account_id' => $firmAccount->id,
+                    'category_id' => $validated['category'],
+                    'description' => $validated['description'],
+                    'amount' => $validated['amount'],
+                    'my_reference' => $validated['my_reference'],
+                    'recipient_reference' => $validated['recipient_reference'],
+                    'user_id' => auth()->id(),
+                    'authorised' => $validated['authorised'] ?? $payment->authorised,
+                    'verified' => $validated['verified'] ?? $payment->verified,
+                    'account_type' => 'F'
+                ]);
+            } else {
+                // Step 2: Check if the account number exists in BeneficiaryAccount
+                $beneficiaryAccount = BeneficiaryAccount::where('account_number', $validated['account_number'])->first();
+                if (!$beneficiaryAccount) {
+                    // Create a new beneficiary account if it doesn't exist
+                    $beneficiaryAccount = BeneficiaryAccount::create([
+                        'display_text' => $request->input('account_holder_type') === 'natural'
+                            ? $validated['initials'] . ' ' . $validated['surname']
+                            : $validated['company_name'],
+                        'category_id' => $validated['category'],
+                        'account_holder_type' => $request->input('account_holder_type'),
+                        'initials' => $validated['initials'],
+                        'surname' => $validated['surname'],
+                        'company_name' => $validated['company_name'],
+                        'registration_number' => $validated['registration_number'],
+                        'account_number' => $validated['account_number'],
+                        'id_number' => $validated['id_number'],
+                        'institution_id' => $validated['institution_id'],
+                        'branch_code' => $validated['branch_code'],
+                        'my_reference' => $validated['my_reference'],
+                        'recipient_reference' => $validated['recipient_reference'],
+                        'authorised' => $validated['authorised'] ?? false,
+                        'verified' => $validated['verified'] ?? false,
+                        'user_id' => auth()->id(),
+                    ]);
+                }
 
-        return response()->json([
-            'message' => 'Payment updated successfully',
-            'data' => $payment
-        ]);
+                // Update payment to link with the new/existing beneficiary account
+                $payment->update([
+                    //'firm_account_id' => $validated['firm_account_id'],
+                    'beneficiary_account_id' => $beneficiaryAccount->id,
+                    'category_id' => $validated['category'],
+                    'description' => $validated['description'],
+                    'amount' => $validated['amount'],
+                    'my_reference' => $validated['my_reference'],
+                    'recipient_reference' => $validated['recipient_reference'],
+                    'user_id' => auth()->id(),
+                    'authorised' => $validated['authorised'] ?? $payment->authorised,
+                    'verified' => $validated['verified'] ?? $payment->verified,
+                    'account_type' => 'B'
+                ]);
+            }
+
+            // Step 4: Check if the requisition has existing deposits
+            $requisition = Requisition::find($payment->requisition_id);
+
+            // Eager load the relationships
+            $requisition->load(
+                'user',
+                'authorizedBy',
+                'lockedBy',
+                'firmAccount.institution',
+                'payments.beneficiaryAccount.institution',
+                'payments.payToFirmAccount.institution',
+                'payments.beneficiaryAccount.accountType',
+                'payments.payToFirmAccount.accountType',
+                //'payments.payToFirmAccount',
+                'payments.sourceFirmAccount',
+                'deposits.firmAccount',
+                'deposits.user'
+            );
+
+            // Transform the requisition data to include payToAccount details
+            $requisitionData = $requisition->toArray();
+
+            // Add payToAccount details for each payment
+            $requisitionData['payments'] = $requisition->payments->map(function ($payment) {
+                $paymentData = $payment->toArray();
+
+                // Get the payToAccount and include its institution details
+                $payToAccount = $payment->payToAccount;
+                $payToAccountData = $payToAccount ? $payToAccount->toArray() : null;
+
+                if ($payToAccount && $payToAccount->institution) {
+                    $payToAccountData['institution'] = $payToAccount->institution->toArray();
+                }
+
+                if ($payToAccount && $payToAccount->accountType) {
+                    $payToAccountData['account_type'] = $payToAccount->accountType->toArray();
+                }
+
+                // Include the transformed payToAccount in the payment data
+                $paymentData['beneficiary_account'] = $payToAccountData;
+               
+                return $paymentData;
+            });
+
+            return response()->json([
+                'message' => 'Payment updated successfully',
+                'requisitionData' => $requisitionData,
+                
+            ]);
+
+            /* return response()->json([
+                'message' => 'Payment updated successfully',
+                'data' => $payment->fresh() // Return the updated payment with fresh relationships
+            ]); */
+        } catch (\Exception $e) {
+            // Log the error
+            \Log::error('Error updating payment: ' . $e->getMessage());
+
+            // Return an error response
+            return response()->json([
+                'message' => 'An error occurred while updating the payment. Please try again later.',
+                'error' => $e->getMessage() // Optional: for debugging, remove in production
+            ], 500);
+        }
     }
+
 
     /**
      * Remove the specified resource from storage.

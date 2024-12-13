@@ -46,9 +46,9 @@ class DepositController extends Controller
                  'funding_status' => 1, // true should be a boolean, not a string
                  'capturing_status' => 1,
                  'status_id' => 3, //chainge status to awaiting authorization 
-                 'locked' => 1,
+                 /* 'locked' => 1,
                  'locked_at' => Carbon::now(),
-                 'locked_by' => auth()->id(),
+                 'locked_by' => auth()->id(), */
              ]);
          }
 
