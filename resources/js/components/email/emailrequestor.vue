@@ -40,7 +40,7 @@
 
             <div class="d-flex justify-content-between mt-4">
                 <button type="button" class="btn btn-secondary" @click="cancel">Cancel</button>
-                <button type="submit" class="btn btn-primary">Send</button>
+                <button type="submit" class="btn btn-primary"> <span id="buttonSpinner" class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span> Send</button>
             </div>
         </form>
     </div>
@@ -48,6 +48,7 @@
 
 <script>
 import axios from 'axios';
+import { useToast } from 'vue-toastification';
 
 export default {
     name: 'EmailRequestor',
@@ -58,23 +59,31 @@ export default {
         }
     },
     data() {
+        
         return {
+            requisition: {},  // Initialize as an empty object
             emailForm: {
                 recipient: '',
                 subject: '',
                 greeting: 'Dear',
                 message: '',
             },
-            recipients: [],
-            url: '',
-            currentUser: window.Laravel.user || { name: 'Guest' },
-            errors: {}
+            recipients: [],  // This will be populated from the API
+            url: '',  // This will be the URL to follow for authorisation
+            currentUser: window.Laravel.user || { name: 'Guest' }, // Default to 'Guest' if user is not available
+            errors: {},
+           
         };
     },
     mounted() {
         this.loadRecipients();
         this.loadRequisitionDetails();
         this.url = this.generateUrl();
+    },
+    setup() {
+        // Initialize toast
+        const toast = useToast();
+        return { toast };
     },
     methods: {
          // Fetch recipients from the API
@@ -100,18 +109,35 @@ export default {
                 });
         },
         generateUrl() {
-            return `https://pay.iconis.co.za/matters/305633/requisition/payments/to/review`;
+            const matterId = 300316;  // Example matter ID, replace with dynamic value
+            const requisitionId = 3;  // Example requisition ID, replace with dynamic value
+            /*testing env*///return `http://127.0.0.1:8000/matters/requisitions/${requisitionId}/details`;
+            /*live env*/return `https://pay.iconis.co.za/matters/requisitions/${requisitionId}/details`;
         },
+
         sendEmail() {
+
+            const buttonSpinner = document.getElementById('buttonSpinner');
+            buttonSpinner.classList.remove('d-none');
+            
             axios.post('/api/send-email/requestor-notification', this.emailForm)
                 .then(response => {
-                    alert('Email sent successfully!');
+                    buttonSpinner.classList.add('d-none');
+                    //alert('Email sent successfully!');
+                    this.toast.success(response.data.message, {
+                        title: 'Success'
+                    });
                 })
                 .catch(error => {
                     if (error.response && error.response.data.errors) {
-                        this.errors = error.response.data.errors;
+                        buttonSpinner.classList.add('d-none');
+                        //this.errors = error.response.data.errors;
+                        this.toast.error(error.response ? error.response.data : 'No response data', {
+                            title: 'Error'
+                        });
                     } else {
                         console.error('Error sending email:', error);
+                        buttonSpinner.classList.add('d-none');
                     }
                 });
         },

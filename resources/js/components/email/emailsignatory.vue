@@ -136,8 +136,8 @@ export default {
                     if (error.response && error.response.data.errors) {
                         //this.errors = error.response.data.errors;
                         this.toast.error(error.response ? error.response.data : 'No response data', {
-                        title: 'Error'
-                    });
+                            title: 'Error'
+                        });
                     } else {
                         console.error('Error sending email:', error);
                     }
