@@ -16,7 +16,7 @@
                             <div class="form-group row">
                                 <label for="file-reference" class="form-label col-sm-2">File Reference: *</label>
                                 <div class="col-sm-10">
-                                    <input type="text" v-model="form.file_reference" class="form-control" id="file-reference" placeholder="Enter file reference" required>
+                                    <input type="text" v-model="form.file_reference" class="form-control" id="file-reference" placeholder="Enter file reference" maxlength="150" required>
                                 </div>
                             </div>
                             <div class="form-group row">
@@ -34,7 +34,7 @@
                             <div class="form-group row">
                                 <label for="properties" class="form-label col-sm-2">Properties</label>
                                 <div class="col-sm-10">
-                                    <input type="text" v-model="form.properties" class="form-control" id="properties" placeholder="Enter property description">
+                                    <input type="text" v-model="form.properties" class="form-control" id="properties" minlength="3" maxlength="250" placeholder="Enter property description">
                                 </div>
                             </div>
                             <div class="form-group row mb-0">

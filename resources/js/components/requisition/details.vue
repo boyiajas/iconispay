@@ -707,7 +707,7 @@
                         <div class="mb-3 row">
                             <label for="description" class="form-label col-sm-3">Description: *</label>
                             <div class="col-sm-9">
-                                <input type="text" v-model="depositForm.description" class="form-control" id="description" required placeholder="Enter a description for the entry">
+                                <input type="text" v-model="depositForm.description" class="form-control" id="description" minlength="2"  maxlength="150"  required placeholder="Enter a description for the entry">
                                 <div v-if="errors.description" class="text-danger">{{ errors.description }}</div>
                             </div>
                         </div>
@@ -1034,7 +1034,7 @@
                         <div class="mb-2 row">
                             <label for="description" class="form-label col-sm-3">Description: *</label>
                             <div class="col-sm-9">
-                                <input type="text" v-model="paymentForm.description" class="form-control" required placeholder="Enter a description for the entry">
+                                <input type="text" v-model="paymentForm.description" class="form-control" minlength="2" maxlength="150"  required placeholder="Enter a description for the entry">
                             </div>
                         </div>
                         <div class="mb-2 row">
@@ -1046,13 +1046,13 @@
                         <div class="mb-2 row">
                             <label for="my_reference" class="form-label col-sm-3">My Reference: *</label>
                             <div class="col-sm-9">
-                                <input type="text" v-model="paymentForm.my_reference" class="form-control" placeholder="Enter a reference for our bank account">
+                                <input type="text" v-model="paymentForm.my_reference" class="form-control" maxlength="20"  placeholder="Enter a reference for our bank account">
                             </div>
                         </div>
                         <div class="mb-2 row">
                             <label for="recipient_reference" class="form-label col-sm-3">Recipient Reference:</label>
                             <div class="col-sm-9">
-                                <input type="text" v-model="paymentForm.recipient_reference" class="form-control" placeholder="Enter a reference for the recipient's bank account">
+                                <input type="text" v-model="paymentForm.recipient_reference" class="form-control" maxlength="20"  placeholder="Enter a reference for the recipient's bank account">
                             </div>
                         </div>
                         
@@ -1825,8 +1825,9 @@ export default {
         },
         // Handle account type change based on the selected option
         onAccountChange() {
+            
             if (this.paymentForm.account_holder_type === 'natural' || this.paymentForm.account_holder_type === 'juristic') {
-                this.showAccountDetails = true;
+                this.showAccountDetails = false;
                 this.loadAccountTypes();
                 this.loadInstitutions();
             } else {
@@ -2526,6 +2527,7 @@ export default {
         },
         // Set the account type and update the form fields based on search
         setNewAccountType(accountType) {
+            
             if (accountType === 'juristic') {
                 this.paymentForm.account_holder_type = 'juristic';
             } else if (accountType === 'natural') {
@@ -2561,9 +2563,10 @@ export default {
         openCreatePaymentModal() {
             
             this.resetPaymentForm();
+            this.showAccountDetails = false;
             if(this.requisition){
                 this.paymentForm.my_reference = this.requisition.file_reference;
-            }
+            } 
             
             this.createPaymentModalInstance = new bootstrap.Modal(document.getElementById('createPaymentModal'));
             this.createPaymentModalInstance.show();
@@ -2781,6 +2784,14 @@ export default {
                 })
                 .then(response => {
                     this.avsResult = response.data; console.log("this is the value of avs result " , response.data);
+                    if (response.success && response.data.errmsg) {
+                        this.toast.error(response.data ? response.errmsg : 'No response data', {
+                            title: 'Error'
+                        });
+                        
+                    }else{
+
+                    }
                     this.showAvsModal = true;
                     
                     // Show the AVS Result Modal after verification
@@ -2791,7 +2802,7 @@ export default {
                 })
                 .catch(error => {
                     console.error('AVS Verification failed:', error);
-                    alert('AVS Verification failed. Please try again.');
+                    //alert('AVS Verification failed. Please try again.');
                     if (error.response && error.response.data.errors) {
                         this.errors = error.response.data.errors;  // Show validation errors
                     }

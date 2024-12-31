@@ -4,8 +4,10 @@ namespace App\Http\Controllers;
 
 use App\Models\Avs;
 use App\Models\BeneficiaryAccount;
+use \AvsHelper;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Str;
 
 class AvsController extends Controller
 {
@@ -44,10 +46,53 @@ class AvsController extends Controller
         }
 
         // Simulate AVS response based on the provided data
-        $avsResult = $this->simulateAvs($request, $beneficiaryAccount);
+        //$avsResult = $this->simulateAvs($request, $beneficiaryAccount);
+
+        $accountTypeMapping = [
+            'Unknown' => '00',
+            'Cheque' => '01',
+            'Savings' => '02',
+            'Transmission' => '03',
+            'Bond' => '04',
+            'Credit card' => '05',
+            'Subscription' => '06',
+            'Trust' => '07',
+            'Attorneys' => '08',
+        ];
+   
+        $request_data = [
+            "operator" => "AutTstOp",
+            "accountNumber" => $beneficiaryAccount->account_number,
+            "accountType" => $this->getBackendAccountType($beneficiaryAccount, $accountTypeMapping),//e.g. 01 -Current/cheque, 02 -savings, 03 -transmission, 04 - bond, 06 - subscription, 00 - if this is not known
+            "branchCode" => $beneficiaryAccount->branch_code,
+            "initials" => $beneficiaryAccount->initials,
+            "idNumber" => $beneficiaryAccount->id_number,
+            "lastName" => $beneficiaryAccount->surname,
+            "phoneNumber" => "",
+            "emailAddress" => "test@test.co.za",
+            "userReference" => "AVS000001"
+        ];
+
+        // Use the helper class to send the request
+        $avsResult = AvsHelper::send_request($request_data);
+
+        // Handle the response
+        if ($avsResult['status_code'] === 200) {
+            $response_body = json_decode($avsResult['body'], true);
+            return response()->json([
+                "success" => true,
+                "data" => $response_body,
+            ]);
+
+        }else{
+            return response()->json([
+                'message' => 'Unable to verify account. '.$avsResult
+            ], 405);
+        }
+
 
         // Update beneficiary account with AVS result
-        $beneficiaryAccount->verified = $avsResult['verified'];
+        /* $beneficiaryAccount->verified = $avsResult['verified'];
         $beneficiaryAccount->verification_status = $avsResult['verification_status'];
         $beneficiaryAccount->account_found = $avsResult['account_found'];
         $beneficiaryAccount->account_open = $avsResult['account_open'];
@@ -61,10 +106,62 @@ class AvsController extends Controller
         $beneficiaryAccount->save();
 
         // Return the AVS result as a response
-        return response()->json($beneficiaryAccount);
+        return response()->json($beneficiaryAccount); */
+    }
+
+    private function getBackendAccountType(BeneficiaryAccount $beneficiaryAccount, array $accountTypeMapping)
+    {
+        // Retrieve the name of the account type from the relationship
+        $accountTypeName = $beneficiaryAccount->accountType->name ?? 'Unknown';
+    
+        // Check if the account type name is contained within the mapping keys
+        foreach ($accountTypeMapping as $key => $value) {
+            if (Str::contains(strtolower($accountTypeName), strtolower($key))) {
+                return $value;
+            }
+        }
+    
+        // Default to '00' (Unknown) if no match is found
+        return '00';
     }
 
     private function simulateAvs($request, $beneficiaryAccount)
+    {
+        // Base AVS result structure
+        $avsResult = [
+            'verified' => true,
+            'verification_status' => 'successful',
+            'account_found' => true,
+            'account_open' => true,
+            'account_type_verified' => $beneficiaryAccount->account_type_id == 2 ? 'Cheque account' : 'Savings account',
+            'account_type_match' => true,
+            'branch_code_match' => $beneficiaryAccount->branch_code == $request->branch_code,
+            'holder_name_match' => false,
+            'holder_initials_match' => false,
+            'registration_number_match' => false,
+        ];
+
+        // Differentiate between natural and juristic account verification
+        if ($beneficiaryAccount->account_holder_type == 'natural') {
+            // For natural persons, compare initials and surname
+            $avsResult['holder_name_match'] = strtolower($beneficiaryAccount->surname) == strtolower($request->surname);
+            $avsResult['holder_initials_match'] = strtolower($beneficiaryAccount->initials) == strtolower($request->initials);
+        } else {
+            // For juristic persons, compare company name and registration number
+            $avsResult['holder_name_match'] = strtolower($beneficiaryAccount->company_name) == strtolower($request->company_name);
+            $avsResult['registration_number_match'] = strtolower($beneficiaryAccount->registration_number) == strtolower($request->registration_number);
+        }
+
+        // Simulate failure scenarios
+        if (!$avsResult['holder_name_match']) {
+            $avsResult['verified'] = false;
+            $avsResult['verification_status'] = 'failed';
+        }
+
+        return $avsResult;
+    }
+
+    private function avsVerification($request, $beneficiaryAccount)
     {
         // Base AVS result structure
         $avsResult = [
