@@ -66,7 +66,7 @@ class AvsController extends Controller
             "accountType" => $this->getBackendAccountType($beneficiaryAccount, $accountTypeMapping),//e.g. 01 -Current/cheque, 02 -savings, 03 -transmission, 04 - bond, 06 - subscription, 00 - if this is not known
             "branchCode" => $beneficiaryAccount->branch_code,
             "initials" => $beneficiaryAccount->initials,
-            "idNumber" => $beneficiaryAccount->id_number,
+            "idNumber" => $beneficiaryAccount->id_number ?? $beneficiaryAccount->registration_number,
             "lastName" => $beneficiaryAccount->surname,
             "phoneNumber" => "",
             "emailAddress" => "test@test.co.za",
@@ -86,7 +86,7 @@ class AvsController extends Controller
 
         }else{
             return response()->json([
-                'message' => 'Unable to verify account. '.$avsResult
+                'message' => 'Unable to verify account. '.json_encode($avsResult)
             ], 405);
         }
 

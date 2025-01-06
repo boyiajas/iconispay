@@ -369,6 +369,7 @@ export default {
                     branch_code: this.beneficiaryAccount.branchCode,
                     account_holder: this.beneficiaryAccount.displayText,
                     account_holder_type: this.beneficiaryAccount.accountHolderType,
+                    registration_number: this.beneficiaryAccount.registrationNumber,
                 })
                 .then(response => {
                     this.avsResult = response.data; console.log("this is the value of avs result " , response.data);
@@ -383,13 +384,23 @@ export default {
                 .catch(error => {
                     console.error('AVS Verification failed:', error);
                     
-                    //alert('AVS Verification failed. Please try again.');
-                    if (error && error.response && error.response.data.errors) {
-                        this.errors = error.response.data.errors;  // Show validation errors
-                        this.toast.error(error && error.response ? error.response.data : 'No response data', {
+                    if (error && error.response && error.response.data.message) {
+                        let errorMessage = error.response.data.message;
+
+                        // Try to parse JSON in the message if it exists
+                        try {
+                            const parsedMessage = JSON.parse(errorMessage.split('. ')[1] || '{}');
+                            if (parsedMessage && parsedMessage.errmsg) {
+                                errorMessage = parsedMessage.errmsg;
+                            }
+                        } catch (parseError) {
+                            console.warn('Error parsing message:', parseError);
+                        }
+
+                        this.toast.error(errorMessage, {
                             title: 'Error'
                         });
-                    }else{
+                    } else {
                         this.toast.error('AVS Verification failed. Please try again.', {
                             title: 'Error'
                         });
