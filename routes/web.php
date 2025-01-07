@@ -125,6 +125,7 @@ Route::group(['middleware' => 'no_cache'], function (){
         Route::resource('users', UserController::class);
         Route::get('/requisitions/{requisition}/notifications', [NotificationController::class, 'index']);
         Route::post('/requisitions/{requisition}/notifications', [NotificationController::class, 'store']);
+        Route::get('/requisitions/{requisition}/history', [RequisitionController::class, 'getRequisitionHistory']);
         Route::get('/recipients', [UserController::class, 'getRecipients']);
         Route::get('/deactivated-users', [UserController::class, 'deactivatedUsers']);
         Route::resource('firm-accounts', FirmAccountController::class);

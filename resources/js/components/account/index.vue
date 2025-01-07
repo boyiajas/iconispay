@@ -7,7 +7,7 @@
             </div>
             <div class="card-body">
                 
-                <div class="table-responsive">
+                <div class="">
                     <table id="accounts-table" class="table table-bordered table-striped display nowrap" style="width:100%">
                         <thead>
                             <tr>
@@ -30,7 +30,7 @@
                 <h5>Pending Confirmation Files</h5>
             </div>
             <div class="card-body">
-                <div class="table-responsive">
+                <div class="">
                     <table id="pending-confirmation-files-table" class="table table-bordered table-striped display nowrap" style="width:100%">
                         <thead>
                             <tr>
@@ -60,7 +60,7 @@
                     <input type="date" v-model="toDate" class="form-control me-3" id="toDate">
                     <button class="btn btn-primary" @click="filterClosedFiles">Go</button>
                 </div>
-                <div class="table-responsive">
+                <div class="">
                     <table id="recently-closed-files-table" class="table table-bordered table-striped display nowrap" style="width:100%">
                         <thead>
                             <tr class="table-secondary">

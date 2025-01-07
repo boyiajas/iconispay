@@ -62,7 +62,7 @@ class Requisition extends Model
     /**
      * The requisition can have many history logs.
      */
-    public function historyLogs()
+    public function histories()
     {
         return $this->hasMany(RequisitionHistory::class);
     }

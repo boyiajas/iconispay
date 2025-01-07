@@ -11,7 +11,7 @@ class RequisitionHistory extends Model
 
     protected $fillable = [
         'requisition_id',
-        'user_name',
+        'user_id',
         'action',
         'details',
     ];
@@ -22,5 +22,10 @@ class RequisitionHistory extends Model
     public function requisition()
     {
         return $this->belongsTo(Requisition::class);
+    }
+
+    public function user()
+    {
+        return $this->belongsTo(User::class);
     }
 }

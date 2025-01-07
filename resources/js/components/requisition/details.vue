@@ -538,19 +538,19 @@
                     </div>
                     <div class="card-body">
                         <!-- Documents DataTable -->
-                        <div class="table-responsive">
-                            <table id="documents-table" class="table table-bordered table-striped display nowrap" style="width:100%">
-                                <thead>
-                                    <tr class="table-secondary">
-                                        <th width="15%">User</th>
-                                        <th>Description</th>
-                                        <th>File Name</th>
-                                        <th width="15%">Date Uploaded</th>
-                                        <th width="15%">Actions</th>
-                                    </tr>
-                                </thead>
-                            </table>
-                        </div>
+                        
+                        <table id="documents-table" class="table table-bordered table-striped display nowrap" style="width:100%">
+                            <thead>
+                                <tr class="table-secondary">
+                                    <th width="15%">User</th>
+                                    <th>Description</th>
+                                    <th>File Name</th>
+                                    <th width="15%">Date Uploaded</th>
+                                    <th width="15%">Actions</th>
+                                </tr>
+                            </thead>
+                        </table>
+                        
                     </div>
                 </div>
             </div>
@@ -605,24 +605,28 @@
             <!-- History Log Tab -->
             <div class="tab-pane fade" id="history-log" role="tabpanel" aria-labelledby="history-log-tab">
                 <div class="card">
+                    <div class="card-header d-flex justify-content-between">
+                        <h6>History Log</h6>
+                        <button class="btn btn-white btn-sm" @click="openUploadModal">Show More Details</button>
+                    </div>
                     <div class="card-body">
-                        <table class="table table-bordered table-striped">
+                        <table class="table table-bordered table-striped" id="history-table">
                             <thead>
-                                <tr>
+                                <tr class="table-secondary">
                                     <th>User Name</th>
                                     <th>Action</th>
                                     <th>Details</th>
                                     <th>Date</th>
                                 </tr>
                             </thead>
-                            <tbody>
+                            <!-- {{-- <tbody>
                                 <tr v-for="log in historyLogs" :key="log.id">
                                     <td>{{ log.user_name }}</td>
                                     <td>{{ log.action }}</td>
                                     <td>{{ log.details }}</td>
                                     <td>{{ new Date(log.created_at).toLocaleString() }}</td>
                                 </tr>
-                            </tbody>
+                            </tbody> --}} -->
                         </table>
                     </div>
                 </div>
@@ -1574,7 +1578,7 @@ export default {
         this.fetchUsers();
         this.fetchSavedNotifications();
        /*  this.showPaymentsTabContent(); */
-        //this.loadHistoryLogs();
+        this.loadHistoryData();
         //this.checkStoredSourceAccount(); // Check if there is a stored source account
     },
     setup() {
@@ -2125,7 +2129,7 @@ export default {
                         }
                     }
                 ],
-                responsive: false,
+                responsive: true,
                 destroy: true,  // Reinitialize the table if needed
                 createdRow: (row, data, dataIndex) => {
                     // Attach click event to the View button
@@ -2143,7 +2147,10 @@ export default {
                             this.deleteDocument(documentId);
                         }
                     });
+
+                    $('td', row).css('word-wrap', 'break-word').css('white-space', 'normal');
                 },
+               
                 /* drawCallback: () => {
                     // Re-attach event listeners when the table is redrawn
                     $('#documents-table').off('click', '.view-document-btn').on('click', '.view-document-btn', (event) => {
@@ -2195,15 +2202,67 @@ export default {
         },
 
         // Load history logs for the requisition
-        loadHistoryLogs() {
-            axios.get(`/api/requisitions/${this.requisitionId}/history`)
+        /* loadHistoryData() {
+            if (this.documentsTable) {
+                this.documentsTable.ajax.reload();
+                return;
+            }
+
+            this.documentsTable = $('#history-table').DataTable({
+                processing: true,
+                serverSide: true,
+                ajax: `/api/requisitions/${this.requisitionId}/history`,
+                columns: [
+                    { data: 'user.email', name: 'user.email', defaultContent: 'System' },
+                    { data: 'action', name: 'action' },
+                    { data: 'details', name: 'details' },
+                    { data: 'created_at', name: 'created_at', render: (data) => moment(data).format('YYYY-MM-DD HH:mm:ss') }
+                ],
+                order: [[3, 'desc']],
+            });
+            /* axios.get(`/api/requisitions/${this.requisitionId}/history`)
                 .then(response => {
                     this.historyLogs = response.data;
                 })
                 .catch(error => {
                     console.error('Error loading history logs:', error);
-                });
+                }); *
+        }, */
+
+        loadHistoryData() {
+            if (this.historyTable) {
+                this.historyTable.ajax.reload(); // Reload the table if already initialized
+                return;
+            }
+
+            this.historyTable = $('#history-table').DataTable({
+                processing: true,
+                serverSide: true,
+                ajax: {
+                    url: `/api/requisitions/${this.requisitionId}/history`, // Endpoint for history data
+                    type: 'GET', // HTTP method
+                    data: (json) => json, // Return full JSON response for DataTables
+                    error: (xhr, error, thrown) => {
+                        console.error('Error fetching history data:', error, thrown);
+                        alert('An error occurred while fetching the history data. Please try again later.');
+                    }
+                },
+                columns: [
+                    { data: 'user.email', name: 'user.email' }, // User email
+                    { data: 'action', name: 'action' }, // Action performed
+                    { data: 'details', name: 'details' }, // Details of the action
+                    { data: 'created_at', name: 'created_at', render: (data) => new Date(data).toLocaleString() }, // Date and time
+                ],
+                responsive: true, // Enable responsive layout
+                destroy: true, // Allow reinitialization
+                createdRow: (row, data, dataIndex) => {
+                    // Apply styles or event listeners to rows if needed
+                    $('td', row).css('word-wrap', 'break-word').css('white-space', 'normal');
+                },
+                order: [[3, 'desc']], // Order by created_at descending
+            });
         },
+
 
         // Update the status values based on requisition data
         updateStatus() {

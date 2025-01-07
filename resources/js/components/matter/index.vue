@@ -27,7 +27,7 @@
         </div>
         <div class="card-body">
         <!-- Matters Table with DataTable -->
-        <div class="table-responsive">
+        <div class="">
             <table id="matters-table" class="table table-bordered display nowrap" style="width:100%">
                 <thead>
                     <tr class="table-secondary">

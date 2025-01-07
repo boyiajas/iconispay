@@ -99,6 +99,23 @@ class RequisitionController extends Controller
         return view('pages.matters.requisition.create');
     }
 
+    public function getRequisitionHistory(Requisition $requisition)
+    {
+        // Retrieve the history related to the requisition
+        /* $histories = $requisition->histories()
+            ->with('user:id,email,name') // Eager load user details
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        // Return the history as JSON
+        return response()->json($histories); */
+        $histories = $requisition->histories()
+        ->with('user:id,email') // Load user details
+        ->orderBy('created_at', 'desc');
+
+        return datatables()->eloquent($histories)->toJson();
+    }
+
     /**
      * Store a newly created resource in storage.
      */
