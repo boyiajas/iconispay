@@ -140,6 +140,8 @@ class RequisitionController extends Controller
             'status_id' => 1, //1 is open by default
         ]);
 
+        logHistory($requisition->id, 'Create Requisition', 'Requisition was created.');
+
         // Return the created requisition details
         return response()->json($requisition, 201);
     }
@@ -333,6 +335,9 @@ class RequisitionController extends Controller
         }
         // Send notification emails to all users subscribed to matter_authorized ends here
 
+        // Log the history
+        logHistory($requisition->id, 'Approve Requisition', 'Requisition was approved.');
+
         return response()->json($requisitionData);
 
         //return response()->json($requisition);
@@ -413,6 +418,9 @@ class RequisitionController extends Controller
         }
         // Send notification emails to all users subscribed to matter_unlocked ends here
 
+        // Log the history
+        logHistory($requisition->id, 'Unlock Requisition', 'Requisition was unlocked.');
+
         return response()->json($requisitionData);
 
         //$requisition->load('user', 'authorizedBy', 'firmAccount.institution', 'payments.beneficiaryAccount', 'payments.beneficiaryAccount.institution', 'deposits.firmAccount', 'deposits.user');
@@ -443,6 +451,9 @@ class RequisitionController extends Controller
             'deposits.firmAccount',
             'deposits.user'
         );
+
+        // Log the history
+        logHistory($requisition->id, 'lock Requisition', 'Requisition was locked.');
 
         // Transform the requisition data to include payToAccount details
         $requisitionData = $requisition->toArray();
@@ -761,6 +772,9 @@ class RequisitionController extends Controller
         Deposit::where('requisition_id', $requisition->id)->delete();
 
         $requisition->delete();
+
+        logHistory($requisition->id, 'Delete Requisition', 'Requisition was deleted.');
+
         return response()->json(['message' => 'Requisition deleted successfully.']);
     }
 }
