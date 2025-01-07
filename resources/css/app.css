@@ -110,3 +110,7 @@ a{
     color: #149dd5 !important;
     border-color: #149dd5 !important;
 }
+
+.multiselect__tag{
+    background: #40b1c5;
+}

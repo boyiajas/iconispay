@@ -71,7 +71,7 @@
                         <div v-if="requisition.status_id == 3">
                             <p class="status-value mb-0 mt-3">&nbsp;</p>
                             <PermissionControl :roles="['admin', 'authoriser']">
-                                <div class="mb-2"><a class="btn btn-sm btn-white btn-default-default" @click="approveRequisition(requisition.id)">Approve</a></div>
+                                <div class="mb-2"><a class="btn btn-sm btn-white btn-default-default" @click="approveRequisition(requisition.id)"><span id="approveBtnSpinner1" class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span> Approve</a></div>
                             </PermissionControl>
                             <!-- <PermissionControl :roles="['user']">
                                 <div class="mb-2"><a class="btn btn-sm btn-white btn-default-default disabled">Approve</a></div>
@@ -156,7 +156,7 @@
                 <span v-else-if="requisition.status_id == 7"> Payment was made successfully and no further changes may be made.</span>
             </span>
             <PermissionControl :roles="['admin','authoriser']">
-                <a v-if="requisition.status_id < 7" class="pull-right btn btn-white btn-primary btn-sm" @click="unlockRequisition(requisition.id)"><i class="fa fa-lock-open"></i> Unlock</a>
+                <a v-if="requisition.status_id < 7" class="pull-right btn btn-white btn-primary btn-sm" @click="unlockRequisition(requisition.id)"> <span id="unlockBtnSpinner" class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span> <i class="fa fa-lock-open"></i> Unlock</a>
             </PermissionControl>
             
         </div>
@@ -482,7 +482,7 @@
                                             <div class="txt-xs">Click here to approve as </div>
                                             <h6>{{ user.name }}</h6>
                                         </div>
-                                        <div class=""><a class="btn btn-sm btn-primary" @click="approveRequisition(requisition.id)">Approve</a></div>
+                                        <div class=""><a class="btn btn-sm btn-primary" @click="approveRequisition(requisition.id)"><span id="approveBtnSpinner" class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span> Approve</a></div>
                                     </div>
                                 </PermissionControl>
                                 <PermissionControl :roles="['user']" v-if="requisition.locked">
@@ -557,8 +557,49 @@
 
             <!-- Notifications Tab -->
             <div class="tab-pane fade" id="notifications" role="tabpanel" aria-labelledby="notifications-tab">
-                <h5>Notifications Content</h5>
-                <!-- Notifications content goes here -->
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between">
+                        <h6>Notifications Content</h6>
+                    </div>
+                    <div class="card-body">
+
+                        <div class="alert alert-info p-2" role="alert">
+                            <div>Select contacts to receive email ( <i class="fa fa-envelope"></i> ) or SMS ( <i class="fa fa-phone"></i> ) notifications.</div>
+                            <div class="d-none">No cell phone number has been captured for you. Ask the firm administrator to capture your cell phone number in the system.</div>
+                        </div>
+                        
+                        <!-- Notifications content goes here -->
+                        <div class="">
+                            <form @submit.prevent="saveNotifications">
+                                <div v-for="(field, key) in notificationFields" :key="key" class="row mb-3">
+                                    <label class="col-sm-2 col-form-label form-label" :for="key">{{ field.label }}</label>
+                                    <div class="col-sm-10">
+                                        <vue-multiselect
+                                            v-model="field.selected"
+                                            :options="users"
+                                            :multiple="true"
+                                            :close-on-select="false"
+                                            :clear-on-select="false"
+                                            label="name"
+                                            track-by="id"
+                                            placeholder="Add contact"
+                                            class="notification-multiselect"
+                                        ></vue-multiselect>
+
+                                    </div>
+                                    <div class="col-sm-2"></div>
+                                    <div class="col-sm-10">
+                                        <button type="button" @click="addCurrentUser(key)" class="btn btn-link btn-sm text-primary">
+                                            Add me: <i class="fa fa-envelope"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <button type="submit" class="btn btn-primary"><span id="buttonSpinner" class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span> Save</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+                
             </div>
 
             <!-- History Log Tab -->
@@ -1340,9 +1381,12 @@ import 'datatables.net-bs5';
 import moment from 'moment';
 import PermissionControl from '../permission/PermissionControl.vue';
 import { useToast } from 'vue-toastification';
+import VueMultiselect from "vue-multiselect";
+import 'vue-multiselect/dist/vue-multiselect.min.css'; // Import styles
 
 export default {
     name: 'RequisitionDetails',
+    //components: { VueMultiselect },
     props: {
         requisitionId: {
             type: Number,
@@ -1351,13 +1395,37 @@ export default {
         user: {
             type: Object,
             required: true
-        }
+        },
+        
     },
     components: {
-        PermissionControl
+        PermissionControl, VueMultiselect
     },
     data() {
         return {
+            users: [
+                { id: 1, name: "Default User 1" },
+                { id: 2, name: "Default User 2" },
+            ], // Users to populate multiselect
+            notificationFields: {
+                matter_authorised: {
+                label: "Matter Authorised",
+                selected: [],
+                },
+                matter_unlocked: {
+                label: "Matter Unlocked",
+                selected: [],
+                },
+                payment_successful: {
+                label: "Payment Processing Successful",
+                selected: [],
+                },
+                payment_failed: {
+                label: "Payment Processing Failed",
+                selected: [],
+                },
+            },
+
             loading: true,
             showPayments: false,
             showApprove: false,
@@ -1503,6 +1571,8 @@ export default {
     mounted() {
         
         this.loadRequisitionDetails();
+        this.fetchUsers();
+        this.fetchSavedNotifications();
        /*  this.showPaymentsTabContent(); */
         //this.loadHistoryLogs();
         //this.checkStoredSourceAccount(); // Check if there is a stored source account
@@ -1513,6 +1583,81 @@ export default {
         return { toast };
     },
     methods: {
+        // Fetch all users for selection
+        fetchUsers() {
+            axios.get('/api/recipients')
+                .then(response => {
+                    this.users = response.data;
+                })
+                .catch(error => {
+                    console.error('Error fetching users:', error);
+                });
+       /*  axios
+            .get("/api/users")
+            .then((response) => {
+            this.users = response.data;
+            })
+            .catch((error) => console.error("Error fetching users:", error)); */
+        },
+        // Fetch saved notification settings
+        fetchSavedNotifications() {
+            axios
+                .get(`/api/requisitions/${this.requisitionId}/notifications`)
+                .then((response) => {
+                for (const key in response.data) {
+
+                    if (this.notificationFields[key]) {
+                    this.notificationFields[key].selected = response.data[key];
+                    }
+                }
+                })
+                .catch((error) =>
+                console.error("Error fetching saved notifications:", error)
+                );
+        },
+        // Add the current user to the notification list
+        addCurrentUser(fieldKey) {
+            /* const currentUser = this.users.find(
+                (user) => user.id === this.user.id
+            ); */
+
+            const currentUser = this.user;
+            if (currentUser && !this.notificationFields[fieldKey].selected.includes(currentUser)) {
+                this.notificationFields[fieldKey].selected.push(currentUser);
+            }
+        },
+        // Save notification settings
+        saveNotifications() {
+            const buttonSpinner = document.getElementById('buttonSpinner');
+            buttonSpinner.classList.remove('d-none');          
+
+            const payload = {};
+            for (const key in this.notificationFields) {
+                payload[key] = this.notificationFields[key].selected.map(
+                (user) => user.id
+                );
+            }
+            axios.post(`/api/requisitions/${this.requisitionId}/notifications`, payload)
+                .then(response => {
+                    buttonSpinner.classList.add('d-none');
+                    this.toast.success(response.data.message, {
+                        title: 'Success'
+                    });
+                })
+                .catch(error => {
+                    if (error.response && error.response.data.errors) {
+                        buttonSpinner.classList.add('d-none');
+                        //this.errors = error.response.data.errors;
+                        this.toast.error(error.response ? error.response.data : 'No response data', {
+                            title: 'Error'
+                        });
+                    } else {
+                        console.error('Failed to update notifications.', error);
+                        buttonSpinner.classList.add('d-none');
+                    }
+                });
+
+        },
         // Load requisition details based on matter ID and requisition ID
         loadRequisitionDetails() {
             this.contentHtml = this.loadingHtml;  // Show loading spinner
@@ -1571,12 +1716,20 @@ export default {
             }
         },
         approveRequisition(requisitionId) {
+
+            const approveBtnSpinner = document.getElementById('approveBtnSpinner');
+            const approveBtnSpinner1 = document.getElementById('approveBtnSpinner1');
+            approveBtnSpinner.classList.remove('d-none');
+            approveBtnSpinner1.classList.remove('d-none');
+
             axios.put(`/api/requisitions/${requisitionId}/approve`)
                 .then(response => {
                     //console.log(this.requisition);
                     //console.log("Requisition approved successfully:", response.data);
                     // Optionally update local data or trigger a refresh
                     //this.$emit('requisitionUpdated', response.data);
+                    approveBtnSpinner.classList.add('d-none');
+                    approveBtnSpinner1.classList.add('d-none');
                     this.toast.success('Requisition approved successfully!', {
                         title: 'Success'
                     });
@@ -1588,6 +1741,8 @@ export default {
 
                 })
                 .catch(error => {
+                    approveBtnSpinner.classList.add('d-none');
+                    approveBtnSpinner1.classList.add('d-none');
                     console.error("Error approving requisition:", error);
                     this.toast.error(error.response ? error.response.data : 'No response data', {
                         title: 'Error'
@@ -1597,9 +1752,14 @@ export default {
         },
         // Method to unlock a requisition
         unlockRequisition(requisitionId) {
+
+            const unlockBtnSpinner = document.getElementById('unlockBtnSpinner');
+            unlockBtnSpinner.classList.remove('d-none');
+
             axios.put(`/api/requisitions/${requisitionId}/unlock`)
                 .then(response => {
                     console.log("Requisition unlocked successfully:", response.data);
+                    unlockBtnSpinner.classList.add('d-none');
                     this.toast.success('Requisition unlocked successfully!', {
                         title: 'Success'
                     });
@@ -1608,6 +1768,7 @@ export default {
                     this.requisition = { ...response.data }; // Ensure reactivity
                 })
                 .catch(error => {
+                    unlockBtnSpinner.classList.add('d-none');
                     console.error("Error unlocking requisition:", error);
                     this.toast.error(error.response ? error.response.data : 'No response data', {
                         title: 'Error'
@@ -2846,6 +3007,49 @@ export default {
 </script>
 
 <style scoped>
+
+.notification-form-container {
+  padding: 20px;
+  background: #f9f9f9;
+  border: 1px solid #ddd;
+  border-radius: 5px;
+}
+
+.notification-form-container h5 {
+  font-size: 16px;
+  margin-bottom: 10px;
+  color: #333;
+}
+
+.notification-form-container p {
+  font-size: 14px;
+  margin-bottom: 20px;
+  color: #666;
+}
+
+.form-label {
+  font-weight: bold;
+  color: #555;
+}
+
+.notification-multiselect {
+  margin-bottom: 10px;
+}
+
+.btn-link {
+  font-size: 14px;
+  color: #007bff;
+  text-decoration: none;
+}
+
+.btn-link:hover {
+  text-decoration: underline;
+}
+
+.btn-primary {
+  background-color: #007bff;
+  border-color: #007bff;
+}
 
 .approve-box{
     border-radius: 3px;

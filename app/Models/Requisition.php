@@ -115,4 +115,9 @@ class Requisition extends Model
     {
         return $this->fileUploads()->count();
     }
+
+    public function notifications()
+    {
+        return $this->hasMany(Notification::class);
+    }
 }

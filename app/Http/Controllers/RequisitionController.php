@@ -2,6 +2,8 @@
 
 namespace App\Http\Controllers;
 
+use App\Enums\NotificationType;
+use App\Mail\NotificationMail; // Assuming this is the new mailable class
 use App\Models\Deposit;
 use App\Models\FileHistoryLog;
 use App\Models\FileUpload;
@@ -12,6 +14,7 @@ use Carbon\Carbon;
 use DataTables;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\File;
+use Illuminate\Support\Facades\Mail;
 use Illuminate\Support\Facades\Storage;
 
 class RequisitionController extends Controller
@@ -291,6 +294,28 @@ class RequisitionController extends Controller
             return $paymentData;
         });
 
+        // Send notification emails to all users subscribed to matter_authorized start here
+            $users = $requisition->notifications()
+            ->where('notification_type', NotificationType::MATTER_AUTHORISED)
+            ->with('user')
+            ->get()
+            ->pluck('user');
+
+        foreach ($users as $user) {
+            $emailData = [
+                'subject' => 'Requisition Approved',
+                'greeting' => 'Hello ' . $user->name,
+                'message' => "The requisition #{$requisition->file_reference} has been approved.",
+                //'url' => route('requisition.details', ['requisition' => $requisition->id]),
+                'url' => url("/matters/requisitions/{$requisition->id}/details"),
+                'senderName' => 'Iconis Pay',
+                /* 'unsubscribeLink' => route('notifications.unsubscribe', ['user' => $user->id]),
+                'preferencesLink' => route('notifications.preferences', ['user' => $user->id]), */
+            ];
+            Mail::to($user->email)->queue(new NotificationMail($emailData));
+        }
+        // Send notification emails to all users subscribed to matter_authorized ends here
+
         return response()->json($requisitionData);
 
         //return response()->json($requisition);
@@ -348,6 +373,28 @@ class RequisitionController extends Controller
         
             return $paymentData;
         });
+
+        // Send notification emails to all users subscribed to matter_unlocked start here
+            $users = $requisition->notifications()
+            ->where('notification_type', NotificationType::MATTER_UNLOCKED)
+            ->with('user')
+            ->get()
+            ->pluck('user');
+
+        foreach ($users as $user) {
+            $emailData = [
+                'subject' => 'Requisition Unlocked',
+                'greeting' => 'Hello ' . $user->name,
+                'message' => "The requisition #{$requisition->file_reference} has been unlocked.",
+                //'url' => route('requisition.details', ['requisition' => $requisition->id]),
+                'url' => url("/matters/requisitions/{$requisition->id}/details"),
+                'senderName' => 'Iconis Pay',
+                /* 'unsubscribeLink' => route('notifications.unsubscribe', ['user' => $user->id]),
+                'preferencesLink' => route('notifications.preferences', ['user' => $user->id]), */
+            ];
+            Mail::to($user->email)->queue(new NotificationMail($emailData));
+        }
+        // Send notification emails to all users subscribed to matter_unlocked ends here
 
         return response()->json($requisitionData);
 

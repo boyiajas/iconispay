@@ -13,28 +13,30 @@ use App\Http\Controllers\CertificateController;
 use App\Http\Controllers\DepositController;
 use App\Http\Controllers\DocumentController;
 use App\Http\Controllers\EmailController;
+use App\Http\Controllers\EmailPreviewController;
 use App\Http\Controllers\FileUploadController;
 use App\Http\Controllers\FirmAccountController;
 use App\Http\Controllers\HomeController;
 use App\Http\Controllers\InstitutionController;
 use App\Http\Controllers\MatterController;
+use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\ReportController;
+
+
+
+
 use App\Http\Controllers\RequisitionController;
 use App\Http\Controllers\StatusController;
-
-
-
-
 use App\Http\Controllers\UserController;
-use App\Http\Controllers\EmailPreviewController;
 use App\Http\Middleware\RedirectIfAuthenticated;
+use Illuminate\Http\Request;
+
+
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Route;
 use Maatwebsite\Excel\Facades\Excel;
 
-
-use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Log;
 
 
 
@@ -121,6 +123,8 @@ Route::group(['middleware' => 'no_cache'], function (){
         Route::get('/firm-accounts/all-accounts', [FirmAccountController::class, 'getAllFirmAccounts']);
         // User Management Routes
         Route::resource('users', UserController::class);
+        Route::get('/requisitions/{requisition}/notifications', [NotificationController::class, 'index']);
+        Route::post('/requisitions/{requisition}/notifications', [NotificationController::class, 'store']);
         Route::get('/recipients', [UserController::class, 'getRecipients']);
         Route::get('/deactivated-users', [UserController::class, 'deactivatedUsers']);
         Route::resource('firm-accounts', FirmAccountController::class);
