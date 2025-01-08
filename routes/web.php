@@ -30,12 +30,16 @@ use App\Http\Controllers\RequisitionController;
 use App\Http\Controllers\StatusController;
 use App\Http\Controllers\UserController;
 use App\Http\Middleware\RedirectIfAuthenticated;
+use App\Models\BeneficiaryAccount;
+
+
+use App\Models\FirmAccount;
 use Illuminate\Http\Request;
-
-
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Route;
 use Maatwebsite\Excel\Facades\Excel;
+
+
 
 
 
@@ -81,6 +85,45 @@ Route::post('/api/avs-callback', function (Request $request) {
 
     // Process the request
     $data = $request->all();
+    $accountNumber = $data['Response']['accountNumber'] ?? null;
+
+    if ($accountNumber) {
+        $beneficiaryAccount = BeneficiaryAccount::where('account_number', $accountNumber)->first();
+
+        if ($beneficiaryAccount) {
+            $beneficiaryAccount->update([
+                'verified' => true,
+                'verification_status' => 'successful',
+                'account_found' => $data['Response']['accountExists'],
+                'account_open' => $data['Response']['accountOpen'],
+                'account_type_verified' => $data['Response']['accountType'],
+                'account_type_match' => $data['Response']['accountTypeValid'],
+                'branch_code_match' => '00',
+                'holder_name_match' => $data['Response']['lastNameMatch'],
+                'holder_initials_match' => $data['Response']['initialMatch'],
+                'registration_number_match' => '00',
+                'avs_verified_at' => now(),
+            ]);
+        } else {
+            $firmAccount = FirmAccount::where('account_number', $accountNumber)->first();
+
+            if ($firmAccount) {
+                $firmAccount->update([
+                    'verified' => true,
+                    'verification_status' => 'successful',
+                    'account_found' => $data['Response']['accountExists'],
+                    'account_open' => $data['Response']['accountOpen'],
+                    'account_type_verified' => $data['Response']['accountType'],
+                    'account_type_match' => $data['Response']['accountTypeValid'],
+                    'branch_code_match' => '00',
+                    'holder_name_match' => $data['Response']['lastNameMatch'],
+                    'holder_initials_match' => $data['Response']['initialMatch'],
+                    'registration_number_match' => '00',
+                    'avs_verified_at' => now(),
+                ]);
+            }
+        }
+    }
 
     // Prepare the response
     $response = [
@@ -126,6 +169,7 @@ Route::group(['middleware' => 'no_cache'], function (){
         Route::get('/requisitions/{requisition}/notifications', [NotificationController::class, 'index']);
         Route::post('/requisitions/{requisition}/notifications', [NotificationController::class, 'store']);
         Route::get('/requisitions/{requisition}/history', [RequisitionController::class, 'getRequisitionHistory']);
+        Route::put('/requisitions/{requisition}/update', [RequisitionController::class, 'updateRequisition'])->name('requisitions.update.requisition');
         Route::get('/recipients', [UserController::class, 'getRecipients']);
         Route::get('/deactivated-users', [UserController::class, 'deactivatedUsers']);
         Route::resource('firm-accounts', FirmAccountController::class);

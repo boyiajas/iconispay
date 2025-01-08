@@ -397,10 +397,54 @@ class DepositController extends Controller
 
         $deposit->update($validated);
 
-        // Eager load the user relationship and return the deposit with user data
+        $requisition = $deposit->requisition;
+
+        // Eager load the relationships
+        $requisition->load(
+            'user',
+            'authorizedBy',
+            'firmAccount.institution',
+            'payments.beneficiaryAccount.institution',
+            'payments.payToFirmAccount.institution',
+            'payments.beneficiaryAccount.accountType',
+            'payments.payToFirmAccount.accountType',
+            //'payments.payToFirmAccount',
+            'payments.sourceFirmAccount',
+            'deposits.firmAccount',
+            'deposits.user'
+        );
+
+        // Transform the requisition data to include payToAccount details
+        $requisitionData = $requisition->toArray();
+
+        // Add payToAccount details for each payment
+        $requisitionData['payments'] = $requisition->payments->map(function ($payment) {
+            $paymentData = $payment->toArray();
+
+            // Get the payToAccount and include its institution details
+            $payToAccount = $payment->payToAccount;
+            $payToAccountData = $payToAccount ? $payToAccount->toArray() : null;
+
+            if ($payToAccount && $payToAccount->institution) {
+                $payToAccountData['institution'] = $payToAccount->institution->toArray();
+            }
+
+            if ($payToAccount && $payToAccount->accountType) {
+                $payToAccountData['account_type'] = $payToAccount->accountType->toArray();
+            }
+
+            // Include the transformed payToAccount in the payment data
+            $paymentData['beneficiary_account'] = $payToAccountData;
+           
+            return $paymentData;
+        });
+
+        return response()->json($requisitionData);
+
+       /*  // Eager load the user relationship and return the deposit with user data
         $deposit->load('user');
 
-        return response()->json($deposit);
+        return response()->json($deposit); */
     }
 
     /**

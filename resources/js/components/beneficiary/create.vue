@@ -313,6 +313,8 @@ export default {
             accountTypes: [], //will be populated with account types from the API
             institutions: [], // This will hold the list of institutions fetched from the API
             avsResult: {},  // Store the AVS result data
+
+            showAwsModelInstance: null,
         };
     },
     mounted() {
@@ -370,6 +372,7 @@ export default {
                     account_holder: this.beneficiaryAccount.displayText,
                     account_holder_type: this.beneficiaryAccount.accountHolderType,
                     registration_number: this.beneficiaryAccount.registrationNumber,
+                    id_number: this.beneficiaryAccount.idNumber,
                 })
                 .then(response => {
                     this.avsResult = response.data; console.log("this is the value of avs result " , response.data);
@@ -465,6 +468,12 @@ export default {
                 emailAddress: '',
                 phoneNumber: '',
             };
+        },
+        closeModal() {
+            //const newUserModal = bootstrap.Modal.getInstance(document.getElementById('newUserModal'));
+            if(this.showAvsModal){
+                this.showAwsModelInstance.hide();
+            }
         },
         // Handle cancel button
         cancel() {

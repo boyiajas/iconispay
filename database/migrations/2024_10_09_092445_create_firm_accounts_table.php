@@ -34,14 +34,14 @@ return new class extends Migration
             $table->string('recipient_reference')->nullable(); // Recipient's reference for payments
             $table->boolean('verified')->default(false); // Whether the account has been verified
             $table->string('verification_status')->nullable(); // Status from AVS (e.g., 'pending', 'failed', 'successful')
-            $table->boolean('account_found')->default(false); // Whether the account was found
-            $table->boolean('account_open')->default(false); // Whether the account has been open for 3+ months
+            $table->string('account_found')->nullable(); // Whether the account was found
+            $table->string('account_open')->nullable(); // Whether the account has been open for 3+ months
             $table->string('account_type_verified')->nullable(); // Account type from the verification (e.g., 'Cheque account')
-            $table->boolean('account_type_match')->default(false); // Whether the account type matched
-            $table->boolean('branch_code_match')->default(false); // Whether the branch code matched
-            $table->boolean('holder_name_match')->default(false); // Whether the account holder's name matched
-            $table->boolean('holder_initials_match')->default(false); // Whether the initials matched (for natural persons)
-            $table->boolean('registration_number_match')->default(false); // Whether the registration number matched (for juristic entities)
+            $table->string('account_type_match')->nullable(); // Whether the account type matched
+            $table->string('branch_code_match')->nullable(); // Whether the branch code matched
+            $table->string('holder_name_match')->nullable(); // Whether the account holder's name matched
+            $table->string('holder_initials_match')->nullable(); // Whether the initials matched (for natural persons)
+            $table->string('registration_number_match')->nullable(); // Whether the registration number matched (for juristic entities)
             $table->string('avs_verified_at')->nullable(); // AVS verification timestamp
             $table->integer('number_of_authorizer')->nullable(); // Number of authorizers required
             $table->foreignId('user_id'); // Foreign key to user

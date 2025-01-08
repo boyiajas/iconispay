@@ -257,7 +257,7 @@
                         <div class="card-body">
                             <div v-html="contentHtml"></div>
                             <!-- Source Accounts DataTable -->
-                            <div class="table-responsive">
+                            <div class="">
                                 <table id="source-accounts-table" class="table table-bordered table-striped display nowrap" style="width:100%">
                                     <thead>
                                         <tr class="table-secondary">
@@ -364,25 +364,25 @@
                                     <div v-if="requisition && requisition.payments && requisition.payments.length > 0" class="deposit-section row ml-0 mt-1 mb-0 p-0">
                                         <div v-for="payment in requisition.payments" :key="payment.id" class="col-md-12 row mb-2 lighthover p-0">
                                             <div class="col-md-3">
-                                                <span v-if="payment.beneficiary_account && payment.beneficiary_account.authorised">
+                                                <span v-if="payment.beneficiary_account && payment.beneficiary_account.verification_status == 'successful'">
                                                     <i class="far fa-check-circle mr-2 mt-1 text-success" ref="popoverIcon" 
                                                     data-bs-toggle="popover" 
                                                     data-bs-placement="top" 
-                                                    title="Status" 
+                                                    title="Account details complete, AVS verified account" 
+                                                    data-bs-content="Account details complete, No AVS verification done"></i>
+                                                </span>
+                                                <span v-else-if="payment.beneficiary_account.verified && payment.beneficiary_account.verified != 'successful'">
+                                                    <i class="fas fa-ban mr-2 mt-1 text-danger" ref="popoverIcon" 
+                                                    data-bs-toggle="popover" 
+                                                    data-bs-placement="top" 
+                                                    title="AVS verification failed, Invalid account / details" 
                                                     data-bs-content="Account details complete, No AVS verification done"></i>
                                                 </span>
                                                 <span v-else-if="!payment.verified">
-                                                    <i class="fa fa-square mr-2 mt-1 text-success" ref="popoverIcon" 
+                                                    <i class="far fa-square bg-green mr-2 mt-1 text-success" ref="popoverIcon" 
                                                     data-bs-toggle="popover" 
                                                     data-bs-placement="top" 
-                                                    title="Status" 
-                                                    data-bs-content="Account details complete, No AVS verification done"></i>
-                                                </span>
-                                                <span v-else-if="payment.verified">
-                                                    <i class="far fa-check-circle bg-green mr-2 mt-1 text-success" ref="popoverIcon" 
-                                                    data-bs-toggle="popover" 
-                                                    data-bs-placement="top" 
-                                                    title="Status" 
+                                                    title="Account details complete, No AVS verification done" 
                                                     data-bs-content="Account details complete, No AVS verification done"></i>
                                                 </span>
                                                 {{ payment.description }}
@@ -446,7 +446,7 @@
                                                     class="mr-4"
                                                 >
 
-                                                    <div  v-if="requisition.deposits  && requisition.deposits.length > 0">&nbsp; R{{ parseFloat(totalDepositAmount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }} </div>   <div v-if="requisition.payments && requisition.payments.length > 0">-  R{{ parseFloat(totalDepositAmount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }} </div>
+                                                    <div  v-if="requisition.deposits  && requisition.deposits.length > 0">&nbsp; R{{ parseFloat(totalDepositAmount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }} </div>   <div v-if="requisition.payments && requisition.payments.length > 0">-  R{{ parseFloat(totalPaymentAmount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }} </div>
                                                     
                                                 </div>
                                                 <hr class="mb-0 mt-1"/>
@@ -1869,6 +1869,8 @@ export default {
                             title: 'Error'
                         });
                     }
+
+                   
                     // Close the modal
                     this.closeModal();
                 })
@@ -1886,8 +1888,21 @@ export default {
         updateDeposit() {
             axios.put(`/api/deposits/${this.editDepositForm.id}`, this.editDepositForm)
                 .then(response => {
+                    // Remove the deposit from the local list
+                    this.requisition = response.data;
+
+                    //console.log('Deposit deleted successfully:', response.data);
+
+                    if(response.data){
+                        // Update the requisition object with the new source_account_id
+                        //this.requisition.funding_status = response.data.funding_status;
+                        this.closeModal();
+                        this.toast.success('Deposit update successfully!', {
+                            title: 'Success'
+                        });
+                    }
                    // Response contains the updated deposit
-                   const updatedDeposit = response.data;
+                    /* const updatedDeposit = response.data;
 
                     // Find the index of the deposit in the deposits array
                     const index = this.selectedSourceAccount.deposits.findIndex(deposit => deposit.id === updatedDeposit.id);
@@ -1901,7 +1916,7 @@ export default {
                         title: 'Success'
                     });
                     // Close the modal
-                    this.closeModal();
+                    this.closeModal(); */
                 })
                 .catch(error => {
                     if (error.response && error.response.data.errors) {
@@ -2509,7 +2524,20 @@ export default {
         },
         // Save requisition (stub method for future implementation)
         saveRequisition() {
-            console.log('Save requisition:', this.requisition);
+            //console.log('Save requisition:', this.requisition);
+            axios.put(`/api/requisitions/${this.requisition.id}/update`, this.requisition)
+                .then(response => {
+                    console.log('Requisition saved successfully:', response.data);
+                    this.toast.success('Requisition saved successfully!', {
+                        title: 'Success'
+                    });
+                })
+                .catch(error => {
+                    console.error('Error saving requisition:', error);
+                    this.toast.error(error.response ? error.response.data.message : 'Error saving requisition', {
+                        title: 'Error'
+                    });
+                });
         },
 
         // Delete requisition (stub method for future implementation)

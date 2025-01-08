@@ -216,6 +216,34 @@ class RequisitionController extends Controller
         //
     }
 
+    public function updateRequisition(Request $request, Requisition $requisition)
+    {
+        $validatedData = $request->validate([
+            'file_reference' => 'nullable|string|max:255',
+            'reason' => 'nullable|string|max:255',
+            'parties' => 'nullable|string|max:255',
+            'properties' => 'nullable|string|max:255',
+            'status_id' => 'nullable|integer|exists:statuses,id',
+            'firm_account_id' => 'nullable|integer|exists:firm_accounts,id',
+            'transaction_value' => 'nullable|numeric',
+            'capturing_status' => 'nullable|string|max:255',
+            'authorization_status' => 'nullable|string|max:255',
+            'locked' => 'nullable|boolean',
+            'completed_at' => 'nullable|date',
+        ]);
+
+        // Update the requisition with validated data
+        $requisition->update($validatedData);
+
+        // Load related data if needed
+        $requisition->load('user', 'authorizedBy', 'lockedBy', 'firmAccount', 'payments', 'deposits');
+
+        return response()->json([
+            'message' => 'Requisition updated successfully',
+            'requisition' => $requisition,
+        ]);
+    }
+
     /**
      * Update the specified resource in storage.
      */

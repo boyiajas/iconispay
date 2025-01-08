@@ -2,10 +2,11 @@
 
 namespace App\Http\Controllers;
 
+use \AvsHelper;
 use App\Models\Avs;
 use App\Models\BeneficiaryAccount;
-use \AvsHelper;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 
@@ -30,6 +31,7 @@ class AvsController extends Controller
             'surname' => 'nullable|string|max:255', // Only for natural persons
             'company_name' => 'nullable|string|max:255', // Only for juristic persons
             'registration_number' => 'nullable|string|max:20', // Only for juristic persons
+            'id_number' => 'nullable|string|max:20', // Only for juristic persons
         ]);
 
         if ($validator->fails()) {
@@ -44,9 +46,6 @@ class AvsController extends Controller
         if (!$beneficiaryAccount) {
             return response()->json(['error' => 'Beneficiary account not found.'], 404);
         }
-
-        // Simulate AVS response based on the provided data
-        //$avsResult = $this->simulateAvs($request, $beneficiaryAccount);
 
         $accountTypeMapping = [
             'Unknown' => '00',
@@ -74,7 +73,10 @@ class AvsController extends Controller
         ];
 
         // Use the helper class to send the request
-        $avsResult = AvsHelper::send_request($request_data);
+        //$avsResult = AvsHelper::send_request($request_data);
+
+        // Simulate AVS response based on the provided data
+        $avsResult = $this->avsHelperSimulation($request_data);
 
         // Handle the response
         if ($avsResult['status_code'] === 200) {
@@ -89,24 +91,6 @@ class AvsController extends Controller
                 'message' => 'Unable to verify account. '.json_encode($avsResult)
             ], 405);
         }
-
-
-        // Update beneficiary account with AVS result
-        /* $beneficiaryAccount->verified = $avsResult['verified'];
-        $beneficiaryAccount->verification_status = $avsResult['verification_status'];
-        $beneficiaryAccount->account_found = $avsResult['account_found'];
-        $beneficiaryAccount->account_open = $avsResult['account_open'];
-        $beneficiaryAccount->account_type_verified = $avsResult['account_type_verified'];
-        $beneficiaryAccount->account_type_match = $avsResult['account_type_match'];
-        $beneficiaryAccount->branch_code_match = $avsResult['branch_code_match'];
-        $beneficiaryAccount->holder_name_match = $avsResult['holder_name_match'];
-        $beneficiaryAccount->holder_initials_match = $avsResult['holder_initials_match'];
-        $beneficiaryAccount->registration_number_match = $avsResult['registration_number_match'];
-        $beneficiaryAccount->avs_verified_at = now();
-        $beneficiaryAccount->save();
-
-        // Return the AVS result as a response
-        return response()->json($beneficiaryAccount); */
     }
 
     private function getBackendAccountType(BeneficiaryAccount $beneficiaryAccount, array $accountTypeMapping)
@@ -125,76 +109,98 @@ class AvsController extends Controller
         return '00';
     }
 
-    private function simulateAvs($request, $beneficiaryAccount)
+    private function avsHelperSimulation(array $data)
     {
-        // Base AVS result structure
-        $avsResult = [
-            'verified' => true,
-            'verification_status' => 'successful',
-            'account_found' => true,
-            'account_open' => true,
-            'account_type_verified' => $beneficiaryAccount->account_type_id == 2 ? 'Cheque account' : 'Savings account',
-            'account_type_match' => true,
-            'branch_code_match' => $beneficiaryAccount->branch_code == $request->branch_code,
-            'holder_name_match' => false,
-            'holder_initials_match' => false,
-            'registration_number_match' => false,
+        $simulatedResponse = [
+            "status_code" => 200,
+            "body" => json_encode([
+                "success" => true,
+                "errmsg" => "00001 Transaction sent to the bank. Waiting for feedback",
+                "count" => 1,
+                "Response" => [
+                    "operator" => "AutTstOp",
+                    "accountNumber" => $data['accountNumber'],
+                    "accountType" => $data['accountType'],
+                    "branchCode" => $data['branchCode'],
+                    "idNumber" => $data['idNumber'],
+                    "initials" => $data['initials'] ?? "",
+                    "lastName" => $data['lastName'] ?? "",
+                    "phoneNumber" => "",
+                    "emailAddress" => "test@test.co.za",
+                    "userReference" => "AVS000001",
+                    "accountExists" => "",
+                    "accountIdMatch" => "",
+                    "initialMatch" => "",
+                    "lastNameMatch" => "",
+                    "accountOpen" => "",
+                    "accountAcceptsCredits" => "",
+                    "accountAcceptsDebits" => "",
+                    "accountOpenGtThreeMonths" => "",
+                    "phoneValid" => "",
+                    "emailValid" => "",
+                    "accountTypeValid" => "",
+                    "transactionReference" => "3530132",
+                    "messageCode" => "00001",
+                    "messageDescription" => "Transaction sent to the bank. Waiting for feedback"
+                ]
+            ])
         ];
 
-        // Differentiate between natural and juristic account verification
-        if ($beneficiaryAccount->account_holder_type == 'natural') {
-            // For natural persons, compare initials and surname
-            $avsResult['holder_name_match'] = strtolower($beneficiaryAccount->surname) == strtolower($request->surname);
-            $avsResult['holder_initials_match'] = strtolower($beneficiaryAccount->initials) == strtolower($request->initials);
-        } else {
-            // For juristic persons, compare company name and registration number
-            $avsResult['holder_name_match'] = strtolower($beneficiaryAccount->company_name) == strtolower($request->company_name);
-            $avsResult['registration_number_match'] = strtolower($beneficiaryAccount->registration_number) == strtolower($request->registration_number);
-        }
-
-        // Simulate failure scenarios
-        if (!$avsResult['holder_name_match']) {
-            $avsResult['verified'] = false;
-            $avsResult['verification_status'] = 'failed';
-        }
-
-        return $avsResult;
-    }
-
-    private function avsVerification($request, $beneficiaryAccount)
-    {
-        // Base AVS result structure
-        $avsResult = [
-            'verified' => true,
-            'verification_status' => 'successful',
-            'account_found' => true,
-            'account_open' => true,
-            'account_type_verified' => $beneficiaryAccount->account_type_id == 2 ? 'Cheque account' : 'Savings account',
-            'account_type_match' => true,
-            'branch_code_match' => $beneficiaryAccount->branch_code == $request->branch_code,
-            'holder_name_match' => false,
-            'holder_initials_match' => false,
-            'registration_number_match' => false,
+        // Simulate callback after 30 seconds
+        $callbackUrl = url('/api/avs-callback');
+        $callbackData = [
+          
+            "Response" => [
+                "operator" => "AutTstOp",
+                "accountNumber" => $data['accountNumber'],
+                "accountType" => $data['accountType'],
+                "branchCode" => $data['branchCode'],
+                "idNumber" => $data['idNumber'],
+                "initials" => $data['initials'] ?? null,
+                "lastName" => $data['lastName'] ?? null,
+                "phoneNumber" => null,
+                "emailAddress" => "test@test.co.za",
+                "userReference" => "AVS000001",
+                "accountExists" => "00",
+                "accountIdMatch" => "00",
+                "initialMatch" => "00",
+                "lastNameMatch" => "00",
+                "accountOpen" => "00",
+                "accountAcceptsCredits" => "00",
+                "accountAcceptsDebits" => "00",
+                "accountOpenGtThreeMonths" => "00",
+                "phoneValid" => "00",
+                "emailValid" => "00",
+                "accountTypeValid" => "00",
+                "transactionReference" => "3529771",
+                "messageCode" => "00000",
+                "messageDescription" => "Successful"
+            ]
+               
         ];
 
-        // Differentiate between natural and juristic account verification
-        if ($beneficiaryAccount->account_holder_type == 'natural') {
-            // For natural persons, compare initials and surname
-            $avsResult['holder_name_match'] = strtolower($beneficiaryAccount->surname) == strtolower($request->surname);
-            $avsResult['holder_initials_match'] = strtolower($beneficiaryAccount->initials) == strtolower($request->initials);
+        // Execute callback asynchronously
+        if (function_exists('pcntl_fork')) {
+            $pid = pcntl_fork();
+            if ($pid === -1) {
+                // Fork failed
+                error_log('Could not fork process');
+            } elseif ($pid === 0) {
+                // Child process: handle callback
+                sleep(10);
+                Http::withBasicAuth('iconis', 'test123')->post($callbackUrl, $callbackData);
+                exit(0);
+            }
+            // Parent process continues
         } else {
-            // For juristic persons, compare company name and registration number
-            $avsResult['holder_name_match'] = strtolower($beneficiaryAccount->company_name) == strtolower($request->company_name);
-            $avsResult['registration_number_match'] = strtolower($beneficiaryAccount->registration_number) == strtolower($request->registration_number);
+            // Fallback: non-blocking sleep and execution
+            register_shutdown_function(function () use ($callbackUrl, $callbackData) {
+                sleep(10);
+                Http::withBasicAuth('iconis', 'test123')->post($callbackUrl, $callbackData);
+            });
         }
 
-        // Simulate failure scenarios
-        if (!$avsResult['holder_name_match']) {
-            $avsResult['verified'] = false;
-            $avsResult['verification_status'] = 'failed';
-        }
-
-        return $avsResult;
+        return $simulatedResponse;
     }
 
     /**
