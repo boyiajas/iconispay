@@ -16,7 +16,7 @@
                             <div class="form-group row">
                                 <label for="file-reference" class="form-label col-sm-2">File Reference: *</label>
                                 <div class="col-sm-10">
-                                    <input type="text" v-model="form.file_reference" class="form-control" id="file-reference" placeholder="Enter file reference" maxlength="150" required>
+                                    <input type="text" v-model="form.file_reference" class="form-control" id="file-reference" placeholder="Enter file reference" maxlength="150" required @blur="fetchRequisitionData">
                                 </div>
                             </div>
                             <div class="form-group row">
@@ -75,6 +75,27 @@ export default {
         return { toast };
     },
     methods: {
+
+        fetchRequisitionData() {
+            if (this.form.file_reference.trim()) {
+                axios
+                    .get(`/api/requisitions/search`, { params: { file_reference: this.form.file_reference } })
+                    .then(response => {
+                        if (response.data) {
+                            const { reason, parties } = response.data;
+                            this.form.reason = reason || '';
+                            this.form.parties = parties || '';
+                            //this.toast.success("Reason and Parties fields auto-filled successfully.");
+                        } else {
+                            //this.toast.warning("No matching requisition found.");
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error fetching requisition:', error);
+                        //this.toast.error("Error fetching requisition data.");
+                    });
+            }
+        },
         // Submit the requisition form
         submitRequisition() {
             // Send form data to the API endpoint

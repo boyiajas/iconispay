@@ -170,6 +170,7 @@ Route::group(['middleware' => 'no_cache'], function (){
         Route::post('/requisitions/{requisition}/notifications', [NotificationController::class, 'store']);
         Route::get('/requisitions/{requisition}/history', [RequisitionController::class, 'getRequisitionHistory']);
         Route::put('/requisitions/{requisition}/update', [RequisitionController::class, 'updateRequisition'])->name('requisitions.update.requisition');
+        Route::get('/requisitions/search', [RequisitionController::class, 'searchRequisition'])->name('requisitions.search');
         Route::get('/recipients', [UserController::class, 'getRecipients']);
         Route::get('/deactivated-users', [UserController::class, 'deactivatedUsers']);
         Route::resource('firm-accounts', FirmAccountController::class);

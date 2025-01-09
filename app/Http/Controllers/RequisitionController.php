@@ -116,6 +116,27 @@ class RequisitionController extends Controller
         return datatables()->eloquent($histories)->toJson();
     }
 
+    public function searchRequisition(Request $request)
+    {
+        $request->validate([
+            'file_reference' => 'required|string|max:150',
+        ]);
+
+        $requisition = Requisition::where('file_reference', $request->file_reference)
+            ->latest('created_at') // Get the most recent requisition
+            ->first();
+
+        if ($requisition) {
+            return response()->json([
+                'reason' => $requisition->reason,
+                'parties' => $requisition->parties,
+            ]);
+        }
+
+        return response()->json(null, 202);
+    }
+
+
     /**
      * Store a newly created resource in storage.
      */
