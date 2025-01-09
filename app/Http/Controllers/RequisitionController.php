@@ -799,10 +799,11 @@ class RequisitionController extends Controller
         // Delete associated Deposit records
         Deposit::where('requisition_id', $requisition->id)->delete();
 
+        logHistory($requisition->id, 'Delete Requisition', "Requisition with file reference # {$requisition->file_reference} and parties {$requisition->parties} was deleted.");
+
         $requisition->delete();
 
-        logHistory($requisition->id, 'Delete Requisition', 'Requisition was deleted.');
-
+        
         return response()->json(['message' => 'Requisition deleted successfully.']);
     }
 }
