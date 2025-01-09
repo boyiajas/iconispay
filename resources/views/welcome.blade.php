@@ -171,7 +171,7 @@ Umhlanga Ridgeside , 4320</li>
                                 </ul>
                             </li> -->
                             <li><a href="/">Contact</a></li>
-                            <li><a href="/">Login</a></li>
+                            <li><a href="{{ route('login') }}">Login</a></li>
                         </ul>
                     </div><!-- end of nav-collapse -->
                     <div class="search-social">
