@@ -58,6 +58,8 @@ class PaymentController extends Controller
              // Step 1: Check if the account number exists in FirmAccount
             $firmAccount = FirmAccount::where('account_number', $validated['account_number'])->first();
             if ($firmAccount) {
+
+                
                 // If the account exists in FirmAccount, create a new payment with payment type 'F'
                 $payment = Payment::create([
                     'firm_account_id' => $validated['firm_account_id'],
@@ -286,10 +288,34 @@ class PaymentController extends Controller
             // Step 1: Check if the account number exists in FirmAccount
             $firmAccount = FirmAccount::where('account_number', $validated['account_number'])->first();
             if ($firmAccount) {
+
+                  // Create the FirmAccount
+                  $firmAccount->update([
+                    //'display_text' => $request->input('displayText'),
+                    //'category_id' => $request->input('category'),
+                   'account_holder_type' => $request->input('account_holder_type'),
+                    //'account_holder' => $request->input('displayText'),
+                    'account_number' => $validated['account_number'],
+                    //'account_type_id' => $request->input('accountType'),
+                    //'institution_id' => $request->input('institution.id'), 
+                    'branch_code' => $validated['branch_code'],
+                    'initials' => $validated['initials'],
+                    'surname' => $validated['surname'],
+                    'company_name' => $validated['company_name'],
+                   /*  'id_number' => $request->input('idNumber'),
+                    'registration_number' => $request->input('registrationNumber'),
+                    'my_reference' => $request->input('myReference'),
+                    'recipient_reference' => $request->input('recipientReference'),
+                    'verified' => $request->input('verified'), */
+                    //'authorised' => $request->input('verified'),
+                    
+                ]);
+
                 // Update payment to link with the existing firm account
                 $payment->update([
                     //'firm_account_id' => $payment->firm_account_id,
                     'beneficiary_account_id' => $firmAccount->id,
+                    'company_name' => $validated['company_name'],
                     'category_id' => $validated['category'],
                     'description' => $validated['description'],
                     'amount' => $validated['amount'],
@@ -324,6 +350,29 @@ class PaymentController extends Controller
                         'authorised' => $validated['authorised'] ?? false,
                         'verified' => $validated['verified'] ?? false,
                         'user_id' => auth()->id(),
+                    ]);
+
+                }else{
+                    //beneficiary found update
+                    $beneficiaryAccount->update([
+                        //'display_text' => $request->input('displayText'),
+                        //'category_id' => $request->input('category'),
+                        'account_holder_type' => $request->input('account_holder_type'),
+                        //'account_holder' => $request->input('displayText'),
+                        'account_number' => $validated['account_number'],
+                        //'account_type_id' => $request->input('accountType'),
+                        //'institution_id' => $request->input('institution.id'), 
+                        'branch_code' => $validated['branch_code'],
+                        'initials' => $validated['initials'],
+                        'surname' => $validated['surname'],
+                        'company_name' => $validated['company_name'],
+                    /*  'id_number' => $request->input('idNumber'),
+                        'registration_number' => $request->input('registrationNumber'),
+                        'my_reference' => $request->input('myReference'),
+                        'recipient_reference' => $request->input('recipientReference'),
+                        'verified' => $request->input('verified'), */
+                        //'authorised' => $request->input('verified'),
+                        
                     ]);
                 }
 
