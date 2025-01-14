@@ -511,6 +511,7 @@
 
                     <div class="card mt-0" style="display: flex; flex-direction: row;">
                         <div class="card-body"> 
+                            <span class="btn btn-sm btn-white btn-default-default mr-1" @click="cancel"><i class="fa fa-arrow-left" aria-hidden="true"></i> Back to List</span> 
                             <router-link to="/requisition/new" class="btn btn-primary btn-sm"><i class="fa fa-plus" aria-hidden="true"></i> New Requisition</router-link>
                         </div>
                         <div class="pr-3">
@@ -3088,6 +3089,10 @@ export default {
         // Print the current page
         printPage() {
             window.print();
+        },
+        // Handle cancel button
+        cancel() {
+            this.$router.go(-1);  // Navigate back
         },
     }
 };
