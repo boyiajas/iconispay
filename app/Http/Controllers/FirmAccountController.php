@@ -245,7 +245,7 @@ class FirmAccountController extends Controller
 
         // Retrieve all requisitions for the specified source account with status ready for payment
         $requisitions = Requisition::where('firm_account_id', $sourceAccountId)
-            ->where('status_id', 5)
+            ->where('status_id', 6)
             ->whereDoesntHave('fileUploads') // Exclude requisitions that are already attached to a file upload
             ->with('fileUploads') // Eager load file uploads to avoid N+1 problem
             ->get();
