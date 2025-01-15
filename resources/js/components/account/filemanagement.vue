@@ -48,7 +48,7 @@
                             <tbody>
                                 <tr v-for="(payment, index) in fileDetails.payments" :key="index">
                                     <td><div>{{ payment.fileReference }} </br><span style="color:#999;font-size:14px;">Created By {{ payment.requisitionCreatedBy.name }}</span></div></td>
-                                    <td>{{ payment.recipientDisplayText }}  -  {{ payment.payToAccountInstitution || 'N/A' }}
+                                    <td><a :href="`/matters/requisitions/${payment.requisition_id}/details`">{{ payment.recipientDisplayText }}  -  {{ payment.payToAccountInstitution || 'N/A' }} </a>
                                     <br/> ({{ payment.recipientBranchCode || 'N/A' }})
                                     - {{ payment.recipientAccount || 'N/A' }}
                                     </td>
