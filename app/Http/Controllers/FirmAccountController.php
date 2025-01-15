@@ -358,7 +358,8 @@ class FirmAccountController extends Controller
                             140 => $accountNumber,
                             154 => $branchCode . "3",
                             162 => strtoupper($recipientReference),
-                            199 => $amount . Carbon::parse($payment->created_at)->format('ymd') . "N  0000000CNAD HOC\t I",
+                            199 => $amount,
+                            210 => Carbon::parse($payment->created_at)->format('ymd') . "N  0000000CNAD HOC\t I",
                         ];
                         // Format the sentence
                         $fileContent .= $this->formatSentenceFixedColumns($wordsWithIndices) . "\n";
