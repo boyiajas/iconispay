@@ -2412,9 +2412,16 @@ export default {
                 if(response.data){
                      // Update the requisition object with the new source_account_id
                     this.requisition.firm_account_id = response.data.requisition.firm_account_id;
-                    this.requisition.status_id = 2;
+                    //this.requisition.status_id = 2;
                     this.closeModal();
-                    this.openCreatePaymentModal();
+                    if(this.requisition.status_id == 1){ //this is to allow the create payment only when a new requisition select source account
+                        this.openCreatePaymentModal();
+                    }else{
+                        //console.log('Source Account updated successfully:', response.data);
+                        this.toast.success('Source Account updated successfully!', {
+                            title: 'Success'
+                        });
+                    }
                 }
             })
             .catch(error => {

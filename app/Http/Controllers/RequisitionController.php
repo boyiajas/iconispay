@@ -281,9 +281,25 @@ class RequisitionController extends Controller
         // Update the requisition with the new firm_account_id and set status_id to 2
         $requisition->update([
             'firm_account_id' => $request->firm_account_id,
-            'status_id' => 2, //set to incompleted
+            //'status_id' => 2, //set to incompleted
         ]);
 
+         // Retrieve all deposits associated with the requisition
+        $deposits = Deposit::where('requisition_id', $requisition->id)->get();
+        if ($deposits->isNotEmpty()) {
+            // Loop through each deposit and update the firm_account_id
+            foreach ($deposits as $deposit) {
+                $deposit->update([
+                    'firm_account_id' => $request->firm_account_id,
+                ]);
+            }
+    
+            // Optionally update the requisition status to 3 if deposits exist
+            $requisition->update(['status_id' => 3]);
+        }
+
+        // Log the history
+        logHistory($requisition->id, 'Source Account Updated', 'Requisition source account was successfully updated.');
 
         return response()->json([
             'message' => 'Requisition updated successfully',
