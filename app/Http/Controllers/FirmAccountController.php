@@ -352,13 +352,13 @@ class FirmAccountController extends Controller
                             0 => "ABSADATA",
                             12 => strtoupper("3450000" . $absacount . "C" . $company_name),
                             60 => $firmAccount->account_number,
-                            69 => $firmAccount->branch_code . "3",
-                            77 => strtoupper($payment->my_reference),
-                            108 => strtoupper($recipientReference),
-                            143 => $accountNumber,
+                            70 => $firmAccount->branch_code . "3",
+                            78 => strtoupper($payment->my_reference),
+                            108 => strtoupper($TodisplayName),
+                            140 => $accountNumber,
                             154 => $branchCode . "3",
                             162 => strtoupper($recipientReference),
-                            203 => $amount . Carbon::parse($payment->created_at)->format('ymd') . "N  0000000CNAD HOC\t I",
+                            199 => $amount . Carbon::parse($payment->created_at)->format('ymd') . "N  0000000CNAD HOC\t I",
                         ];
                         // Format the sentence
                         $fileContent .= $this->formatSentenceFixedColumns($wordsWithIndices) . "\n";
