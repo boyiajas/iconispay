@@ -245,7 +245,7 @@ class FirmAccountController extends Controller
 
         // Retrieve all requisitions for the specified source account with status ready for payment
         $requisitions = Requisition::where('firm_account_id', $sourceAccountId)
-            ->where('status_id', 6)
+            ->where('status_id', 5)
             ->whereDoesntHave('fileUploads') // Exclude requisitions that are already attached to a file upload
             ->with('fileUploads') // Eager load file uploads to avoid N+1 problem
             ->get();
@@ -488,6 +488,10 @@ class FirmAccountController extends Controller
             }
         
             $requisitionIds[] = $requisition->id; // Track requisition IDs
+
+            // Update requisition status to processed (6)
+            $requisition->update(['status_id' => 6]);
+            
         }
 
         if($bank === 'Standard'){ //here we want to add the last part of the rows to the standard bank file
