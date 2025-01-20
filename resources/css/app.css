@@ -5,7 +5,7 @@ a{
 
 .txt-xs{
     font-size: 13px;
-    color: #666;
+    color: #666 !important;
 }
 
 /** white button **/
@@ -15,18 +15,18 @@ a{
 }
 
 .btn-default-default{
-    border: solid 1px #ccc;
+    border: solid 1px #ccc !important;
 }
 .btn-white:hover{
     color: rgb(0, 151, 157);
-    background-color: #fafafa;
+    background-color: #fafafa !important;
 }
 
 .nav-link{
-    color: rgb(0, 151, 157);
+    color: rgb(0, 151, 157) !important;
 }
 .nav-link:hover{
-    color: #333;
+    color: #333 !important;
 }
 
 .btn-primary{
@@ -42,7 +42,7 @@ a{
 }
 
 .bg-green{
-    color: green;
+    color: green !important;
 }
 
 .badge-success{
@@ -50,7 +50,7 @@ a{
 }
 
 .bg-blue{
-    color: #0097b2bf;
+    color: #0097b2bf !important;
 }
 
 .bg-info{
@@ -60,8 +60,8 @@ a{
 .modal-header{
     color: #fff;
     background-color: #0097b2bf !important;
-    padding-top: 5px;
-    padding-bottom: 5px;
+    padding-top: 5px !important;
+    padding-bottom: 5px !important;
 }
 
 
@@ -75,11 +75,11 @@ a{
 }
 
 .text-fade{
-    color:#999;
+    color:#999 !important;
 }
 
 .bg-faded{
-    background-color: #f3f3f3;
+    background-color: #f3f3f3 !important;
 }
 
 .custom-badge-success{
@@ -112,5 +112,5 @@ a{
 }
 
 .multiselect__tag{
-    background: #40b1c5;
+    background: #40b1c5 !important;
 }
