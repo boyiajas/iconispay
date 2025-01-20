@@ -11,7 +11,7 @@ a{
 /** white button **/
 
 .btn-white{
-    background-color: #fff;
+    background-color: #fff !important;
 }
 
 .btn-default-default{
