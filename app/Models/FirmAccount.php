@@ -116,7 +116,7 @@ class FirmAccount extends Model
     {
         // Eager load FileUploads with their associated requisitions
         $fileUploads = FileUpload::with(['requisitions' => function ($query) {
-            $query->where('status_id', 5); // Only load requisitions with status_id of 5
+            $query->where('status_id', 6); // Only load requisitions with status_id of 5
         }])->where('firm_account_id', $this->id)->get();
 
         $fileLinks = [];

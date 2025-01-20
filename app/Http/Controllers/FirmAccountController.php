@@ -624,10 +624,10 @@ class FirmAccountController extends Controller
         // Retrieve pending confirmation files for the specified FirmAccount ID
         $pendingFiles = FirmAccount::where('id', $id)
             ->whereHas('requisitions', function ($query) {
-                $query->where('status_id', 5); // Only requisitions with 'pending_confirmation' status
+                $query->where('status_id', 6); // Only requisitions with 'pending_confirmation' status
             })
             ->with(['requisitions' => function ($query) {
-                $query->where('status_id', 5)
+                $query->where('status_id', 6)
                     ->has('fileUploads')// Ensure requisitions have file uploads
                     ->with('fileUploads', 'payments'); // Load related file uploads and payments
             }, 'institution'])
@@ -723,9 +723,9 @@ class FirmAccountController extends Controller
     {
         // Retrieve FirmAccounts that have requisitions with file uploads, grouped by generated file
         $pendingFiles = FirmAccount::whereHas('requisitions.fileUploads', function ($query) {
-            $query->where('status_id', 5); // Ensure the requisitions have file uploads with status_id 5
+            $query->where('status_id', 6); // Ensure the requisitions have file uploads with status_id 5
         })->with(['requisitions' => function ($query) {
-            $query->where('status_id', 5)
+            $query->where('status_id', 6)
                 ->has('fileUploads')// Ensure requisitions have file uploads
                 ->with('fileUploads', 'payments'); // Load file uploads and payments
         }, 'institution'])->get();
