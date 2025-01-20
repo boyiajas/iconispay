@@ -126,6 +126,10 @@ class PaymentController extends Controller
             if ($requisition->deposits()->exists()) {
                 // Update requisition status_id to 3 if a deposit already exists
                 $requisition->update(['status_id' => 3]);
+
+            }else if ($requisition) {
+                // Update requisition status_id to 2 if no deposit already exists
+                $requisition->update(['status_id' => 2]);
             }
 
             // Eager load the relationships

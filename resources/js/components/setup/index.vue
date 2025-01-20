@@ -322,6 +322,116 @@
             </div>
         </div>
 
+        <!-- Firm Account Details Modal start here -->
+         <!-- Modal -->
+        <div class="modal fade" id="firmAccountModal" tabindex="-1" role="dialog" aria-labelledby="firmAccountModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-lg" role="document">
+                <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="firmAccountModalLabel">Firm Account Details</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close" @click="closeModal">
+                    <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <!-- Account Holder Section -->
+                    <div class="account-holder-section">
+                    <h6>{{ firmAccount.name }} - {{ firmAccount.accountNumber }}</h6>
+                    <p><strong>Account Holder ({{ firmAccount.holderType }}):</strong></p>
+                    <p>Name: {{ firmAccount.holderName }}</p>
+                    <p>Registration #: {{ firmAccount.registrationNumber }}</p>
+                    </div>
+
+                    <!-- Account Details Section -->
+                    <div class="account-details-section">
+                    <h6>Account Details</h6>
+                    <p><strong>Account #:</strong> {{ firmAccount.accountNumber }}</p>
+                    <p><strong>Institution:</strong> {{ firmAccount.institution }}</p>
+                    <p><strong>Branch:</strong> {{ firmAccount.branch }}</p>
+                    <p><strong>Account Description:</strong> {{ firmAccount.accountDescription }}</p>
+                    <p><strong>File Type:</strong> {{ firmAccount.fileType }}</p>
+                    <p><strong>Method:</strong> {{ firmAccount.method }}</p>
+                    </div>
+
+                    <!-- AVS Section -->
+                    <div class="avs-section alert alert-success">
+                    <strong>AVS Successfully Matched on {{ firmAccount.avsMatchedAt }}</strong>
+                    <button class="btn btn-sm btn-secondary ml-2" @click="showAvsDetails">Show Details</button>
+                    </div>
+
+                    <!-- Authorizations Section -->
+                    <div class="authorization-section">
+                    <h6>Authorisations</h6>
+                    <div class="authorization-box alert alert-success">
+                        <strong>{{ firmAccount?.authorizer?.name }}</strong> on {{ firmAccount?.authorizedAt }}
+                        <p>logged in as <em>{{ firmAccount?.authorizer?.email }}</em></p>
+                    </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal" @click="closeModal">Close</button>
+                </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Firm Account Details Modal ends here -->
+
+         <!-- Beneficiary Account Details Modal start here -->
+         <!-- Modal -->
+         <div class="modal fade" id="beneficiaryAccountModal" tabindex="-1" role="dialog" aria-labelledby="beneficiaryAccountModalLabel" aria-hidden="true">
+            <div class="modal-dialog modal-lg" role="document">
+                <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="beneficiaryAccountModalLabel">Beneficiary Account Details</h5>
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close" @click="closeModal">
+                    <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <!-- Account Holder Section -->
+                    <div class="account-holder-section">
+                    <h6>{{ beneficiaryAccount?.name }} - {{ beneficiaryAccount?.accountNumber }}</h6>
+                    <p><strong>Account Holder ({{ beneficiaryAccount?.holderType }}):</strong></p>
+                    <p>Name: {{ beneficiaryAccount?.holderName }}</p>
+                    <p>Registration #: {{ beneficiaryAccount?.registrationNumber }}</p>
+                    </div>
+
+                    <!-- Account Details Section -->
+                    <div class="account-details-section">
+                    <h6>Account Details</h6>
+                    <p><strong>Account #:</strong> {{ beneficiaryAccount?.accountNumber }}</p>
+                    <p><strong>Institution:</strong> {{ beneficiaryAccount?.institution }}</p>
+                    <p><strong>Branch:</strong> {{ beneficiaryAccount?.branch }}</p>
+                    <p><strong>Account Description:</strong> {{ beneficiaryAccount?.accountDescription }}</p>
+                    <p><strong>File Type:</strong> {{ beneficiaryAccount?.fileType }}</p>
+                    <p><strong>Method:</strong> {{ beneficiaryAccount?.method }}</p>
+                    </div>
+
+                    <!-- AVS Section -->
+                    <div class="avs-section alert alert-success">
+                    <strong>AVS Successfully Matched on {{ beneficiaryAccount?.avsMatchedAt }}</strong>
+                    <button class="btn btn-sm btn-secondary ml-2" @click="showAvsDetails">Show Details</button>
+                    </div>
+
+                    <!-- Authorizations Section -->
+                    <div class="authorization-section">
+                    <h6>Authorisations</h6>
+                    <div class="authorization-box alert alert-success">
+                        <strong>{{ beneficiaryAccount?.authorizer?.name }}</strong> on {{ beneficiaryAccount?.authorizedAt }}
+                        <p>logged in as <em>{{ beneficiaryAccount?.authorizer?.email }}</em></p>
+                    </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal" @click="closeModal">Close</button>
+                </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Beneficiary Account Details Modal ends here -->
+
     </div>
 </template>
 
@@ -338,9 +448,11 @@ export default {
             activeTab: 0,
             usersTable: [],
             sourceAccountsTable: [],
-            beneficiaryAccounts: [],
+            
             auditTrails: [],
             deactivatedUsersTable: [],
+            viewFirmAccountModalInstance: null,
+            viewBeneficiaryAccountModalInstance: null,
             newUser: {
                 email: '',
                 name: '',
@@ -357,6 +469,7 @@ export default {
             },
             modalInstance: null, // Store the modal instance
             firmAccount: {}, // Store the selected firm account data for editing
+            beneficiaryAccount: [],
         };
     },
     mounted() {
@@ -800,6 +913,14 @@ export default {
             if (this.modalInstance) {
                 this.modalInstance.hide();
             }
+
+            if(this.viewBeneficiaryAccountModalInstance){
+                this.viewBeneficiaryAccountModalInstance.hide();
+            }
+
+            if(this.viewFirmAccountModalInstance){
+                this.viewFirmAccountModalInstance.hide();
+            }
         },
         editUser(user) {
             alert(`Edit user ${user.username}`);
@@ -862,7 +983,7 @@ export default {
                             return `
                                  ${showCheckIcon ? `<button class='btn btn-outline-info btn-sm authorize-firmaccount-btn' data-toggle='tooltip' title='Authorise this firm Account' data-id='${data.id}'><i class='fas fa-check text-success'></i></button>` : ''}
                                  ${showCheckIcon ? '<button class="btn btn-outline-secondary btn-sm" data-toggle="tooltip" title="Edit this firm Account" onclick="editFirmAccount(${row.id})"><i class="fas fa-edit"></i></button>' : ''}
-                                  ${!showCheckIcon ? '<button class="btn btn-outline-info btn-sm" data-toggle="tooltip" title="View this firm Account"><i class="fas fa-search"></i></button>' : ''}
+                                  ${!showCheckIcon ? '<button class="btn btn-outline-info btn-sm view-firmaccount-btn" data-toggle="tooltip" title="View this firm Account"><i class="fas fa-search"></i></button>' : ''}
                                 
                                 <button class="btn btn-outline-danger btn-sm delete-firmaccount-btn" data-toggle="tooltip" title="Delete this firm Account" data-id="${data.id}"><i class="fas fa-trash"></i></button>
                             `;
@@ -887,6 +1008,16 @@ export default {
                 const id = $(event.currentTarget).data('id');
                 this.confirmFirmAccountDelete(id);
             });
+
+            // Event listener for delete button
+            $('#source-accounts-table tbody').on('click', '.view-firmaccount-btn', (event) => {
+                //const id = $(event.currentTarget).data('id');
+                //this.confirmFirmAccountDelete(id);
+                //alert('testing view from firmaccount');
+                this.viewFirmAccountModalInstance = new bootstrap.Modal(document.getElementById('firmAccountModal'));
+                this.viewFirmAccountModalInstance.show();
+            });
+
             // Event listener for delete button
             $('#source-accounts-table tbody').on('click', '.authorize-firmaccount-btn', (event) => {
                 const id = $(event.currentTarget).data('id');
@@ -935,7 +1066,7 @@ export default {
                             return `
                                  ${showCheckIcon ? `<button class='btn btn-outline-info btn-sm authorize-beneficiary-btn' data-toggle='tooltip' title='Authorise this beneficiary Account' data-id='${data.id}'><i class='fas fa-check text-success'></i></button>` : ''}
                                  ${showCheckIcon ? '<button class="btn btn-outline-secondary btn-sm" data-toggle="tooltip" title="Edit this beneficiary Account" onclick="editFirmAccount(${row.id})"><i class="fas fa-edit"></i></button>' : ''}
-                                  ${!showCheckIcon ? '<button class="btn btn-outline-info btn-sm" data-toggle="tooltip" title="View this beneficiary Account"><i class="fas fa-search"></i></button>' : ''}
+                                  ${!showCheckIcon ? '<button class="btn btn-outline-info btn-sm view-beneficiary-btn" data-toggle="tooltip" title="View this beneficiary Account"><i class="fas fa-search"></i></button>' : ''}
                                 
                                 <button class="btn btn-outline-danger btn-sm delete-beneficiary-btn" data-toggle="tooltip" title="Delete this beneficiary Account" data-id="${data.id}"><i class="fas fa-trash"></i></button>
                             `;
@@ -977,6 +1108,16 @@ export default {
                 const id = $(event.currentTarget).data('id');
                 this.confirmDelete(id);
             });
+
+            // Event listener for delete button
+            $('#beneficiary-accounts-table tbody').on('click', '.view-beneficiary-btn', (event) => {
+                //const id = $(event.currentTarget).data('id');
+                //this.confirmDelete(id);
+                //alert('testing view beneficiary ');
+                this.viewBeneficiaryAccountModalInstance = new bootstrap.Modal(document.getElementById('beneficiaryAccountModal'));
+                this.viewBeneficiaryAccountModalInstance.show();
+            });
+
              // Event listener for delete button
              $('#beneficiary-accounts-table tbody').on('click', '.authorize-beneficiary-btn', (event) => {
                
