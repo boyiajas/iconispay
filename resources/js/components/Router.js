@@ -66,6 +66,9 @@ const routes = [
     { path: '/firmaccount/new', name: 'newfirmaccount', component: NewFirmAccount },
     { path: '/beneficiary/new', name: 'newbeneficiary', component: NewBeneficiary },
     { path: '/setup', name: 'setup', component: Setup},
+
+    // Catch-all route to redirect non-existing routes to the home page
+    { path: '/:pathMatch(.*)*', redirect: '/home' },
 ];
 
 const router = createRouter({
