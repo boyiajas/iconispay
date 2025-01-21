@@ -12,20 +12,20 @@
                 <h5>Pending Confirmation Files</h5>
             </div>
             <div class="card-body">
-                <div class="table-responsive">
-                    <table id="pending-confirmation-files-table" class="table table-bordered table-striped display nowrap" style="width:100%">
-                        <thead>
-                            <tr class="table-secondary">
-                                <th>Account</th>
-                                <th>File</th>
-                                <th>Payments</th>
-                                <th>Date Generated</th>
-                                <th>Total Amount</th>
-                                <th>Status</th>
-                            </tr>
-                        </thead>
-                    </table>
-                </div>
+                
+                <table id="pending-confirmation-files-table" class="table table-bordered table-striped display nowrap" style="width:100%">
+                    <thead>
+                        <tr class="table-secondary">
+                            <th>Account</th>
+                            <th>File</th>
+                            <th>Payments</th>
+                            <th>Date Generated</th>
+                            <th>Total Amount</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                </table>
+                
             </div>
         </div>
 
@@ -42,20 +42,20 @@
                     <input type="date" v-model="toDate" class="form-control me-3" id="toDate">
                     <button class="btn btn-primary" @click="filterClosedFiles">Go</button>
                 </div>
-                <div class="table-responsive">
-                    <table id="recently-closed-files-table" class="table table-bordered table-striped display nowrap" style="width:100%">
-                        <thead>
-                            <tr class="table-secondary">
-                                <th>Account</th>
-                                <th>File</th>
-                                <th>Payments</th>
-                                <th>Date Completed</th>
-                                <th>Total Amount</th>
-                                <th>Status</th>
-                            </tr>
-                        </thead>
-                    </table>
-                </div>
+                
+                <table id="recently-closed-files-table" class="table table-bordered table-striped display nowrap" style="width:100%">
+                    <thead>
+                        <tr class="table-secondary">
+                            <th>Account</th>
+                            <th>File</th>
+                            <th>Payments</th>
+                            <th>Date Completed</th>
+                            <th>Total Amount</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                </table>
+                
             </div>
         </div>
     </div>
@@ -100,7 +100,7 @@ export default {
         initializePendingConfirmationFilesTable() {
             this.pendingConfirmationFilesTable = $('#pending-confirmation-files-table').DataTable({
                 processing: true,
-                serverSide: true,
+                serverSide: false,
                 ajax: {
                     url: `/api/firm-accounts/${this.$route.params.id}/pending-confirmation-files`,
                     type: 'GET',
@@ -138,7 +138,7 @@ export default {
         initializeRecentlyClosedFilesTable() {
             this.recentlyClosedFilesTable = $('#recently-closed-files-table').DataTable({
                 processing: true,
-                serverSide: true,
+                serverSide: false,
                 ajax: {
                     url: `/api/firm-accounts/${this.$route.params.id}/recently-closed-files`,
                     type: 'GET',
