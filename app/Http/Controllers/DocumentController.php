@@ -90,6 +90,8 @@ class DocumentController extends Controller
                 'file_path' => $filePath,
                 'file_type' => $file->getClientMimeType(),
             ]);
+            
+            logHistory($request->input('requisition_id'), 'Document Added to Requisition', "document # {$newFileName} was added to this requisition.");
     
             return response()->json([
                 'message' => 'Document uploaded successfully',
