@@ -266,8 +266,8 @@ export default {
                             
                             return `
                                 ${data.new_requisition_count} Requisition(s) 
-                                <button class="btn ${(data.generated_file_count > 0 && data.new_requisition_count <= 0) ? 'bg-info text-white' : (data.new_requisition_count > 0 ? 'bg-info text-white generate-file-btn' : 'bg-default-default')} btn-sm ml-2 px-1 py-0"
-                                    data-id="${data.account_id}" ${data.requisition_count > 0 ? '' : 'disabled'}>
+                                <button class="btn ${(data.generated_file_count > 0 && data.new_requisition_count > 0) ? 'bg-info text-white generate-file-btn' : (data.new_requisition_count > 0 ? 'bg-info text-white generate-file-btn' : 'bg-default-default')} btn-sm ml-2 px-1 py-0"
+                                    data-id="${data.account_id}" ${(data.requisition_count > 0  && data.new_requisition_count > 0) ? '' : 'disabled'}>
                                     Generate
                                      ${data.new_requisition_count > 0 ? `<span class="badge text-info bg-white rounded-pill pr-1 pl-1">
                                         ${data.new_requisition_count}
