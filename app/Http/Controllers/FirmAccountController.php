@@ -10,6 +10,8 @@ use App\Models\Requisition;
 use Carbon\Carbon;
 use DataTables;
 use Illuminate\Http\Request;
+use Maatwebsite\Excel\Facades\Excel;
+use App\Exports\FnbGeneratePayAwayFile;
 
 class FirmAccountController extends Controller
 {
@@ -275,55 +277,11 @@ class FirmAccountController extends Controller
         $standardBankFirstRowFileContent = '';
         $nedBankLastRowFileContent = '';
         $nedBankFirstRowFileContent = '';
-
-        /* foreach ($requisitions as $requisition) {
-            foreach ($requisition->payments as $payment) {
-                // Get the payToAccount and its details
-                $payToAccount = $payment->payToAccount;
-                $accountNumber = $payToAccount ? $payToAccount->account_number : 'N/A';
-                $branchCode = $payToAccount ? $payToAccount->branch_code : 'N/A';
-                $recipientReference = $payment->recipient_reference ?? 'N/A';
-
-                // Build the content of the file
-                switch ($bank) {
-                    case 'ABSA':
-                    case 'Capitec':
-                    case 'FNB':
-                    case 'Standard':
-                    case 'Capitec Business':
-                        $fileContent .= "ABSADATA\t" . "3450000" . $absacount . "C" . $company_name . "\t\t";
-                        $fileContent .= $firmAccount->account_number . $firmAccount->branch_code . "3" . $payment->my_reference;
-                        $fileContent .= "\t\t" . $recipientReference;
-                        $fileContent .= "\t\t" . $accountNumber . $branchCode . $recipientReference;
-                        //$fileContent .= "\t\t" . number_format($payment->amount, 2, '.', ',');
-                        $fileContent .= "\t\t" . number_format($payment->amount, 2, '.', '');
-                        $fileContent .= Carbon::parse($payment->created_at)->format('ymd') . "N  0000000CNAD HOC\t I\n";
-                        break;
-                    
-                    case 'Nedbank':
-                        $rowType = $increment < $requisition->payments->count() ? '10' : '12';
-
-                        $fileContent .= $rowType . $firmAccount->branch_code . '0' . $firmAccount->account_number;
-                        $fileContent .= '000000000' . str_pad($increment, 2, '0', STR_PAD_LEFT);
-                        $fileContent .= $branchCode . $accountNumber;
-                        $fileContent .= '10000' . $payment->amount . Carbon::parse($payment->created_at)->format('ymd') . ($rowType === '10' ? '000000 ' : '100000');
-                        $fileContent .= str_pad($recipientReference, 30);
-                        $fileContent .= str_pad($payment->recipient_name, 30);
-                        $fileContent .= '00000000000000000000                21' . PHP_EOL;
-
-                    default:
-                        // Handle other banks if necessary
-                        break;
-                }
-
-                $absacount += 1000;
-            }
-
-            $requisitionIds[] = $requisition->id; // Add requisition ID to the array
-
-            // Optionally, update each requisition's status_id to 6 (processed)
-            // $requisition->update(['status_id' => 6]);
-        } */
+        $excelData = [
+            'date' => now()->format('d/m/Y'), // Set dynamic date for the second row
+            'firmAccountNumber' => $firmAccount->account_number, // Firm account number for the third row
+            'tableData' => [], // Initialize table data
+        ];
 
         foreach ($requisitions as $requisition) {
             
@@ -477,6 +435,45 @@ class FirmAccountController extends Controller
 
                     case 'FNB':
 
+                        $excelData['tableData'][] = [
+                            'RECIPIENT NAME' => $payToAccount->display_text ?? 'N/A',
+                            'RECIPIENT ACCOUNT' => $payToAccount->account_number ?? 'N/A',
+                            'RECIPIENT ACCOUNT TYPE' => $payToAccount->account_type ?? 'N/A',
+                            'BRANCHCODE' => $payToAccount->branch_code ?? 'N/A',
+                            'AMOUNT' => number_format($payment->amount, 2, '.', ''),
+                            'OWN REFERENCE' => $payment->my_reference ?? 'N/A',
+                            'RECIPIENT REFERENCE' => $payment->recipient_reference ?? 'N/A',
+                            'EMAIL 1 NOTIFY' => '',
+                            'EMAIL 1 ADDRESS' => '',
+                            'EMAIL 1 SUBJECT' => '',
+                            'EMAIL 2 NOTIFY' => '',
+                            'EMAIL 2 ADDRESS' => '',
+                            'EMAIL 2 SUBJECT' => '',
+                            'EMAIL 3 NOTIFY' => '',
+                            'EMAIL 3 ADDRESS' => '',
+                            'EMAIL 3 SUBJECT' => '',
+                            'EMAIL 4 NOTIFY' => '',
+                            'EMAIL 4 ADDRESS' => '',
+                            'EMAIL 4 SUBJECT' => '',
+                            'EMAIL 5 NOTIFY' => '',
+                            'EMAIL 5 ADDRESS' => '',
+                            'EMAIL 5 SUBJECT' => '',
+                            'FAX 1 NOTIFY' => '',
+                            'FAX 1 CODE' => '',
+                            'FAX 1 NUMBER' => '',
+                            'FAX 1 SUBJECT' => '',
+                            'FAX 2 NOTIFY' => '',
+                            'FAX 2 CODE' => '',
+                            'FAX 2 NUMBER' => '',
+                            'FAX 2 SUBJECT' => '',
+                            'SMS 1 NOTIFY' => '',
+                            'SMS 1 CODE' => '',
+                            'SMS 1 NUMBER' => '',
+                            'SMS 2 NOTIFY' => '',
+                            'SMS 2 CODE' => '',
+                            'SMS 2 NUMBER' => '',
+                        ];
+                        
                         break;
     
                     default:
@@ -494,6 +491,32 @@ class FirmAccountController extends Controller
             
         }
 
+        if($bank === 'FNB'){
+            /* if (empty($excelData['tableData'])) {
+                return response()->json(['message' => 'No payments found to export.'], 400);
+            } */
+
+            // Clean output buffer to avoid corruption
+            if (ob_get_contents()) {
+                ob_end_clean();
+            }
+
+            // File name for the Excel export
+            //$fileName = "FNB_Payment_File_{$firmAccount->account_number}_" . now()->format('Ymd_His') . '.xlsx';
+            // Generate the CSV file
+            $fileName = "FNB_Payment_File_{$firmAccount->account_number}_" . now()->format('Ymd_His') . '.csv';
+
+    
+
+            $filePath = storage_path("app/files/{$fileName}");
+            // Use Maatwebsite to export as CSV
+            $fileContent = Excel::store(new FnbGeneratePayAwayFile($excelData), "files/{$fileName}");
+
+            //$fileContent = Excel::store(new FnbGeneratePayAwayFile($excelData), "files/{$fileName}");
+
+            //dd($fileContent);
+        }
+
         if($bank === 'Standard'){ //here we want to add the last part of the rows to the standard bank file
             $fileContent = $standardBankFirstRowFileContent . $fileContent;
             $fileContent .= $standardBankLastRowFileContent;
@@ -504,8 +527,12 @@ class FirmAccountController extends Controller
             $fileContent .= $nedBankLastRowFileContent;
         }       
 
-        // Write content to the file
-        file_put_contents($filePath, $fileContent);
+        if($bank === 'FNB'){
+
+        }else{
+             // Write content to the file
+            file_put_contents($filePath, $fileContent);
+        }
 
         $fileHash = hash_file('sha256', $filePath);  // Generate the hash for the file
         
@@ -746,7 +773,7 @@ class FirmAccountController extends Controller
                     return $requisition->calculateTransactionValue();
                 });
 
-                $dateGenerated = \Carbon\Carbon::parse($generatedAt)->format('d M Y H:i');
+                $dateGenerated = Carbon::parse($generatedAt)->format('d M Y H:i');
                 $fileId = $requisitions->first()->fileUploads->first()->id; // Get the file ID from the first file upload
 
 
@@ -755,7 +782,7 @@ class FirmAccountController extends Controller
 
                 return [
                     'display' => $account->display_text,
-                    'default_file_name' => "Default - {$account->account_number} (".\Carbon\Carbon::parse($generatedAt)->format('Y-m-d Hi').")",
+                    'default_file_name' => "Default - {$account->account_number} (".Carbon::parse($generatedAt)->format('Y-m-d Hi').")",
                     'payments' => $totalPayments,
                     'date_generated' => $dateGenerated,
                     'total_amount' => $totalAmount,
