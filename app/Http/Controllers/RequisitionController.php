@@ -299,7 +299,7 @@ class RequisitionController extends Controller
         }
 
         // Log the history
-        logHistory($requisition->id, 'Source Account Updated', 'Requisition source account was successfully updated.');
+        logHistory($requisition->id, 'Source Account Updated', "Requisition source account # {$requisition->firmAccount->display_text} - {$requisition->firmAccount->account_number} was successfully updated.");
 
         return response()->json([
             'message' => 'Requisition updated successfully',
