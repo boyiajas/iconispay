@@ -187,11 +187,14 @@ class RequisitionController extends Controller
                 //'payments.payToFirmAccount',
                 'payments.sourceFirmAccount',
                 'deposits.firmAccount',
-                'deposits.user'
+                'deposits.user',
             );
 
             // Transform the requisition data to include payToAccount details
             $requisitionData = $requisition->toArray();
+
+            // Add the file upload ID to the data
+            $requisitionData['file_upload_id'] = $requisition->getFileUploadId();
 
             // Add payToAccount details for each payment
             $requisitionData['payments'] = $requisition->payments->map(function ($payment) {

@@ -120,4 +120,16 @@ class Requisition extends Model
     {
         return $this->hasMany(Notification::class);
     }
+
+    /**
+     * Get the FileUpload ID the requisition belongs to.
+     *
+     * @return int|null
+     */
+    public function getFileUploadId()
+    {
+        $fileUpload = $this->fileUploads()->first();
+
+        return $fileUpload ? $fileUpload->id : null;
+    }
 }

@@ -7,7 +7,7 @@
             <span class="pull-right">
                 <router-link :to="{ name: 'emailrequestor', params: { requisitionId: requisitionId } }" class="btn btn-white btn-default-default btn-sm ml-1">Email Requestor</router-link>
                 <router-link :to="{ name: 'emailsignatory', params: { requisitionId: requisitionId } }" class="btn btn-white btn-default-default btn-sm ml-1">Email Signatory</router-link>
-                <router-link to="/requisition/new" class="btn btn-white btn-default-default btn-sm ml-1">File History</router-link>
+                <div class="btn btn-white btn-default-default btn-sm ml-1" @click="navigateToAllTransactionsForAFile(requisition.file_upload_id)">File History</div>
                 <button class="btn btn-light btn-default-default btn-sm ml-1" @click="printPage"><i class="fas fa-print"></i> Print</button>
                 <!-- <router-link to="/requisition/new" class="btn btn-primary btn-sm ml-1"><i class="fas fa-print"></i> Print</router-link> -->
             </span>
@@ -535,7 +535,7 @@
                 <div class="card mb-4">
                     <div class="card-header d-flex justify-content-between">
                         <h6>Documents</h6>
-                        <button class="btn btn-white btn-sm" @click="openUploadModal"><i class="fa fa-plus" aria-hidden="true"></i> New Document</button>
+                        <button class="btn btn-white btn-sm" @click="openUploadModal" v-if="!this.requisition.locked"><i class="fa fa-plus" aria-hidden="true"></i> New Document</button>
                     </div>
                     <div class="card-body">
                         <!-- Documents DataTable -->
@@ -700,7 +700,7 @@
                         </div>
                         <div class="modal-footer">
                             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" @click="closeModal">Cancel</button>
-                            <button type="submit" class="btn btn-primary">Upload</button>
+                            <button type="submit" class="btn btn-primary"><span id="buttonSpinner" class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span> Upload</button>
                         </div>
                     </form>
                 </div>
@@ -2360,6 +2360,9 @@ export default {
 
         // Submit the document form to the backend via Axios
         uploadDocument() {
+            const buttonSpinner = document.getElementById('buttonSpinner');
+            buttonSpinner.classList.remove('d-none');
+
             const formData = new FormData();
             formData.append('description', this.documentForm.description);
             formData.append('file', this.documentForm.file);
@@ -2372,6 +2375,7 @@ export default {
             })
             .then(response => {
                 console.log('Document uploaded successfully:', response.data);
+                buttonSpinner.classList.add('d-none');
                 // Close the modal and reset form
                 this.closeModal();
                 this.documentForm.description = '';
@@ -2383,6 +2387,7 @@ export default {
                 }
             })
             .catch(error => {
+                buttonSpinner.classList.add('d-none');
                 console.error('Error uploading document:', error);
             });
         },
@@ -3063,6 +3068,15 @@ export default {
                         this.errors = error.response.data.errors;  // Show validation errors
                     }
                 });
+        },
+
+        navigateToAllTransactionsForAFile(fileId) {
+            
+            this.$router.push({
+                name: 'alltransactionsforafile',
+                params: { id: fileId },
+                state: { requisition: this.requisition }
+            });
         },
 
         // Reset the form fields and errors

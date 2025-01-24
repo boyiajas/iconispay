@@ -13,6 +13,7 @@ import EmailSignatory from './email/emailsignatory.vue';
 import EmailRequestor from './email/emailrequestor.vue';
 import AccountFileEdit from './account/accountfileedit.vue';
 import FileManagement from './account/filemanagement.vue';
+import AllTransactionsForAFile from './account/alltransactionsforafile.vue';
 import ReadyForPayment from './report/readyForPayment.vue';
 import PaidByDate from './report/paidByDate.vue';
 
@@ -43,6 +44,11 @@ const routes = [
         path: '/file-management/:id',
         name: 'filemanagement',
         component: FileManagement
+    },
+    {
+        path: '/reports/alltransactionsforfilereference/:id',
+        name: 'alltransactionsforafile',
+        component: AllTransactionsForAFile
     },
     {
         path: '/requisitions/status/:status',
