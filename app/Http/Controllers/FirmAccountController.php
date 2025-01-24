@@ -438,7 +438,7 @@ class FirmAccountController extends Controller
                         $excelData['tableData'][] = [
                             'RECIPIENT NAME' => $payToAccount->display_text ?? 'N/A',
                             'RECIPIENT ACCOUNT' => $payToAccount->account_number ?? 'N/A',
-                            'RECIPIENT ACCOUNT TYPE' => $payToAccount->account_type ?? 'N/A',
+                            'RECIPIENT ACCOUNT TYPE' => ($payToAccount->account_type_id - 1) ?? 'N/A',
                             'BRANCHCODE' => $payToAccount->branch_code ?? 'N/A',
                             'AMOUNT' => number_format($payment->amount, 2, '.', ''),
                             'OWN REFERENCE' => $payment->my_reference ?? 'N/A',
