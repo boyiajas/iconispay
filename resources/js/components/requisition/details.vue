@@ -700,7 +700,7 @@
                         </div>
                         <div class="modal-footer">
                             <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" @click="closeModal">Cancel</button>
-                            <button type="submit" class="btn btn-primary"><span id="buttonSpinner" class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span> Upload</button>
+                            <button type="submit" class="btn btn-primary"><span id="uploadbuttonSpinner" class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span> Upload</button>
                         </div>
                     </form>
                 </div>
@@ -2360,8 +2360,8 @@ export default {
 
         // Submit the document form to the backend via Axios
         uploadDocument() {
-            const buttonSpinner = document.getElementById('buttonSpinner');
-            buttonSpinner.classList.remove('d-none');
+            const uploadbuttonSpinner = document.getElementById('uploadbuttonSpinner');
+            uploadbuttonSpinner.classList.remove('d-none');
 
             const formData = new FormData();
             formData.append('description', this.documentForm.description);
@@ -2375,7 +2375,7 @@ export default {
             })
             .then(response => {
                 console.log('Document uploaded successfully:', response.data);
-                buttonSpinner.classList.add('d-none');
+                uploadbuttonSpinner.classList.add('d-none');
                 // Close the modal and reset form
                 this.closeModal();
                 this.documentForm.description = '';
@@ -2387,7 +2387,7 @@ export default {
                 }
             })
             .catch(error => {
-                buttonSpinner.classList.add('d-none');
+                uploadbuttonSpinner.classList.add('d-none');
                 console.error('Error uploading document:', error);
             });
         },
