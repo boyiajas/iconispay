@@ -7,7 +7,7 @@
             <span class="pull-right">
                 <router-link :to="{ name: 'emailrequestor', params: { requisitionId: requisitionId } }" class="btn btn-white btn-default-default btn-sm ml-1">Email Requestor</router-link>
                 <router-link :to="{ name: 'emailsignatory', params: { requisitionId: requisitionId } }" class="btn btn-white btn-default-default btn-sm ml-1">Email Signatory</router-link>
-                <div class="btn btn-white btn-default-default btn-sm ml-1" @click="navigateToAllTransactionsForAFile(requisition.file_upload_id)">File History</div>
+                <button class="btn btn-white btn-default-default btn-sm ml-1" @click="navigateToAllTransactionsForAFile(requisition?.file_upload_id ?? 0)">File History</button>
                 <button class="btn btn-light btn-default-default btn-sm ml-1" @click="printPage"><i class="fas fa-print"></i> Print</button>
                 <!-- <router-link to="/requisition/new" class="btn btn-primary btn-sm ml-1"><i class="fas fa-print"></i> Print</router-link> -->
             </span>
@@ -419,7 +419,7 @@
 
                                     <div v-else class="txt-xs">No Payments have been added</div>
                                 
-                                    <div class="row ml-0 p-0">
+                                    <div class="row ml-0 p-0 mb-0">
                                         <div class="col-md-3">
                                             
                                         </div>
@@ -1388,6 +1388,7 @@ import PermissionControl from '../permission/PermissionControl.vue';
 import { useToast } from 'vue-toastification';
 import VueMultiselect from "vue-multiselect";
 import 'vue-multiselect/dist/vue-multiselect.min.css'; // Import styles
+import { useRequisitionStore } from '../store/datastore';
 
 export default {
     name: 'RequisitionDetails',
@@ -1403,6 +1404,7 @@ export default {
         },
         
     },
+    
     components: {
         PermissionControl, VueMultiselect
     },
@@ -1586,6 +1588,11 @@ export default {
         // Initialize toast
         const toast = useToast();
         return { toast };
+    },
+    created() {
+        // Fetch requisition data when the component is created
+        //const requisitionStore = useRequisitionStore();
+        //this.requisition = requisitionStore.requisition;
     },
     methods: {
         // Fetch all users for selection
@@ -3071,11 +3078,14 @@ export default {
         },
 
         navigateToAllTransactionsForAFile(fileId) {
+            //console.log("requisition: ", this.requisition);
+
+            const requisitionStore = useRequisitionStore();
+            requisitionStore.setRequisition(this.requisition); // Store data in Pinia
             
             this.$router.push({
                 name: 'alltransactionsforafile',
-                params: { id: fileId },
-                state: { requisition: this.requisition }
+                params: { id: fileId }
             });
         },
 

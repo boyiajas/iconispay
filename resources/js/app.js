@@ -11,6 +11,8 @@ import 'vue-toastification/dist/index.css'; // Toast CSS
 import axios from 'axios';
 import $ from 'jquery'; // Import jQuery for DataTables AJAX interception
 import LoginModal from './components/authentication/LoginModal.vue'; // Login Modal component
+import { createPinia } from 'pinia';
+import piniaPluginPersistedstate from 'pinia-plugin-persistedstate';
 
 // Create Vue app
 const app = createApp(App);
@@ -23,9 +25,16 @@ app.use(Toast, {
     pauseOnHover: true,
 });
 
+// Create a Pinia instance
+const pinia = createPinia();
+pinia.use(piniaPluginPersistedstate);
+
+app.use(pinia);
+
 // Use Vue Router and Ziggy for routing
 app.use(router);
 app.use(ZiggyVue); // Use Ziggy for Laravel route handling
+
 
 // Set up an Axios interceptor to handle session expiry and server errors
 axios.interceptors.response.use(

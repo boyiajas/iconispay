@@ -13,6 +13,9 @@ a{
 .btn-white{
     background-color: #fff !important;
 }
+.text-white{
+    color: #fff !important;
+}
 
 .btn-default-default{
     border: solid 1px #ccc !important;

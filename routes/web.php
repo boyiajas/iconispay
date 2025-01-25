@@ -194,6 +194,7 @@ Route::group(['middleware' => 'no_cache'], function (){
         Route::get('/recently-closed-files', [FirmAccountController::class, 'getRecentlyClosedFiles']);
 
         Route::get('/file-management/{id}', [FileUploadController::class, 'getFileDetails']);
+        Route::get('/files/{id}/requisitions', [FileUploadController::class, 'getAllRequisitionsForAFile']);
         
         Route::resource('/institutions', InstitutionController::class);
 

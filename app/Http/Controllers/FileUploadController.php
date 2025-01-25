@@ -26,6 +26,78 @@ class FileUploadController extends Controller
         //
     }
 
+    public function getAllRequisitionsForAFile($id)
+    {
+        // Retrieve the specified file upload by ID, along with related requisitions and their details
+        $fileUpload = FileUpload::with([
+            'requisitions' => function ($query) {
+                $query->with([
+                    'payments.beneficiaryAccount.institution', // Beneficiary account with institution details
+                    'payments.payToFirmAccount.institution', // Firm account with institution details
+                    'payments.beneficiaryAccount.accountType', // Beneficiary account type
+                    'payments.payToFirmAccount.accountType', // Firm account type
+                    'payments.sourceFirmAccount', // Source firm account details
+                    'deposits.firmAccount', // Deposits firm account details
+                    'deposits.user', // User who created the deposit
+                    'user', // Requisition user details
+                    'authorizedBy', // Authorized by user details
+                    'lockedBy', // Locked by user details
+                    'firmAccount.institution', // Firm account institution
+                ]);
+            },
+            'firmAccount.institution', // File firm account with institution details
+            'user', // File user details
+        ])->find($id);
+
+        // Check if the file upload exists
+        if (!$fileUpload) {
+            return response()->json(['error' => 'File not found'], 404);
+        }
+
+        // Transform the requisitions data
+        $requisitions = $fileUpload->requisitions->map(function ($requisition) {
+            $requisitionData = $requisition->toArray();
+
+            // Add file upload ID to each requisition
+            $requisitionData['file_upload_id'] = $requisition->file_upload_id;
+
+            // Transform payments to include payToAccount and beneficiary details
+            $requisitionData['payments'] = $requisition->payments->map(function ($payment) {
+                $paymentData = $payment->toArray();
+
+                // Get payToAccount (Beneficiary or Firm Account)
+                $payToAccount = $payment->payToFirmAccount ?? $payment->beneficiaryAccount;
+                $payToAccountData = $payToAccount ? $payToAccount->toArray() : null;
+
+                // Add institution and account type details to payToAccount
+                if ($payToAccount) {
+                    if ($payToAccount->institution) {
+                        $payToAccountData['institution'] = $payToAccount->institution->toArray();
+                    }
+                    if ($payToAccount->accountType) {
+                        $payToAccountData['account_type'] = $payToAccount->accountType->toArray();
+                    }
+                }
+
+                // Include the transformed payToAccount in the payment data
+                $paymentData['pay_to_account'] = $payToAccountData;
+
+                return $paymentData;
+            });
+
+            return $requisitionData;
+        });
+
+        // Structure the response
+        $responseData = [
+            'file_upload' => $fileUpload->toArray(),
+            'requisitions' => $requisitions,
+        ];
+
+        return response()->json($responseData);
+    }
+
+
     public function getFileDetails($id)
     {
         // Retrieve the specified file upload by ID, along with related requisitions and their payments
