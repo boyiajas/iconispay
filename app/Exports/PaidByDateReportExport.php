@@ -59,6 +59,10 @@ class PaidByDateReportExport implements FromCollection, WithHeadings
      */
     public function collection(): Collection
     {
+        // Parse and format the date range
+        $fromDate = Carbon::parse($this->fromDate)->startOfDay();
+        $toDate = Carbon::parse($this->toDate)->endOfDay();
+
         // Load payments within the date range, with relationships
         $payments = Payment::with([
             'sourceFirmAccount.institution',
@@ -69,7 +73,10 @@ class PaidByDateReportExport implements FromCollection, WithHeadings
             'payToFirmAccount.category',
             'requisition.matter',
         ])
-        ->whereBetween('created_at', [$this->fromDate, $this->toDate])
+        //->whereBetween('created_at', [$this->fromDate, $this->toDate])
+        ->whereHas('requisition', function ($query) use ($fromDate, $toDate) {
+            $query->whereBetween('completed_at', [$fromDate, $toDate]);
+        })
         ->get();
 
         // Prepare data for the report
