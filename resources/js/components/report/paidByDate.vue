@@ -25,6 +25,13 @@
                 </div>
                
               </div>
+
+              <div :class="['mb-0', showNotification ? '' : 'd-none']" id="report-generate-notification">
+                  <div class="alert alert-info p-2 pb-0 mb-0" role="alert">
+                      <h6 style="font-weight: normal;">Your report has been generated, the file is available  for download in the browser</h6>
+                  </div>
+                 
+              </div>
              
             </div>
           </form>
@@ -42,7 +49,16 @@
       return {
         fromDate: "", // Selected from date
         toDate: "", // Selected to date
+        showNotification: false, //Toggle for report notification
       };
+    },
+    watch: {
+      fromDate() {
+        this.resetNotification();
+      },
+      toDate() {
+        this.resetNotification();
+      },
     },
     methods: {
      
@@ -51,7 +67,7 @@
             alert("Please select both from and to dates.");
             return;
         }
-
+        
         axios
             .post(
                 "/api/reports/paid-by-date",
@@ -71,6 +87,8 @@
                 document.body.appendChild(link);
                 link.click();
                 link.remove();
+
+                this.showNotification = true;
             })
             .catch((error) => {
                 console.error(
@@ -78,6 +96,9 @@
                     error.response?.data || error.message
                 );
             });
+    },
+    resetNotification() {
+      this.showNotification = false; // Hide notification when dates change
     },
     cancelButton() {
             this.$router.go(-1);
