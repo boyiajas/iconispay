@@ -248,7 +248,17 @@ class UserController extends Controller
      */
     public function destroy(User $user)
     {
+        // Delete certificates explicitly if needed
+        $user->certificates()->each(function ($certificate) {
+            // Optionally delete the certificate file from storage
+            if ($certificate->file_path) {
+                \Storage::delete($certificate->file_path);
+            }
+            $certificate->delete();
+        });
+
         $user->delete();
+        
         return response()->json(['message' => 'User deleted successfully.']);
     }
 }
