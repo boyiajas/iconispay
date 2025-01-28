@@ -365,7 +365,7 @@ class PaymentController extends Controller
                         //'account_holder' => $request->input('displayText'),
                         'account_number' => $validated['account_number'],
                         //'account_type_id' => $request->input('accountType'),
-                        //'institution_id' => $request->input('institution.id'), 
+                        'institution_id' => $validated['institution_id'],//$request->input('institution.id'), 
                         'branch_code' => $validated['branch_code'],
                         'initials' => $validated['initials'],
                         'surname' => $validated['surname'],
