@@ -893,7 +893,7 @@ class FirmAccountController extends Controller
 
             $validator = Validator::make([
                 'displayText' => $row[0] ?? null,
-                'accountHolderType' => $row[2] ?? null,
+                'accountHolder' => $row[2] ?? null,
                 'accountNumber' => $row[3] ?? null,
                 'accountCategory' => $row[1] ?? null,
                 'accountType' => $row[6] ?? null,
@@ -910,7 +910,8 @@ class FirmAccountController extends Controller
                 'number_of_authorizer' => $row[15] ?? null,
             ], [
                 'displayText' => 'required|string|max:255',
-                'accountHolderType' => 'required|in:natural,juristic',
+                'accountHolder' => 'required|string|max:255',
+                //'accountHolderType' => 'required|in:natural,juristic',
                 'accountNumber' => 'required|string|max:50|unique:firm_accounts,account_number',
                 'accountCategory' => 'required|integer',
                 'accountType' => 'required|string|max:50',
@@ -929,7 +930,7 @@ class FirmAccountController extends Controller
 
             // Extract values from row using consistent indexing
             $displayText = $row[0] ?? null;
-            $accountHolderType = $row[2] ?? null;
+            $accountHolder = $row[2] ?? null;
             $accountNumber = $row[3] ?? null;
             $accountCategory = strtolower(trim($row[1] ?? ''));
             $accountType = strtolower(trim($row[6] ?? ''));
@@ -944,6 +945,7 @@ class FirmAccountController extends Controller
             $recipientReference = $row[13] ?? null;
             $verified = filter_var($row[14] ?? false, FILTER_VALIDATE_BOOLEAN);
             $number_of_authorizer = $row[15] ?? null;
+            $accountHolderType = null;
 
             // Determine `account_holder_type`
             if (empty($initials) && empty($surname)) {
@@ -953,13 +955,11 @@ class FirmAccountController extends Controller
             }
             //dd($row, $accountCategory, $accountType, $institution);
             // Retrieve category, account type, and institution IDs using LIKE for fuzzy search
-            $categoryId = Category::where('name', 'LIKE', "%$accountCategory%")->value('id');
-            $accountTypeId = AccountType::where('name', 'LIKE', "%$accountType%")->value('id');
-            $institutionId = Institution::where('short_name', 'LIKE', "%strtolower($institution)%")->value('id');
+            $categoryId = Category::where('name', 'LIKE', '%' . strtolower($accountCategory) . '%')->value('id');
+            $accountTypeId = AccountType::where('name', 'LIKE', '%' . strtolower($accountType) . '%')->value('id');
+            $institutionId = Institution::where('name', 'LIKE', '%' . strtolower($institution) . '%')->value('id');
 
-            dd($row, $accountCategory, $accountType, $institution, $categoryId, $accountTypeId, $institutionId);
-
-            if (!$categoryId || !$accountTypeId || !$institutionId) {
+            if (!$categoryId || !$institutionId) {
                 $errors[] = [
                     'row' => $index + 1,
                     'errors' => "Invalid category, account type, or institution for '$displayText'.",
@@ -988,8 +988,8 @@ class FirmAccountController extends Controller
             $firmAccount = FirmAccount::create([
                 'display_text' => $displayText,
                 'category_id' => $categoryId,
+                'account_holder' => $accountHolder,
                 'account_holder_type' => $accountHolderType,
-                'account_holder' => $displayText,
                 'account_number' => $accountNumber,
                 'account_type_id' => $accountTypeId,
                 'institution_id' => $institutionId,

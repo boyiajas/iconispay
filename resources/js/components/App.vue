@@ -3,7 +3,7 @@
       <!-- Navbar -->
       <nav class="navbar navbar-light bg-light" v-if="user">
         <div class="container">
-          <div class="mr-3 navbar-row">
+          <div class="mr-3 navbar-row ml-3">
             <router-link to="/" class="navbar-brand">Iconis® Pay</router-link>
             <div>
               <span>Logged in as: {{ user.name }} (Strauss Daly Incorporated)</span>
