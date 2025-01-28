@@ -166,6 +166,7 @@ Route::group(['middleware' => 'no_cache'], function (){
         Route::get('/firm-accounts/all-accounts', [FirmAccountController::class, 'getAllFirmAccounts']);
         // User Management Routes
         Route::resource('users', UserController::class);
+        Route::post('/import-users', [UserController::class, 'importUsers']);
         Route::get('/requisitions/{requisition}/notifications', [NotificationController::class, 'index']);
         Route::post('/requisitions/{requisition}/notifications', [NotificationController::class, 'store']);
         Route::get('/requisitions/{requisition}/history', [RequisitionController::class, 'getRequisitionHistory']);
@@ -284,7 +285,9 @@ Route::group(['middleware' => 'no_cache'], function (){
         Route::get('/logout', 'logout')->name('logout');
     });
     */
+    
     Route::get('/users', [UserController::class, 'index']);
+    
     Route::get('/firm-accounts', [FirmAccountController::class, 'index']);
     Route::get('/audit-trails', [AuditTrailController::class, 'index']);
 

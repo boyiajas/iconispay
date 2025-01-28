@@ -56,7 +56,10 @@
                 <div class="card mb-4">
                     <div class="card-header d-flex justify-content-between">
                         <h5>Users List</h5>
-                        <button class="btn btn-white btn-sm" title="Create New User" @click="addUser"><i class="fas fa-user-plus"></i> New User</button>
+                        <div>
+                            <button class="btn btn-white btn-sm me-2" @click="openImportModal"><i class="fas fa-upload"></i> Import Users</button>
+                            <button class="btn btn-white btn-sm" @click="addUser"><i class="fas fa-user-plus"></i> New User</button>
+                        </div>
                     </div>
                     <div class="card-body">
                         <table id="users-list-table" class="table table-bordered table-striped display nowrap" style="width:100%">
@@ -153,7 +156,10 @@
                 <div class="card mb-4">
                     <div class="card-header d-flex justify-content-between">
                         <h5>Deactivated Users List</h5>
-                        <button class="btn btn-white btn-sm" @click="addUser">+ New User</button>
+                        <div>
+                            <button class="btn btn-white btn-sm me-2" @click="openImportModal"><i class="fas fa-upload"></i> Import Users</button>
+                            <button class="btn btn-white btn-sm" @click="addUser"><i class="fas fa-user-plus"></i> New User</button>
+                        </div>
                     </div>
                     <div class="card-body">
                         <table id="deactivated-users-table" class="table table-bordered table-striped display nowrap" style="width:100%">
@@ -224,6 +230,66 @@
                 </div>
             </div>
         </div>
+
+        <!-- Edit User Modal -->
+        <div class="modal fade" id="editUserModal" tabindex="-1" aria-labelledby="editUserModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="editUserModalLabel">Update User</h5>
+                        <button type="button" class="btn-close" @click="closeModal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form @submit.prevent="updateUser">
+                            <!-- Full Name -->
+                            <div class="mb-3">
+                                <label for="editName" class="form-label">Full Name:</label>
+                                <input type="text" v-model="editUser.name" id="editName" class="form-control" required />
+                            </div>
+
+                            <!-- Email -->
+                            <div class="mb-3">
+                                <label for="editEmail" class="form-label">Email:</label>
+                                <input type="email" v-model="editUser.email" id="editEmail" class="form-control" required />
+                            </div>
+
+                            <!-- Password -->
+                            <div class="mb-3">
+                                <label for="editPassword" class="form-label">New Password:</label>
+                                <input type="password" v-model="editUser.password" id="editPassword" class="form-control" placeholder="Enter new password" />
+                            </div>
+
+                            <!-- Confirm Password -->
+                            <div class="mb-3">
+                                <label for="editPasswordConfirmation" class="form-label">Confirm Password:</label>
+                                <input type="password" v-model="editUser.password_confirmation" id="editPasswordConfirmation" class="form-control" placeholder="Confirm new password" />
+                            </div>
+
+                            <!-- Role Checkboxes -->
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="checkbox" v-model="editUser.is_admin" id="editIsAdmin">
+                                <label class="form-check-label" for="editIsAdmin">Is Administrator</label>
+                            </div>
+                            <div class="form-check mb-2">
+                                <input class="form-check-input" type="checkbox" v-model="editUser.authoriser_role" id="editAuthoriserRole">
+                                <label class="form-check-label" for="editAuthoriserRole">Request Authoriser Role</label>
+                            </div>
+                            <div class="form-check mb-0">
+                                <input class="form-check-input" type="checkbox" v-model="editUser.bookkeeper_role" id="editBookkeeperRole">
+                                <label class="form-check-label" for="editBookkeeperRole">Request Bookkeeper Role</label>
+                            </div>
+
+                            <!-- Buttons -->
+                            <div class="d-flex justify-content-end">
+                                <button type="submit" class="btn btn-primary me-2">Save Changes</button>
+                                <button type="button" class="btn btn-secondary" @click="closeModal">Cancel</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
 
         <!-- edit firmAccount Modal -->
         <div class="modal fade" id="editFirmAccountModal" tabindex="-1" aria-labelledby="editFirmAccountLabel" aria-hidden="true">
@@ -315,6 +381,38 @@
                             <div class="form-group d-flex justify-content-end">
                                 <button type="submit" class="btn btn-primary btn-sm">Submit</button>
                                 <button type="button" class="btn btn-secondary ms-2 btn-sm" @click="closeModal">Cancel</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Import Users Modal -->
+        <div class="modal fade" id="importUsersModal" tabindex="-1" aria-labelledby="importUsersModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="importUsersModalLabel">Import Users</h5>
+                        <button type="button" class="btn-close" @click="closeModal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form @submit.prevent="importUsers">
+                            <div class="mb-3">
+                                <label for="fileType" class="form-label">File Type:</label>
+                                <select v-model="importFileType" class="form-select" id="fileType" required>
+                                    <option value="" disabled>Select file type</option>
+                                    <option value="excel">Excel (.xlsx)</option>
+                                    <option value="csv">CSV (.csv)</option>
+                                </select>
+                            </div>
+                            <div class="mb-3">
+                                <label for="importFile" class="form-label">Upload File:</label>
+                                <input type="file" ref="importFile" id="importFile" class="form-control" accept=".xlsx, .csv" required>
+                            </div>
+                            <div class="d-flex justify-content-end">
+                                <button type="submit" class="btn btn-primary me-2"><span id="importButtonSpinner" class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span> Import</button>
+                                <button type="button" class="btn btn-secondary" @click="closeModal">Cancel</button>
                             </div>
                         </form>
                     </div>
@@ -447,7 +545,19 @@ export default {
         return {
             activeTab: 0,
             usersTable: [],
+            users: [], // Users list
+            editUser: {
+                id: null,
+                name: "Peter Pan",
+                email: "boyiajas@gmail.com",
+                password: "testing",
+                password_confirmation: "testing",
+                is_admin: false,
+                authoriser_role: false,
+                bookkeeper_role: false, 
+            }, // Object to hold user data for editing
             sourceAccountsTable: [],
+            importFileType: "",
             
             auditTrails: [],
             deactivatedUsersTable: [],
@@ -468,6 +578,7 @@ export default {
                 toDate: '',   // End date for filtering
             },
             modalInstance: null, // Store the modal instance
+            editModalInstance: null,
             firmAccount: {}, // Store the selected firm account data for editing
             beneficiaryAccount: [],
         };
@@ -481,6 +592,84 @@ export default {
         return { toast };
     },
     methods: {
+        openEditUserModal() {
+                          
+            this.editModalInstance = new bootstrap.Modal(document.getElementById("editUserModal"));
+            this.editModalInstance.show();
+            
+        },
+        // Update User
+        updateUser() {
+            // Map roles from checkboxes
+            const roles = [];
+            if (this.editUser.is_admin) roles.push("admin");
+            if (this.editUser.authoriser_role) roles.push("authoriser");
+            if (this.editUser.bookkeeper_role) roles.push("bookkeeper");
+
+            const payload = {
+                ...this.editUser,
+                roles: roles.join(","), // Comma-separated roles
+            };
+
+            axios
+                .put(`/api/users/${this.editUser.id}`, payload)
+                .then((response) => {
+
+                   
+                    this.toast.success(response.data.message || 'User updataed successfully!');
+           
+                    this.closeModal();
+                    this.loadUsers(); // Refresh user list
+                    //$('#users-list-table').DataTable().ajax.reload(null, false);
+                })
+                .catch((error) => {
+                    this.toast.error(error.response.data.message || 'An error occurred while trying to update user information.');
+                    console.error("Error updating user:", error.response?.data || error.message);
+                }); 
+        },
+        openImportModal() {
+            this.modalInstance = new bootstrap.Modal(document.getElementById("importUsersModal"));
+            this.modalInstance.show();
+        },
+        importUsers() {
+            const fileInput = this.$refs.importFile.files[0];
+            if (!fileInput) {
+                alert("Please select a file to upload.");
+                return;
+            }
+
+            const importButtonSpinner = document.getElementById('importButtonSpinner');
+            importButtonSpinner.classList.remove('d-none');
+
+            const formData = new FormData();
+            formData.append("file", fileInput);
+            formData.append("fileType", this.importFileType);
+
+            axios.post("/api/import-users", formData, {
+                headers: {
+                    "Content-Type": "multipart/form-data",
+                },
+            })
+            .then((response) => {
+                // Display the server response message in a toast
+                const importedCount = response.data.imported_users?.length || 0; // Get the number of imported users
+                const message = `${response.data.message} Imported Users: ${importedCount}.`;
+                this.toast.success(message);
+                importButtonSpinner.classList.add('d-none');
+                this.loadUsers(); // Refresh user list
+                this.closeModal();
+
+            })
+            .catch((error) => {
+                // Handle errors and show an error message in a toast
+                const errorMessage = error.response?.data?.message || "An error occurred during the import process.";
+                this.toast.error(errorMessage);
+                console.error("Error importing users:", error.response?.data || error.message);
+                importButtonSpinner.classList.add('d-none');
+                this.loadUsers();
+                this.closeModal();
+            });
+        },
         loadUsers() {
             
             if ($.fn.dataTable.isDataTable('#users-list-table')) {
@@ -511,18 +700,19 @@ export default {
 
                              // Check if the user has only the 'user' role
                             const hasOnlyUserRole = data.roles.length === 1 && data.roles[0].name === "user";
+                           
                             
                             if (!data.latest_certificate) {
                                 
                                 return `
-                                    <button class="btn btn-outline-info btn-sm me-2" title="Edit User"><i class="fas fa-user-edit"></i></button>
+                                    <button class="btn btn-outline-info btn-sm me-2 edit-user-btn" data-user-id="${data.id}" title="Edit User"><i class="fas fa-user-edit"></i></button>
                                     ${!hasOnlyUserRole ? `
                                     <button class="btn btn-outline-info btn-sm me-2 generate-certificate-btn" data-user-id="${data.id}" title="Generate Certificate"><i class="fas fa-certificate"></i></button>` : ''}
                                     <button class="btn btn-outline-danger btn-sm delete-user-btn" data-user-id="${data.id}" title="Delete user"><i class="fas fa-trash" ></i></button>
                                 `;
                             } else {
                                 return `
-                                    <button class="btn btn-outline-info btn-sm me-2" title="Edit User"><i class="fas fa-user-edit" ></i></button>
+                                    <button class="btn btn-outline-info btn-sm me-2 edit-user-btn" data-user-id="${data.id}" title="Edit User"><i class="fas fa-user-edit" ></i></button>
                                     <button class="btn btn-outline-success btn-sm me-2 download-certificate-btn" data-certificate-id="${data.latest_certificate?.id}" title="Download Certificate"><i class="fas fa-download"></i></button>
                                     <button class="btn btn-outline-danger btn-sm delete-user-cert-btn" data-user-id="${data.id}" title="Delete user certificate"><i class="fas fa-user-times" ></i></button>
                                     <button class="btn btn-outline-danger btn-sm delete-user-btn" data-user-id="${data.id}" title="Delete user"><i class="fas fa-trash" ></i></button>
@@ -559,6 +749,39 @@ export default {
                             this.confirmUserDelete(userId);
                         }
                     });
+
+                    $(row).find('.edit-user-btn').on('click', (event) => { 
+                        
+                        const userId = $(event.currentTarget).data('user-id');
+                        const user = this.usersTable
+                            .data()
+                            .toArray()
+                            .find((u) => u.id === userId);
+
+                        if (user) {
+
+                            // Normalize roles
+                            const roles = Array.isArray(user.roles)
+                                ? user.roles.map((role) => (typeof role === "object" ? role.name : role))
+                                : [];
+
+                             // Populate `editUser`
+                            this.editUser = {
+                                id: user.id || null, // Ensure the user ID is included for updates
+                                name: user.name || "",
+                                email: user.email || "",
+                                password: "", // Reset password fields
+                                password_confirmation: "",
+                                is_admin: roles.includes("admin"),
+                                authoriser_role: roles.includes("authoriser"),
+                                bookkeeper_role: roles.includes("bookkeeper"),
+                            };
+
+                            this.openEditUserModal();
+                        }
+                    });
+
+                    
                 }, 
                 responsive: true,
                 paging: true,
@@ -913,6 +1136,9 @@ export default {
             if (this.modalInstance) {
                 this.modalInstance.hide();
             }
+            if (this.editModalInstance) {
+                this.editModalInstance.hide();
+            }
 
             if(this.viewBeneficiaryAccountModalInstance){
                 this.viewBeneficiaryAccountModalInstance.hide();
@@ -921,9 +1147,6 @@ export default {
             if(this.viewFirmAccountModalInstance){
                 this.viewFirmAccountModalInstance.hide();
             }
-        },
-        editUser(user) {
-            alert(`Edit user ${user.username}`);
         },
         // Reset new user form fields
         resetNewUser() {
