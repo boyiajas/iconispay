@@ -189,6 +189,9 @@ Route::group(['middleware' => 'no_cache'], function (){
         Route::get('/firm-accounts/{id}/pending-confirmation-files', [FirmAccountController::class, 'getIndividualAccountPendingConfirmationFiles']);
         Route::get('/firm-accounts/{id}/recently-closed-files', [FirmAccountController::class, 'getIndividualAccountRecentlyClosedFiles']);
         Route::post('/firm-accounts/{sourceAccountId}/authorize', [FirmAccountController::class, 'authorise']);
+
+        Route::post('/import-beneficiary-accounts', [BeneficiaryAccountController::class, 'importBeneficiaryAccounts']);
+        Route::post('/import-firm-accounts', [FirmAccountController::class, 'importFirmAccounts']);
         
 
         Route::get('/pending-confirmation-files', [FirmAccountController::class, 'getPendingConfirmationFiles']);

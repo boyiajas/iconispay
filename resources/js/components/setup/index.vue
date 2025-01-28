@@ -28,7 +28,10 @@
                 <div class="card mb-4">
                     <div class="card-header d-flex justify-content-between">
                         <h5>Source Accounts</h5>
-                        <router-link to="/firmaccount/new" class="btn btn-white btn-sm">+ New Source Account</router-link>
+                        <div>
+                            <button class="btn btn-white btn-sm me-2" @click="openImportAccountModal('firm')"><i class="fas fa-upload"></i> Import Firm Accounts</button>
+                            <router-link to="/firmaccount/new" class="btn btn-white btn-sm">+ New Firm Account</router-link>
+                        </div>
                     </div>
                     <div class="card-body">
                         <table id="source-accounts-table" class="table table-bordered table-striped display nowrap" style="width:100%">
@@ -83,7 +86,10 @@
                 <div class="card">
                     <div class="card-header d-flex justify-content-between">
                         <h5>Beneficiary Accounts</h5>
-                        <router-link to="/beneficiary/new" class="btn btn-white btn-sm">+ New Beneficiary Account</router-link>
+                        <div>
+                            <button class="btn btn-white btn-sm me-2" @click="openImportAccountModal('beneficiary')"><i class="fas fa-upload"></i> Import Beneficiary Accounts</button>
+                            <router-link to="/beneficiary/new" class="btn btn-white btn-sm">+ New Beneficiary Account</router-link>
+                        </div>
                     </div>
                     <div class="card-body">
                         <table id="beneficiary-accounts-table" class="table table-bordered table-striped display nowrap" style="width:100%">
@@ -286,6 +292,39 @@
                             </div>
                         </form>
                     </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Import Modal -->
+        <div class="modal fade" id="importModal" tabindex="-1" aria-labelledby="importModalLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="importModalLabel">Import {{ importType }} Accounts</h5>
+                    <button type="button" class="btn-close" @click="closeModal" aria-label="Close"></button>
+                </div>
+                <div class="modal-body">
+                    <form @submit.prevent="importAccounts">
+                    <div class="mb-3">
+                        <label for="fileType" class="form-label">File Type:</label>
+                        <select v-model="importAccountFileType" class="form-select" id="fileType" required>
+                        <option value="" disabled>Select file type</option>
+                        <option value="excel">Excel (.xlsx)</option>
+                        <option value="csv">CSV (.csv)</option>
+                        </select>
+                    </div>
+                    <div class="mb-3">
+                        <label for="importAccountFile" class="form-label">Upload File:</label>
+                        <input type="file" ref="importAccountFile" id="importAccountFile" class="form-control" accept=".xlsx, .csv" required>
+                    </div>
+                    <a :href="sampleFileUrl" class="btn btn-link" download>Download Sample File</a>
+                    <div class="d-flex justify-content-end">
+                        <button type="submit" class="btn btn-primary me-2"><span id="importAccountButtonSpinner" class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span> Import</button>
+                        <button type="button" class="btn btn-secondary" @click="closeModal">Cancel</button>
+                    </div>
+                    </form>
+                </div>
                 </div>
             </div>
         </div>
@@ -543,6 +582,11 @@ import { useToast } from 'vue-toastification';
 export default {
     data() {
         return {
+            importFileType: "",
+            importAccountFileType: "",
+            importType: "", // 'beneficiary' or 'firm'
+            sampleFileUrl: "/sample-files/sample-template.xlsx",
+
             activeTab: 0,
             usersTable: [],
             users: [], // Users list
@@ -557,7 +601,6 @@ export default {
                 bookkeeper_role: false, 
             }, // Object to hold user data for editing
             sourceAccountsTable: [],
-            importFileType: "",
             
             auditTrails: [],
             deactivatedUsersTable: [],
@@ -579,6 +622,7 @@ export default {
             },
             modalInstance: null, // Store the modal instance
             editModalInstance: null,
+            importModalInstance: null,
             firmAccount: {}, // Store the selected firm account data for editing
             beneficiaryAccount: [],
         };
@@ -592,6 +636,48 @@ export default {
         return { toast };
     },
     methods: {
+        openImportAccountModal(type) {
+            this.importType = type === "beneficiary" ? "Beneficiary" : "Firm";
+            this.importModalInstance = new bootstrap.Modal(document.getElementById("importModal"));
+            this.importModalInstance.show();
+        },
+        importAccounts() {
+            const fileInput = this.$refs.importAccountFile.files[0];
+            if (!fileInput) {
+                alert("Please select a file to upload.");
+                return;
+            }
+
+            const importAccountButtonSpinner = document.getElementById('importAccountButtonSpinner');
+            importAccountButtonSpinner.classList.remove('d-none');
+
+            const formData = new FormData();
+            formData.append("file", fileInput);
+            formData.append("fileType", this.importFileType);
+
+            const apiUrl = this.importType === "Beneficiary" ? "/api/import-beneficiary-accounts" : "/api/import-firm-accounts";
+
+            axios
+                .post(apiUrl, formData, {
+                headers: { "Content-Type": "multipart/form-data" },
+                })
+                .then((response) => {
+                    //alert(`${this.importType} Accounts imported successfully!`);
+                    // Display the server response message in a toast
+                    const importedCount = response.data.imported_accounts?.length || 0; // Get the number of imported users
+                    const message = `${response.data.message} Imported Accounts: ${importedCount}.`;
+                    this.toast.success(message);
+                    importAccountButtonSpinner.classList.add('d-none');
+                    this.closeModal();
+                })
+                .catch((error) => {
+                    console.error(`Error importing ${this.importType} accounts:`, error.response?.data || error.message);
+                    const errorMessage = error.response?.data?.message || "An error occurred during the import process.";
+                    this.toast.error(errorMessage);
+                    importAccountButtonSpinner.classList.add('d-none');
+                    this.closeModal();
+                });
+        },
         openEditUserModal() {
                           
             this.editModalInstance = new bootstrap.Modal(document.getElementById("editUserModal"));
@@ -1138,6 +1224,9 @@ export default {
             }
             if (this.editModalInstance) {
                 this.editModalInstance.hide();
+            }
+            if (this.importModalInstance) {
+                this.importModalInstance.hide();
             }
 
             if(this.viewBeneficiaryAccountModalInstance){

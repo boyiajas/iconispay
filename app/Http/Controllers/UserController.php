@@ -157,11 +157,13 @@ class UserController extends Controller
             'password_confirmation' => 'required',
         ]);
 
+        $password = isset($request->password) ? strval($request->password) : Str::random(8); // Generate a random password if not provided
+
         $user = new User();
         $user->name      = $request->name;
         $user->email     = $request->email;
         $user->status    = 'active';
-        $user->password  = Hash::make($request->password);
+        $user->password  = Hash::make($password); 
         $user->syncRoles('user');
 
         if($request->input('is_admin')){
@@ -175,6 +177,17 @@ class UserController extends Controller
         }
 
         $user->save();
+
+        // Dispatch the notification job
+        $emailData = [
+            'name' => $request->name,
+            'email' => $request->email,
+            'password' => $password,
+            'url' => route('login'),
+            'senderName' => 'Iconis Pay',
+        ];
+
+        SendNewUserNotificationJob::dispatch($emailData);
 
         // Return the created requisition details
         return response()->json($user, 201);

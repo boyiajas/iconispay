@@ -2,16 +2,20 @@
 
 namespace App\Http\Controllers;
 
+use App\Exports\FnbGeneratePayAwayFile;
+use App\Models\AccountType;
 use App\Models\Authorizer;
+use App\Models\Category;
 use App\Models\FileHistoryLog;
 use App\Models\FileUpload;
 use App\Models\FirmAccount;
+use App\Models\Institution;
 use App\Models\Requisition;
 use Carbon\Carbon;
 use DataTables;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
 use Maatwebsite\Excel\Facades\Excel;
-use App\Exports\FnbGeneratePayAwayFile;
 
 class FirmAccountController extends Controller
 {
@@ -870,6 +874,146 @@ class FirmAccountController extends Controller
     public function create()
     {
         //
+    }
+
+    public function importFirmAccounts(Request $request)
+    {
+        $request->validate([
+            'file' => 'required|file|mimes:xlsx,csv|max:2048',
+        ]);
+
+        $file = $request->file('file');
+        $data = Excel::toArray([], $file)[0]; // Read the first sheet of the file
+
+        $importedAccounts = [];
+        $errors = [];
+
+        foreach ($data as $index => $row) {
+            if ($index === 0) continue; // Skip header row
+
+            $validator = Validator::make([
+                'displayText' => $row[0] ?? null,
+                'accountHolderType' => $row[2] ?? null,
+                'accountNumber' => $row[3] ?? null,
+                'accountCategory' => $row[1] ?? null,
+                'accountType' => $row[6] ?? null,
+                'institution' => $row[4] ?? null,
+                'branchCode' => $row[5] ?? null,
+                'initials' => $row[7] ?? null,
+                'surname' => $row[8] ?? null,
+                'companyName' => $row[9] ?? null,
+                'idNumber' => $row[10] ?? null,
+                'registrationNumber' => $row[11] ?? null,
+                'myReference' => $row[12] ?? null,
+                'recipientReference' => $row[13] ?? null,
+                'verified' => filter_var($row[14] ?? false, FILTER_VALIDATE_BOOLEAN),
+                'number_of_authorizer' => $row[15] ?? null,
+            ], [
+                'displayText' => 'required|string|max:255',
+                'accountHolderType' => 'required|in:natural,juristic',
+                'accountNumber' => 'required|string|max:50|unique:firm_accounts,account_number',
+                'accountCategory' => 'required|integer',
+                'accountType' => 'required|string|max:50',
+                'institution' => 'required|string|max:50',
+                'branchCode' => 'nullable|string|max:10',
+                'initials' => 'nullable|string|max:10',
+                'surname' => 'nullable|string|max:100',
+                'companyName' => 'nullable|string|max:255',
+                'idNumber' => 'nullable|string|max:50',
+                'registrationNumber' => 'nullable|string|max:100',
+                'myReference' => 'nullable|string|max:100',
+                'recipientReference' => 'nullable|string|max:100',
+                'verified' => 'boolean',
+                'number_of_authorizer' => 'nullable|integer',
+            ]);
+
+            // Extract values from row using consistent indexing
+            $displayText = $row[0] ?? null;
+            $accountHolderType = $row[2] ?? null;
+            $accountNumber = $row[3] ?? null;
+            $accountCategory = strtolower(trim($row[1] ?? ''));
+            $accountType = strtolower(trim($row[6] ?? ''));
+            $institution = strtolower(trim($row[4] ?? ''));
+            $branchCode = $row[5] ?? null;
+            $initials = $row[7] ?? null;
+            $surname = $row[8] ?? null;
+            $companyName = $row[9] ?? null;
+            $idNumber = $row[10] ?? null;
+            $registrationNumber = $row[11] ?? null;
+            $myReference = $row[12] ?? null;
+            $recipientReference = $row[13] ?? null;
+            $verified = filter_var($row[14] ?? false, FILTER_VALIDATE_BOOLEAN);
+            $number_of_authorizer = $row[15] ?? null;
+
+            // Determine `account_holder_type`
+            if (empty($initials) && empty($surname)) {
+                $accountHolderType = 'juristic';
+            } else {
+                $accountHolderType = 'natural';
+            }
+            //dd($row, $accountCategory, $accountType, $institution);
+            // Retrieve category, account type, and institution IDs using LIKE for fuzzy search
+            $categoryId = Category::where('name', 'LIKE', "%$accountCategory%")->value('id');
+            $accountTypeId = AccountType::where('name', 'LIKE', "%$accountType%")->value('id');
+            $institutionId = Institution::where('short_name', 'LIKE', "%strtolower($institution)%")->value('id');
+
+            dd($row, $accountCategory, $accountType, $institution, $categoryId, $accountTypeId, $institutionId);
+
+            if (!$categoryId || !$accountTypeId || !$institutionId) {
+                $errors[] = [
+                    'row' => $index + 1,
+                    'errors' => "Invalid category, account type, or institution for '$displayText'.",
+                ];
+                continue; // Skip invalid rows
+            }
+
+            // Check if the account number already exists
+            if (FirmAccount::where('account_number', $accountNumber)->exists()) {
+                $errors[] = [
+                    'row' => $index + 1,
+                    'errors' => "Account number '$accountNumber' already exists.",
+                ];
+                continue;
+            }
+
+            if ($validator->fails()) {
+                $errors[] = [
+                    'row' => $index + 1,
+                    'errors' => $validator->errors()->all(),
+                ];
+                continue; // Skip invalid rows
+            }
+
+            // Create a new firm account
+            $firmAccount = FirmAccount::create([
+                'display_text' => $displayText,
+                'category_id' => $categoryId,
+                'account_holder_type' => $accountHolderType,
+                'account_holder' => $displayText,
+                'account_number' => $accountNumber,
+                'account_type_id' => $accountTypeId,
+                'institution_id' => $institutionId,
+                'branch_code' => $branchCode,
+                'initials' => $initials,
+                'surname' => $surname,
+                'company_name' => $companyName,
+                'id_number' => $idNumber,
+                'registration_number' => $registrationNumber,
+                'my_reference' => $myReference,
+                'recipient_reference' => $recipientReference,
+                'verified' => $verified,
+                'number_of_authorizer' => $number_of_authorizer,
+                'user_id' => auth()->id(),
+            ]);
+
+            $importedAccounts[] = $firmAccount;
+        }
+
+        return response()->json([
+            'message' => 'Firm accounts imported successfully!',
+            'imported_accounts' => $importedAccounts,
+            'errors' => $errors,
+        ]);
     }
 
     /**
