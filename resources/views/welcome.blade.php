@@ -112,64 +112,20 @@ Umhlanga Ridgeside , 4320</li>
                         <ul class="nav navbar-nav">
                             <li class="menu-item-has-children">
                                 <a href="#">Home</a>
-                                <ul class="sub-menu">
-                                    <li><a href="index.html">Home style 1</a></li>
-                                    <li><a href="index-2.html">Home style 2</a></li>
-                                    <li><a href="index-3.html">Home style 3</a></li>
-                                    <li><a href="index-4.html">Home style 4</a></li>
-                                    <li><a href="index-5.html">Home style 5</a></li>
-                                    <li><a href="index-6.html">Home style 6</a></li>
-                                    <li><a href="index-7.html">Home style 7</a></li>
-                                    <li class="menu-item-has-children">
-                                        <a href="#Level3">Third level</a>
-                                        <ul class="sub-menu">
-                                            <li><a href="#">Level3</a></li>
-                                            <li><a href="#">Level3</a></li>
-                                            <li><a href="#">Level3</a></li>
-                                        </ul>
-                                    </li>
-                                </ul>
                             </li>
                             <li><a href="/">About</a></li>
                             <li class="menu-item-has-children">
                                 <a href="#">Services</a>
                                 <ul class="sub-menu">
-                                    <li><a href="services.html">All services</a></li>
-                                    <li><a href="service-single-finance.html">Financial Planning</a></li>
-                                    <li><a href="service-single-management.html">Wealth Management</a></li>
+                                    <li><a href="#">All services</a></li>
+                                    <li><a href="#">Financial Planning</a></li>
+                                    <!-- <li><a href="service-single-management.html">Wealth Management</a></li>
                                     <li><a href="service-single-vc.html">VC Funding </a></li>
-                                    <li><a href="service-single-investment.html">Investment Planning </a></li>
-                                    <li><a href="service-single-insurance.html">Personal Insurance</a></li>
-                                    <li><a href="service-single-mutual.html">Mutual Funds</a></li>
+                                    <li><a href="service-single-investment.html">Investment Planning </a></li> -->
+                                    <li><a href="#">Personal Insurance</a></li>
+                                    <!-- <li><a href="service-single-mutual.html">Mutual Funds</a></li> -->
                                 </ul>
                             </li>
-                           <!--  <li class="menu-item-has-children">
-                                <a href="#">Case studies</a>
-                                <ul class="sub-menu">
-                                    <li><a href="case-studies.html">Case studies</a></li>
-                                    <li><a href="case-study-single.html">Case study single</a></li>
-                                </ul>
-                            </li> -->
-                            <!-- <li class="menu-item-has-children">
-                                <a href="#">Pages</a>
-                                <ul class="sub-menu">
-                                    <li><a href="testimonials.html">Testimonials</a></li>
-                                    <li><a href="team.html">Team</a></li>
-                                    <li><a href="pricing.html">Pricing</a></li>
-                                    <li><a href="projects.html">Projects</a></li>
-                                    <li><a href="projects-3-col.html">Projects 3 col </a></li>
-                                </ul>
-                            </li> -->
-                           <!--  <li class="menu-item-has-children">
-                                <a href="#">Blog</a>
-                                <ul class="sub-menu">
-                                    <li><a href="blog-default.html">Blog Default</a></li>
-                                    <li><a href="blog.html">Blog Grid</a></li>
-                                    <li><a href="blog-left-sidebar.html">Blog left sidebar</a></li>
-                                    <li><a href="blog-right-sidebar.html">Blog right sidebar</a></li>
-                                    <li><a href="blog-details.html">Blog details</a></li>
-                                </ul>
-                            </li> -->
                             <li><a href="/">Contact</a></li>
                             <li><a href="{{ route('login') }}">Login</a></li>
                         </ul>
@@ -253,26 +209,27 @@ Umhlanga Ridgeside , 4320</li>
                 <div class="row">
                     <div class="col col-lg-8 col-md-10">
                         <div class="section-title-s2">
-                            <h2>Our goal is to make customers feel they’re secured</h2>
+                            <h2>Our Commitment to Secure Payments</h2>
                         </div>
                     </div>
                 </div>
                 <div class="row">
                     <div class="col col-md-7">
                         <div class="about-details">
-                            <p>Unde omnis iste natus error sit voluptatem accusantium doloremque laudantium, totam rem aperiam, eaque ipsa quae ab illo inventore veritatis et quasi architecto beatae vitae dicta sunt explicabo. Nemo enim ipsam voluptatem quia voluptas sit aspernatur aut odit aut fugit, sed quia consequuntur magni dolores eos qui ratione voluptatem.</p>
-                            <h3>Quality and reliability</h3>
-                            <p>Aroident, sunt in culpa qui officia deserunt mollit anim id est laborum. Consect petur. Aroident, sunt in culpa qui officia deserunt mollit anim id est laborum. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.</p>
+                            <p>At Iconis Pay, our mission is to provide professional firms with a secure, efficient, and transparent payment solution. We understand the importance of trust in financial transactions, and our platform is designed to give you peace of mind with every payment.</p>
+                            <h3>Why Choose Iconis Pay?</h3>
+                            <p>With Iconis Pay, you gain a reliable partner that prioritizes your business needs. Our platform ensures end-to-end encryption, real-time tracking, and compliance with regulatory standards to keep your transactions safe and seamless. Experience unparalleled quality and dependability with our innovative solutions.</p>
                         </div>
                     </div>
 
                     <div class="col col-md-5">
                         <div class="about-img">
-                            <img src="{{URL::to('assets/landing-page/images/about-s3.jpg')}}" alt="">
+                            <img src="{{URL::to('assets/landing-page/images/about-s3.jpg')}}" alt="Secure Payments">
                         </div>
                     </div>
                 </div>
             </div> <!-- end container -->
+        </section><!-- end container -->
         </section>        
         <!-- end about-section -->
 
@@ -289,28 +246,28 @@ Umhlanga Ridgeside , 4320</li>
                     </div>
                     <div class="col col-sm-6">
                         <div class="about-text">
-                            <h3>How we work</h3>
-                            <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.</p>
-                            <a href="#" class="theme-btn">Get Details</a>
+                            <h3>How We Simplify Payments</h3>
+                            <p>Iconis Pay streamlines your payment processes by leveraging technology to ensure speed, accuracy, and security. Our platform is intuitive and designed to meet the unique needs of professional firms, ensuring seamless payment management.</p>
+                            <a href="#" class="theme-btn">Learn More</a>
                         </div>
                     </div>
                 </div>
                 <div class="row">
                     <div class="col col-sm-6">
                         <div class="about-text">
-                            <h3>2018 finance analysis</h3>
-                            <p>Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur.</p>
-                            <a href="#" class="theme-btn">View Case Study</a>
+                            <h3>Comprehensive Insights</h3>
+                            <p>Our platform provides in-depth insights into your transactions, helping you make data-driven decisions. With real-time reporting and analytics, you stay ahead in managing your firm's financial operations efficiently.</p>
+                            <a href="#" class="theme-btn">View Insights</a>
                         </div>
                     </div>
                     <div class="col col-sm-6">
                         <div>
-                            <img src="{{URL::to('assets/landing-page/images/about-s2/img-2.jpg')}}" alt="">
+                            <img src="{{URL::to('assets/landing-page/images/about-s2/img-2.jpg')}}" alt="Comprehensive Insights">
                         </div>
                     </div>
                 </div>
             </div> <!-- end container -->
-        </section>
+        </section> 
         <!-- end about-section-s2 -->
 
 
@@ -574,46 +531,46 @@ Umhlanga Ridgeside , 4320</li>
                         <div class="pricing-grids pricing-slider">
                             <div class="grid">
                                 <div class="pricing-header">
-                                    <p class="type">Starter</p>
-                                    <h3>$559</h3>
-                                    <p class="duration">per consulting</p>
+                                    <p class="type">Basic</p>
+                                    <h3>R900</h3>
+                                    <p class="duration">per month</p>
                                 </div>
                                 <div class="pricing-body">
-                                    <p>Lorem ipsum dolor sit amet Consectetur adipiscing elit sed Do eiusmod tem incid ut aliquip id Ut labore et dolore mana</p>
-                                    <a href="#" class="theme-btn">Start plan</a>
+                                    <p>Perfect for small firms to get started with streamlined payment management.</p>
+                                    <a href="#" class="theme-btn">Start Plan</a>
                                 </div>
                             </div>
                             <div class="grid">
                                 <div class="pricing-header">
-                                    <p class="type">Starter</p>
-                                    <h3>$559</h3>
-                                    <p class="duration">per consulting</p>
+                                    <p class="type">Standard</p>
+                                    <h3>R1,800</h3>
+                                    <p class="duration">per month</p>
                                 </div>
                                 <div class="pricing-body">
-                                    <p>Lorem ipsum dolor sit amet Consectetur adipiscing elit sed Do eiusmod tem incid ut aliquip id Ut labore et dolore mana</p>
-                                    <a href="#" class="theme-btn">Start plan</a>
+                                    <p>Ideal for growing firms needing enhanced features and support.</p>
+                                    <a href="#" class="theme-btn">Start Plan</a>
                                 </div>
                             </div>
                             <div class="grid">
                                 <div class="pricing-header">
-                                    <p class="type">Starter</p>
-                                    <h3>$559</h3>
-                                    <p class="duration">per consulting</p>
+                                    <p class="type">Professional</p>
+                                    <h3>R2,700</h3>
+                                    <p class="duration">per month</p>
                                 </div>
                                 <div class="pricing-body">
-                                    <p>Lorem ipsum dolor sit amet Consectetur adipiscing elit sed Do eiusmod tem incid ut aliquip id Ut labore et dolore mana</p>
-                                    <a href="#" class="theme-btn">Start plan</a>
+                                    <p>For established firms requiring advanced tools and custom reporting.</p>
+                                    <a href="#" class="theme-btn">Start Plan</a>
                                 </div>
                             </div>
                             <div class="grid">
                                 <div class="pricing-header">
-                                    <p class="type">Starter</p>
-                                    <h3>$559</h3>
-                                    <p class="duration">per consulting</p>
+                                    <p class="type">Enterprise</p>
+                                    <h3>R3,600</h3>
+                                    <p class="duration">per month</p>
                                 </div>
                                 <div class="pricing-body">
-                                    <p>Lorem ipsum dolor sit amet Consectetur adipiscing elit sed Do eiusmod tem incid ut aliquip id Ut labore et dolore mana</p>
-                                    <a href="#" class="theme-btn">Start plan</a>
+                                    <p>Comprehensive solution for large organizations with premium support.</p>
+                                    <a href="#" class="theme-btn">Start Plan</a>
                                 </div>
                             </div>
                         </div>
