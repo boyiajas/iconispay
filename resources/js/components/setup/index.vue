@@ -319,6 +319,7 @@
                         <input type="file" ref="importAccountFile" id="importAccountFile" class="form-control" accept=".xlsx, .csv" required>
                     </div>
                     <a :href="sampleFileUrl" class="btn btn-link" download>Download Sample File</a>
+                   
                     <div class="d-flex justify-content-end">
                         <button type="submit" class="btn btn-primary me-2"><span id="importAccountButtonSpinner" class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span> Import</button>
                         <button type="button" class="btn btn-secondary" @click="closeModal">Cancel</button>
@@ -585,7 +586,7 @@ export default {
             importFileType: "",
             importAccountFileType: "",
             importType: "", // 'beneficiary' or 'firm'
-            sampleFileUrl: "/sample-files/sample-template.xlsx",
+            sampleFileUrl: "/sample-files/sample-import-template.xlsx",
 
             activeTab: 0,
             usersTable: [],

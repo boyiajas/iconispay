@@ -331,9 +331,31 @@ class RequisitionController extends Controller
     public function approve(Requisition $requisition)
     {
         // Update the requisition with the new values
-        $requisition->update([
+        /* $requisition->update([
             'authorization_status' => 1,                  // Set authorization status to approved
             'status_id' => 5,                             // Update status ID
+            'authorized_user_id' => auth()->id(),         // Set the current user as the authorizer
+            'authorized_at' => Carbon::now(),            // Set the current time for authorization
+            'locked' => 1, 
+            'locked_at' => Carbon::now(),
+            'locked_by' => auth()->id(),
+        ]); */
+
+        // Check the category_id of the firm account
+        $firmAccount = $requisition->firmAccount;
+
+        if ($firmAccount) {
+            if ($firmAccount->category_id == 14) { //if the firm account is a Trust account 
+                $requisition->status_id = 4;
+            } elseif ($firmAccount->category_id == 12) { //if the firm account is a bussiness account
+                $requisition->status_id = 5;
+            }
+        }
+
+        // Update the requisition with the new values
+        $requisition->update([
+            'authorization_status' => 1,                  // Set authorization status to approved
+            'status_id' => $requisition->status_id,       // Use the updated status based on firmAccount category_id
             'authorized_user_id' => auth()->id(),         // Set the current user as the authorizer
             'authorized_at' => Carbon::now(),            // Set the current time for authorization
             'locked' => 1, 
@@ -750,7 +772,7 @@ class RequisitionController extends Controller
         $statusMapping = [
             'Incomplete' => 2,                // Assuming 1 is 'Incomplete'
             'Awaiting Authorisation' => 3,    // Adjust these values as per your database
-            'Awaiting Funding' => 3,
+            'Awaiting Funding' => 4,
             'Ready for Payment' => 5,
             'Pending Payment Confirmation' => 6,
             'Settled Today' => 7,
