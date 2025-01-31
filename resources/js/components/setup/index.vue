@@ -332,7 +332,7 @@
 
 
         <!-- edit firmAccount Modal -->
-        <div class="modal fade" id="editFirmAccountModal" tabindex="-1" aria-labelledby="editFirmAccountLabel" aria-hidden="true">
+        <!-- <div class="modal fade" id="editFirmAccountModal" tabindex="-1" aria-labelledby="editFirmAccountLabel" aria-hidden="true">
             <div class="modal-dialog">
                 <div class="modal-content">
                     <div class="modal-header">
@@ -341,7 +341,7 @@
                     </div>
                     <div class="modal-body">
                         <form @submit.prevent="updateFirmAccount">
-                            <!-- Display Text Field -->
+                            <!-- Display Text Field --
                             <div class="form-group mb-3 row">
                                 <label class="form-label col-sm-3" for="displayText">Display Text:</label>
                                 <div class="col-sm-9">
@@ -349,7 +349,7 @@
                                 </div>
                             </div>
 
-                            <!-- Account Category Dropdown -->
+                            <!-- Account Category Dropdown --
                             <div class="form-group mb-3 row">
                                 <label class="form-label col-sm-3" for="category">Account Category:</label>
                                 <div class="col-sm-9">
@@ -360,7 +360,7 @@
                                 </div>
                             </div>
 
-                            <!-- Account Holder and Account Number Fields -->
+                            <!-- Account Holder and Account Number Fields --
                             <div class="form-group mb-3 row">
                                 <label class="form-label col-sm-3" for="accountHolder">Account Holder:</label>
                                 <div class="col-sm-9">
@@ -374,7 +374,7 @@
                                 </div>
                             </div>
 
-                            <!-- Institution and Branch Code -->
+                            <!-- Institution and Branch Code --
                             <div class="form-group mb-3 row">
                                 <label class="form-label col-sm-3" for="institution">Institution:</label>
                                 <div class="col-sm-9">
@@ -391,7 +391,7 @@
                                 </div>
                             </div>
 
-                            <!-- Save and Delete Buttons -->
+                            <!-- Save and Delete Buttons --
                             <div class="form-group mb-3 row">
                                 <div class="col-sm-9 offset-sm-3">
                                     <button type="submit" class="btn btn-info">Save Changes</button>
@@ -402,7 +402,239 @@
                     </div>
                 </div>
             </div>
+        </div> -->
+
+        <!-- edit firmAccount Modal -->
+        <!-- <div class="modal fade" id="editBeneficiaryAccountModal" tabindex="-1" aria-labelledby="editBeneficiaryAccountLabel" aria-hidden="true">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="editBeneficiaryAccountLabel">Edit Beneficiary Account</h5>
+                        <button type="button" class="btn-close" @click="closeModal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form @submit.prevent="updateBeneficiaryAccount">
+                            <!-- Display Text Field --
+                            <div class="form-group mb-3 row">
+                                <label class="form-label col-sm-3" for="displayText">Display Text:</label>
+                                <div class="col-sm-9">
+                                    <input type="text" v-model="firmAccount.displayText" class="form-control" id="displayText" required>
+                                </div>
+                            </div>
+
+                            <!-- Account Category Dropdown --
+                            <div class="form-group mb-3 row">
+                                <label class="form-label col-sm-3" for="category">Account Category:</label>
+                                <div class="col-sm-9">
+                                    <select v-model="firmAccount.categoryId" class="form-control" id="category" required>
+                                        <option value="">Select a category</option>
+                                        <option v-for="category in categories" :key="category.id" :value="category.id">{{ category.name }}</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <!-- Account Holder and Account Number Fields --
+                            <div class="form-group mb-3 row">
+                                <label class="form-label col-sm-3" for="accountHolder">Account Holder:</label>
+                                <div class="col-sm-9">
+                                    <input type="text" v-model="firmAccount.accountHolder" class="form-control" id="accountHolder" required>
+                                </div>
+                            </div>
+                            <div class="form-group mb-3 row">
+                                <label class="form-label col-sm-3" for="accountNumber">Account #:</label>
+                                <div class="col-sm-9">
+                                    <input type="text" v-model="firmAccount.accountNumber" class="form-control" id="accountNumber" required>
+                                </div>
+                            </div>
+
+                            <!-- Institution and Branch Code --
+                            <div class="form-group mb-3 row">
+                                <label class="form-label col-sm-3" for="institution">Institution:</label>
+                                <div class="col-sm-9">
+                                    <select v-model="firmAccount.institutionId" class="form-control" id="institution" required>
+                                        <option value="">Select an institution</option>
+                                        <option v-for="institution in institutions" :key="institution.id" :value="institution.id">{{ institution.name }}</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="form-group mb-3 row">
+                                <label class="form-label col-sm-3" for="branchCode">Branch Code:</label>
+                                <div class="col-sm-9">
+                                    <input type="text" v-model="firmAccount.branchCode" class="form-control" id="branchCode" required>
+                                </div>
+                            </div>
+
+                            <!-- Save and Delete Buttons --
+                            <div class="form-group mb-3 row">
+                                <div class="col-sm-9 offset-sm-3">
+                                    <button type="submit" class="btn btn-info">Save Changes</button>
+                                    <button type="button" class="btn btn-danger ml-2" @click="confirmDelete">Delete</button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div> -->
+
+        <!-- Unified Edit Account Modal -->
+<div class="modal fade" id="editAccountModal" tabindex="-1" aria-labelledby="editAccountLabel" aria-hidden="true">
+    <div class="modal-dialog modal-xl">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="editAccountLabel">Edit {{ editingAccountType }} Account</h5>
+                <button type="button" class="btn-close" @click="closeModal"></button>
+            </div>
+            <div class="modal-body">
+                <form @submit.prevent="updateAccount">
+                    <!-- Display Text Field -->
+                    <div class="form-group mb-3 row">
+                        <label class="form-label col-sm-2" for="displayText">Display Text: *</label>
+                        <div class="col-sm-10">
+                            <input type="text" v-model="accountData.display_text" class="form-control" id="displayText" placeholder="Enter a display name for the account" required>
+                        </div>   
+                    </div>
+
+                    <!-- Account Category Dropdown -->
+                    <div class="form-group mb-3 row">
+                        <label class="form-label col-sm-2" for="category">Account Category: *</label>
+                        <div class="col-sm-10">
+                            <select v-model="accountData.category_id" class="form-control" id="category" required>
+                                <option value="">Select a category</option>
+                                <option v-for="category in categories" :key="category.id" :value="category.id">{{ category.name }}</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-group mb-3 row">
+                        <label class="form-label col-sm-2" for="number_of_authorizer">Number of Authorisations:</label>
+                        <div class="col-sm-10">
+                            <input type="number" v-model="accountData.number_of_authorizer" class="form-control" id="number_of_authorizer" placeholder="Specify the number of authorisations required for this account">
+                        </div>   
+                    </div>
+
+                    <!-- Account Holder Section -->
+                    <h5>Account Holder</h5>
+                    <hr class="mt-0"/>
+                    <div class="form-group mb-3 row">
+                        <label class="form-label col-sm-2" for="accountNumber">Account #: *</label>
+                        <div class="col-sm-10">
+                            <input type="text" v-model="accountData.account_number" class="form-control" id="accountNumber" placeholder="Enter the account number" required>
+                        </div>
+                    </div>
+
+                    <!-- Account Holder Type Radio Buttons -->
+                    <div class="form-group mb-3 row">
+                        <label class="form-label col-sm-2">Account Holder Type: *</label>
+                        <div class="col-sm-10">
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" v-model="accountData.account_holder_type" id="natural" value="natural">
+                                <label class="form-check-label" for="natural">Natural Person</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input" type="radio" v-model="accountData.account_holder_type" id="juristic" value="juristic">
+                                <label class="form-check-label" for="juristic">Juristic Person</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="mb-0 row form-group">
+                        <label for="account_holder" class="form-label col-sm-2" v-if="accountData.account_holder_type == 'natural'">Account Holder: *</label>
+                        <div class="col-sm-10 row pr-0 mb-1" v-if="accountData.account_holder_type == 'natural'">
+                            <div class="col-sm-2 pr-0" id="initials">
+                                <input type="text" v-model="accountData.initials" class="form-control" placeholder="Initials" required>
+                            </div>
+                            <div class="col-sm-10 pr-0 mb-1">
+                                <input type="text" v-model="accountData.surname" class="form-control" placeholder="Surname" required>
+                            </div>
+                        </div>
+                        <label for="account_holder" class="form-label col-sm-2" v-if="accountData.account_holder_type == 'juristic'">Company Name: *</label>
+                        <div class="col-sm-10 mb-2" v-if="accountData.account_holder_type == 'juristic'">
+                            <input type="text" v-model="accountData.company_name" class="form-control" id="companyName" placeholder="Enter the name of the Company">
+                        </div>
+                    </div>
+                    
+                    <div class="mb-2 row form-group" v-if="accountData.account_holder_type == 'natural'">
+                        <label for="id_number" class="form-label col-sm-2">ID No. / Passport No.:</label>
+                        <div class="col-sm-10">
+                            <input type="text" v-model="accountData.id_number" class="form-control" placeholder="Enter ID Number or leave blank if not known">
+                        </div>
+                    </div>
+                    <div class="mb-2 row form-group" v-if="accountData.account_holder_type == 'juristic'">
+                        <label for="id_number" class="form-label col-sm-2">Registration #.:</label>
+                        <div class="col-sm-10">
+                            <input type="text" v-model="accountData.registration_number" class="form-control" id="registrationNumber" placeholder="Enter the registration number or leave blank if not applicable">
+                        </div>
+                    </div>
+
+                    <!-- Account Type Dropdown -->
+                    <div class="form-group mb-3 row">
+                        <label class="form-label col-sm-2" for="institution">Account Type: *</label>
+                        <div class="col-sm-10">
+                            <select v-model="accountData.account_type_id" class="form-control" id="institution" required>
+                                <option value="">Select an Account Type</option>
+                                <option v-for="accountType in accountTypes" :key="accountType.id" :value="accountType.id">{{ accountType.name }}</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Institution Dropdown -->
+                    <div class="form-group mb-3 row">
+                        <label class="form-label col-sm-2" for="institution">Institution: *</label>
+                        <div class="col-sm-10">
+                            <select v-model="accountData.institution_id" class="form-control" id="institution" required>
+                                <option value="">Select an institution</option>
+                                <option v-for="institution in institutions" :key="institution.id" :value="institution.id">{{ institution.name }}</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Branch Code Field -->
+                    <div class="form-group mb-3 row">
+                        <label class="form-label col-sm-2" for="branchCode">Branch Code: *</label>
+                        <div class="col-sm-10">
+                            <input type="text" v-model="accountData.branch_code" class="form-control" id="branchCode" placeholder="Enter the branch code" required>
+                        </div>
+                    </div>
+
+                    <!-- Verification Section -->
+                    <h5>Verification</h5>
+                    <hr class="mt-0"/>
+                    <div class="form-group mb-3 row">
+                        <label for="verified" class="form-label col-sm-2">Verify Account:</label>
+                        <div class="col-sm-10">
+                            <input type="checkbox" v-model="accountData.verified" class="form-check-input">
+                            <span>Verify account holder and details</span>
+                        </div>
+                    </div>
+
+                    <!-- Email & Phone -->
+                    <div class="form-group mb-3 row">
+                        <label class="form-label col-sm-2" for="emailAddress">Email Address:</label>
+                        <div class="col-sm-10">
+                            <input type="email" v-model="accountData.email_address" class="form-control" placeholder="Enter email address">
+                        </div>
+                    </div>
+                    <div class="form-group mb-3 row">
+                        <label class="form-label col-sm-2" for="phoneNumber">Phone Number:</label>
+                        <div class="col-sm-10">
+                            <input type="text" v-model="accountData.phone_number" class="form-control" placeholder="Enter phone number">
+                        </div>
+                    </div>
+
+                    <!-- Save and Delete Buttons -->
+                    <div class="form-group mb-3 row">
+                        <div class="col-sm-10 offset-sm-2">
+                            <button type="submit" class="btn btn-primary">Save Changes</button>
+                            <button type="button" class="btn btn-danger ml-1" @click="confirmDelete">Delete</button>
+                            <button type="button" class="btn btn-secondary ml-1" @click="closeModal">Cancel</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
         </div>
+    </div>
+</div>
 
         <!-- Register Certificate Modal -->
         <div class="modal fade" id="registerCertificateModal" tabindex="-1" aria-labelledby="registerCertificateModalLabel" aria-hidden="true">
@@ -583,6 +815,11 @@ import { useToast } from 'vue-toastification';
 export default {
     data() {
         return {
+            editingAccountType: '',
+            accountData: {},
+            categories: [],
+            accountTypes: [],
+            institutions: [],
             importFileType: "",
             importAccountFileType: "",
             importType: "", // 'beneficiary' or 'firm'
@@ -623,6 +860,7 @@ export default {
             },
             modalInstance: null, // Store the modal instance
             editModalInstance: null,
+            editAccountModalInstance: null,
             importModalInstance: null,
             firmAccount: {}, // Store the selected firm account data for editing
             beneficiaryAccount: [],
@@ -630,6 +868,9 @@ export default {
     },
     mounted() {
         this.loadUsers();
+        this.loadCategories();
+        this.loadInstitutions();
+        this.loadAccountTypes();
     },
     setup() {
         // Initialize toast
@@ -637,6 +878,63 @@ export default {
         return { toast };
     },
     methods: {
+        loadCategories() {
+            axios.get('/api/categories').then(response => {
+                this.categories = response.data;
+            });
+        },
+        loadAccountTypes(){
+            axios.get('/api/accounttypes')
+                .then(response => {
+                    this.accountTypes = response.data;
+                })
+                .catch(error => {
+                    console.error('Error loading accountTypes:', error);
+                });
+        },
+        loadInstitutions() {
+            axios.get('/api/institutions').then(response => {
+                this.institutions = response.data;
+            });
+        },
+        openEditModal(accountType, id) {
+            this.editingAccountType = accountType;
+            axios.get(`/api/${accountType}-accounts/${id}`).then(response => {
+                this.accountData = response.data;
+                console.log(this.accountData);
+                this.editAccountModalInstance = new bootstrap.Modal(document.getElementById("editAccountModal"));
+                this.editAccountModalInstance.show();
+            });
+        },
+        updateAccount() {
+            axios.put(`/api/${this.editingAccountType}-accounts/${this.accountData.id}`, this.accountData)
+                .then(response => {
+                   // Response contains the updated payment
+                    if(response.data){
+                        // Find the index of the payment in the payments array
+                        this.toast.success(response.data.message, {
+                            title: 'Success'
+                        });
+                    }else{
+                        this.toast.error(error.response ? error.response.data : 'No response data', {
+                            title: 'Error'
+                        });
+                    }
+
+                   
+                    // Close the modal
+                    this.closeModal();
+                })
+                .catch(error => {
+                    console.error('Error updating account:', error);
+                    this.toast.error(error.response ? error.response.data : 'An error occurred while updating account', {
+                            title: 'Error'
+                        });
+                    this.closeModal();
+                });
+
+                (this.editingAccountType == 'firm') ? this.initializeFirmAccounts() : this.initializeBeneficiaryAccounts();
+        },
         openImportAccountModal(type) {
             this.importType = type === "beneficiary" ? "Beneficiary" : "Firm";
             this.importModalInstance = new bootstrap.Modal(document.getElementById("importModal"));
@@ -1038,7 +1336,7 @@ export default {
             this.modalInstance.show();
         },
          // Show the edit modal with populated data
-        editFirmAccount(id) {
+        /* editFirmAccount(id) {
             axios.get(`/api/firm-accounts/${id}`)
                 .then(response => {
                     this.firmAccount = response.data;
@@ -1046,17 +1344,27 @@ export default {
                     this.modalInstance.show();
                 })
                 .catch(error => console.error('Error fetching firm account:', error));
-        },
+        }, */
 
+        /* editBeneficiaryAccount(id){
+            axios.get(`/api/firm-accounts/${id}`)
+                .then(response => {
+                    this.firmAccount = response.data;
+                    this.modalInstance = new bootstrap.Modal(document.getElementById('editBeneficiaryAccountModal'));
+                    this.modalInstance.show();
+                })
+                .catch(error => console.error('Error fetching firm account:', error));
+
+        }, */
         // Update firm account data
-        updateFirmAccount() {
+        /* updateFirmAccount() {
             axios.put(`/api/firm-accounts/${this.firmAccount.id}`, this.firmAccount)
                 .then(response => {
                     this.modalInstance.hide();
                     this.initializeFirmAccounts(); // Reload table data
                 })
                 .catch(error => console.error('Error updating firm account:', error));
-        },
+        }, */
 
         // Show Authorize confirmation
         confirmFirmAccountDelete(id) {
@@ -1226,6 +1534,11 @@ export default {
             if (this.editModalInstance) {
                 this.editModalInstance.hide();
             }
+
+            if (this.editAccountModalInstance) {
+                this.editAccountModalInstance.hide();
+            }
+
             if (this.importModalInstance) {
                 this.importModalInstance.hide();
             }
@@ -1295,7 +1608,7 @@ export default {
                             const showCheckIcon = (row.authorised === null || row.authorised === 0) && row.number_of_authorizer > 0;
                             return `
                                  ${showCheckIcon ? `<button class='btn btn-outline-info btn-sm authorize-firmaccount-btn' data-toggle='tooltip' title='Authorise this firm Account' data-id='${data.id}'><i class='fas fa-check text-success'></i></button>` : ''}
-                                 ${showCheckIcon ? '<button class="btn btn-outline-secondary btn-sm" data-toggle="tooltip" title="Edit this firm Account" onclick="editFirmAccount(${row.id})"><i class="fas fa-edit"></i></button>' : ''}
+                                 <button class="btn btn-outline-secondary btn-sm edit-firmaccount-btn" data-toggle="tooltip" title="Edit this firm Account" data-id="${row.id}"><i class="fas fa-edit"></i></button>
                                   ${!showCheckIcon ? '<button class="btn btn-outline-info btn-sm view-firmaccount-btn" data-toggle="tooltip" title="View this firm Account"><i class="fas fa-search"></i></button>' : ''}
                                 
                                 <button class="btn btn-outline-danger btn-sm delete-firmaccount-btn" data-toggle="tooltip" title="Delete this firm Account" data-id="${data.id}"><i class="fas fa-trash"></i></button>
@@ -1320,6 +1633,12 @@ export default {
             $('#source-accounts-table tbody').on('click', '.delete-firmaccount-btn', (event) => {
                 const id = $(event.currentTarget).data('id');
                 this.confirmFirmAccountDelete(id);
+            });
+
+             // Attach click event listener for edit button
+            $('#source-accounts-table tbody').on('click', '.edit-firmaccount-btn', (event) => {
+                const id = $(event.currentTarget).data('id');
+                this.openEditModal('firm', id);
             });
 
             // Event listener for delete button
@@ -1378,7 +1697,7 @@ export default {
                             const showCheckIcon = (row.authorised === null || row.authorised === 0) && row.number_of_authorizer > 0;
                             return `
                                  ${showCheckIcon ? `<button class='btn btn-outline-info btn-sm authorize-beneficiary-btn' data-toggle='tooltip' title='Authorise this beneficiary Account' data-id='${data.id}'><i class='fas fa-check text-success'></i></button>` : ''}
-                                 ${showCheckIcon ? '<button class="btn btn-outline-secondary btn-sm" data-toggle="tooltip" title="Edit this beneficiary Account" onclick="editFirmAccount(${row.id})"><i class="fas fa-edit"></i></button>' : ''}
+                                 <button class="btn btn-outline-secondary btn-sm edit-beneficiary-btn" data-toggle="tooltip" title="Edit this beneficiary Account" data-id="${data.id}"><i class="fas fa-edit"></i></button>
                                   ${!showCheckIcon ? '<button class="btn btn-outline-info btn-sm view-beneficiary-btn" data-toggle="tooltip" title="View this beneficiary Account"><i class="fas fa-search"></i></button>' : ''}
                                 
                                 <button class="btn btn-outline-danger btn-sm delete-beneficiary-btn" data-toggle="tooltip" title="Delete this beneficiary Account" data-id="${data.id}"><i class="fas fa-trash"></i></button>
@@ -1412,8 +1731,10 @@ export default {
 
             // Event listener for edit button
             $('#beneficiary-accounts-table tbody').on('click', '.edit-beneficiary-btn', (event) => {
+                
                 const id = $(event.currentTarget).data('id');
-                this.editFirmAccount(id);
+                //this.editBeneficiaryAccount(id);
+                this.openEditModal('beneficiary', id);
             });
 
             // Event listener for delete button

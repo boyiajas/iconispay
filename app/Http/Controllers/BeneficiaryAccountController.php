@@ -2,13 +2,18 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\AccountType;
 use App\Models\Authorizer;
 use App\Models\BeneficiaryAccount;
+use App\Models\Category;
 use App\Models\FirmAccount;
+use App\Models\Institution;
 use App\Models\Payment;
 use DataTables;
 use Exception;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
+use Maatwebsite\Excel\Facades\Excel;
 
 class BeneficiaryAccountController extends Controller
 {
@@ -143,6 +148,147 @@ class BeneficiaryAccountController extends Controller
         }
     }
 
+    public function importBeneficiaryAccounts(Request $request)
+    {
+        $request->validate([
+            'file' => 'required|file|mimes:xlsx,csv|max:2048',
+        ]);
+
+        $file = $request->file('file');
+        $data = Excel::toArray([], $file)[0]; // Read the first sheet of the file
+
+        $importedAccounts = [];
+        $errors = [];
+
+        foreach ($data as $index => $row) {
+            if ($index === 0) continue; // Skip header row
+
+            $validator = Validator::make([
+                'displayText' => $row[0] ?? null,
+                'accountHolder' => $row[2] ?? null,
+                'accountNumber' => $row[3] ?? null,
+                'accountCategory' => $row[1] ?? null,
+                'accountType' => $row[6] ?? null,
+                'institution' => $row[4] ?? null,
+                'branchCode' => $row[5] ?? null,
+                'initials' => $row[7] ?? null,
+                'surname' => $row[8] ?? null,
+                'companyName' => $row[9] ?? null,
+                'idNumber' => $row[10] ?? null,
+                'registrationNumber' => $row[11] ?? null,
+                'myReference' => $row[12] ?? null,
+                'recipientReference' => $row[13] ?? null,
+                'verified' => filter_var($row[14] ?? false, FILTER_VALIDATE_BOOLEAN),
+                'number_of_authorizer' => $row[15] ?? null,
+            ], [
+                'displayText' => 'required|string|max:255',
+                'accountHolder' => 'required|string|max:255',
+                //'accountHolderType' => 'required|in:natural,juristic',
+                'accountNumber' => 'required|string|max:50|unique:beneficiary_accounts,account_number',
+                'accountCategory' => 'required|integer',
+                'accountType' => 'required|string|max:50',
+                'institution' => 'required|string|max:50',
+                'branchCode' => 'nullable|string|max:10',
+                'initials' => 'nullable|string|max:10',
+                'surname' => 'nullable|string|max:100',
+                'companyName' => 'nullable|string|max:255',
+                'idNumber' => 'nullable|string|max:50',
+                'registrationNumber' => 'nullable|string|max:100',
+                'myReference' => 'nullable|string|max:100',
+                'recipientReference' => 'nullable|string|max:100',
+                'verified' => 'boolean',
+                'number_of_authorizer' => 'nullable|integer',
+            ]);
+
+            // Extract values from row using consistent indexing
+            $displayText = $row[0] ?? null;
+            $accountHolder = $row[2] ?? null;
+            $accountNumber = $row[3] ?? null;
+            $accountCategory = strtolower(trim($row[1] ?? ''));
+            $accountType = strtolower(trim($row[6] ?? ''));
+            $institution = strtolower(trim($row[4] ?? ''));
+            $branchCode = $row[5] ?? null;
+            $initials = $row[7] ?? null;
+            $surname = $row[8] ?? null;
+            $companyName = $row[9] ?? null;
+            $idNumber = $row[10] ?? null;
+            $registrationNumber = $row[11] ?? null;
+            $myReference = $row[12] ?? null;
+            $recipientReference = $row[13] ?? null;
+            $verified = filter_var($row[14] ?? false, FILTER_VALIDATE_BOOLEAN);
+            $number_of_authorizer = $row[15] ?? null;
+            $accountHolderType = null;
+
+            // Determine `account_holder_type`
+            if (empty($initials) && empty($surname)) {
+                $accountHolderType = 'juristic';
+            } else {
+                $accountHolderType = 'natural';
+            }
+
+            // Search for IDs
+            $categoryId = Category::whereRaw("LOWER(name) LIKE ?", ['%' . strtolower($accountCategory) . '%'])->value('id');
+            $accountTypeId = AccountType::whereRaw("LOWER(name) LIKE ?", ['%' . strtolower($accountType) . '%'])->value('id');
+            $institutionId = Institution::whereRaw("LOWER(short_name) LIKE ?", ['%' . strtolower($institution) . '%'])->value('id');
+
+            if (!$categoryId || !$institutionId) {
+                $errors[] = [
+                    'row' => $index + 1,
+                    'errors' => "Invalid category, account type, or institution for '$displayText'.",
+                ];
+                continue; // Skip invalid rows
+            }
+
+            // Check if the account number already exists
+            if (BeneficiaryAccount::where('account_number', $accountNumber)->exists()) {
+                $errors[] = [
+                    'row' => $index + 1,
+                    'errors' => "Account number '$accountNumber' already exists.",
+                ];
+                continue;
+            }
+
+            if ($validator->fails()) {
+                $errors[] = [
+                    'row' => $index + 1,
+                    'errors' => $validator->errors()->all(),
+                ];
+                continue; // Skip invalid rows
+            }
+
+            // Create a new firm account
+            $beneficiaryAccount = BeneficiaryAccount::create([
+                'display_text' => $displayText,
+                'category_id' => $categoryId,
+                'account_holder' => $accountHolder,
+                'account_holder_type' => $accountHolderType,
+                'account_number' => $accountNumber,
+                'account_type_id' => $accountTypeId,
+                'institution_id' => $institutionId,
+                'branch_code' => $branchCode,
+                'initials' => $initials,
+                'surname' => $surname,
+                'company_name' => $companyName,
+                'id_number' => $idNumber,
+                'registration_number' => $registrationNumber,
+                'my_reference' => $myReference,
+                'recipient_reference' => $recipientReference,
+                'verified' => $verified,
+                'number_of_authorizer' => $number_of_authorizer,
+                'user_id' => auth()->id(),
+            ]);
+
+            $importedAccounts[] = $beneficiaryAccount;
+        }
+
+        return response()->json([
+            'message' => 'Firm accounts imported successfully!',
+            'imported_accounts' => $importedAccounts,
+            'errors' => $errors,
+        ]);
+    }
+
+
     public function store(Request $request)
     {
         $validated = $request->validate([
@@ -201,6 +347,69 @@ class BeneficiaryAccountController extends Controller
 
         return response()->json($beneficiaryAccount, 201);
     }
+
+    public function update(Request $request, BeneficiaryAccount $beneficiaryAccount)
+    {
+        // Validate the incoming request
+        $validated = $request->validate([
+            'display_text' => 'required|string|max:255',
+            'account_holder_type' => 'required|in:natural,juristic',
+            'account_number' => 'required|string|max:50',
+            'category_id' => 'required|integer',
+            'account_type_id' => 'required|exists:account_types,id',
+            'institution_id' => 'required|exists:institutions,id',
+            'branch_code' => 'nullable|string|max:20',
+            'initials' => 'nullable|string|max:10',
+            'surname' => 'nullable|string|max:100',
+            'company_name' => 'nullable|string|max:255',
+            'id_number' => 'nullable|string|max:50',
+            'registration_number' => 'nullable|string|max:100',
+            'my_reference' => 'nullable|string|max:100',
+            'recipient_reference' => 'nullable|string|max:100',
+            'verified' => 'boolean',
+            'number_of_authorizer' => 'nullable|integer',
+            'email_address' => 'nullable|string|email|max:255',
+            'phone_number' => 'nullable|string|max:20',
+        ]);
+
+        // Check if the accountNumber already exists but exclude the current record
+        $existingAccount = BeneficiaryAccount::where('account_number', $request->input('account_number'))
+                                            ->where('id', '!=', $beneficiaryAccount->id)
+                                            ->first();
+        if ($existingAccount) {
+            return response()->json([
+                'message' => 'The account number already exists.'
+            ], 400);
+        }
+
+        // Update the BeneficiaryAccount
+        $beneficiaryAccount->update([
+            'display_text' => $request->input('display_text'),
+            'category_id' => $request->input('category_id'),
+            'account_holder_type' => $request->input('account_holder_type'),
+            'account_holder' => $request->input('display_text'),
+            'account_number' => $request->input('account_number'),
+            'account_type_id' => $request->input('account_type_id'),
+            'institution_id' => $request->input('institution_id'),
+            'branch_code' => $request->input('branch_code'),
+            'initials' => $request->input('initials'),
+            'surname' => $request->input('surname'),
+            'company_name' => $request->input('company_name'),
+            'id_number' => $request->input('id_number'),
+            'registration_number' => $request->input('registration_number'),
+            'my_reference' => $request->input('my_reference'),
+            'recipient_reference' => $request->input('recipient_reference'),
+            'verified' => $request->input('verified'),
+            'number_of_authorizer' => $request->input('number_of_authorizer'),
+            //'user_id' => auth()->id(),
+        ]);
+
+        return response()->json([
+            'message' => 'Beneficiary Account updated successfully!',
+            'beneficiaryAccount' => $beneficiaryAccount
+        ], 200);
+    }
+
 
     public function authorise(Request $request, $sourceAccountId)
     {

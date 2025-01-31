@@ -955,9 +955,15 @@ class FirmAccountController extends Controller
             }
             //dd($row, $accountCategory, $accountType, $institution);
             // Retrieve category, account type, and institution IDs using LIKE for fuzzy search
-            $categoryId = Category::where('name', 'LIKE', '%' . strtolower($accountCategory) . '%')->value('id');
-            $accountTypeId = AccountType::where('name', 'LIKE', '%' . strtolower($accountType) . '%')->value('id');
-            $institutionId = Institution::where('name', 'LIKE', '%' . strtolower($institution) . '%')->value('id');
+            /* $categoryId = Category::where('LOWER(name)', 'LIKE', '%' . strtolower($accountCategory) . '%')->value('id');
+            $accountTypeId = AccountType::where('LOWER(name)', 'LIKE', '%' . strtolower($accountType) . '%')->value('id');
+            $institutionId = Institution::where('LOWER(name)', 'LIKE', '%' . strtolower($institution) . '%')->value('id');
+ */
+            // Search for IDs
+            $categoryId = Category::whereRaw("LOWER(name) LIKE ?", ['%' . strtolower($accountCategory) . '%'])->value('id');
+            $accountTypeId = AccountType::whereRaw("LOWER(name) LIKE ?", ['%' . strtolower($accountType) . '%'])->value('id');
+            $institutionId = Institution::whereRaw("LOWER(short_name) LIKE ?", ['%' . strtolower($institution) . '%'])->value('id');
+
 
             if (!$categoryId || !$institutionId) {
                 $errors[] = [
@@ -1132,8 +1138,66 @@ class FirmAccountController extends Controller
      */
     public function update(Request $request, FirmAccount $firmAccount)
     {
-        //
+        // Validate the incoming request
+        $validated = $request->validate([
+            'display_text' => 'required|string|max:255',
+            'account_holder_type' => 'required|in:natural,juristic',
+            'account_number' => 'required|string|max:50',
+            'category_id' => 'required|integer',
+            'account_type_id' => 'required|exists:account_types,id',
+            'institution_id' => 'required|exists:institutions,id',
+            'branch_code' => 'nullable|string|max:20',
+            'initials' => 'nullable|string|max:10',
+            'surname' => 'nullable|string|max:100',
+            'company_name' => 'nullable|string|max:255',
+            'id_number' => 'nullable|string|max:50',
+            'registration_number' => 'nullable|string|max:100',
+            'my_reference' => 'nullable|string|max:100',
+            'recipient_reference' => 'nullable|string|max:100',
+            'verified' => 'boolean',
+            'number_of_authorizer' => 'nullable|integer',
+            'email_address' => 'nullable|string|email|max:255',
+            'phone_number' => 'nullable|string|max:20',
+        ]);
+
+        // Check if the accountNumber already exists but exclude the current record
+        $existingAccount = FirmAccount::where('account_number', $request->input('account_number'))
+                                    ->where('id', '!=', $firmAccount->id)
+                                    ->first();
+        if ($existingAccount) {
+            return response()->json([
+                'message' => 'The account number already exists.'
+            ], 400);
+        }
+
+        // Update the FirmAccount
+        $firmAccount->update([
+            'display_text' => $request->input('display_text'),
+            'category_id' => $request->input('category_id'),
+            'account_holder_type' => $request->input('account_holder_type'),
+            'account_holder' => $request->input('display_text'),
+            'account_number' => $request->input('account_number'),
+            'account_type_id' => $request->input('account_type_id'),
+            'institution_id' => $request->input('institution_id'),
+            'branch_code' => $request->input('branch_code'),
+            'initials' => $request->input('initials'),
+            'surname' => $request->input('surname'),
+            'company_name' => $request->input('company_name'),
+            'id_number' => $request->input('id_number'),
+            'registration_number' => $request->input('registration_number'),
+            'my_reference' => $request->input('my_reference'),
+            'recipient_reference' => $request->input('recipient_reference'),
+            'verified' => $request->input('verified'),
+            'number_of_authorizer' => $request->input('number_of_authorizer'),
+            //'user_id' => auth()->id(),
+        ]);
+
+        return response()->json([
+            'message' => 'Firm Account updated successfully!',
+            'firmAccount' => $firmAccount
+        ], 200);
     }
+
 
     /**
      * Remove the specified resource from storage.
