@@ -62,7 +62,7 @@
                     
                 </div>
             </div>
-            <div class="col-md-3 incomplete box" :class="{'current': requisition.status_id == 3, 'complete': requisition.status_id >= 5, 'complete': (requisition.status_id == 4 && requisition.authorization_status)}">
+            <div class="col-md-3 incomplete box" :class="{'current': requisition.status_id == 3, 'complete': requisition.status_id >= 5, 'complete': (requisition.status_id == 4 && requisition.authorization_status), 'complete': requisition.authorization_status}">
                 <div class="status-card row pt-2">
                     <div class="col-md-10">
                         <h6 class="fw-bold">Authorization</h6>
@@ -1002,7 +1002,7 @@
                                                 <li v-for="payment in paymentForm.payments" :key="payment.id" class="row">
                                                     <div class="col-md-4"><i class="far fa-check-square bg-green mr-2" aria-hidden="true"></i> {{ formatDate(payment.created_at) }}</div>
                                                     <div class="col-md-4">R{{ payment.amount }}</div>
-                                                    <div class="col-md-4">{{ payment.description }}</div>                                                    
+                                                    <div class="col-md-4"><a :href="`/matters/requisitions/${payment.requisition_id}/details`">{{ payment.description }}</a></div>                                                    
                                                 </li>
                                             </ul>
                                         </div>
