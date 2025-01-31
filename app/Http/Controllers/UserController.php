@@ -36,7 +36,7 @@ class UserController extends Controller
 
     public function getRecipients()
     {
-        return User::where('id', '!=', Auth::user()->id)->get();
+        return User::where('id', '!=', Auth::user()->id)->with('roles')->get();
     }
 
     public function deactivatedUsers(Request $request)

@@ -498,8 +498,8 @@
                                     <div class=""> <i class="fa fa-check mr-2 text-success"></i></div>
                                     <div class="pl-0 pr-0">
                                         <h6>{{ requisition.authorized_by.name }}</h6>
-                                        <div class="txt-xs">on {{ requisition.authorized_at }} </div>
-                                        <div class="txt-xs">logged in as {{ requisition.authorized_by.email }} </div>
+                                        <div class="txt-xs">on {{ formatDateAndTime(requisition?.authorized_at) }} </div>
+                                        <div class="txt-xs">logged in as {{ requisition?.authorized_by.email }} </div>
                                     </div>
                                     
                                 </div>
@@ -1247,13 +1247,13 @@
                         <div class="mb-3 row">
                             <label for="my_reference" class="form-label col-sm-3">My Reference: *</label>
                             <div class="col-sm-9">
-                                <input type="text" v-model="editPaymentForm.my_reference" class="form-control" placeholder="Enter a reference for our bank account">
+                                <input type="text" v-model="editPaymentForm.my_reference" class="form-control" maxlength="20" placeholder="Enter a reference for our bank account">
                             </div>
                         </div>
                         <div class="mb-3 row">
                             <label for="recipient_reference" class="form-label col-sm-3">Recipient Reference:</label>
                             <div class="col-sm-9">
-                                <input type="text" v-model="editPaymentForm.recipient_reference" class="form-control" placeholder="Enter a reference for the recipient's bank account">
+                                <input type="text" v-model="editPaymentForm.recipient_reference" class="form-control" maxlength="20" placeholder="Enter a reference for the recipient's bank account">
                             </div>
                         </div>
                         
@@ -1465,6 +1465,9 @@ export default {
             },
             formatDate(dateString) {
                 return moment(dateString).format('DD MMM YYYY');
+            },
+            formatDateAndTime(dateString) {
+                return moment(dateString).format('Y-MM-D h:m:s');
             },
             depositForm: {
                 description: '',

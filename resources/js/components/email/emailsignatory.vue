@@ -12,7 +12,7 @@
                 <label for="recipient" class="form-label">Recipient:</label>
                 <select v-model="emailForm.recipient" class="form-select" required>
                     <option value="" disabled>--Please Select a Recipient--</option>
-                    <option v-for="recipient in recipients" :key="recipient.id" :value="recipient.id">
+                    <option v-for="recipient in recipientsWithAuthoriser" :key="recipient.id" :value="recipient.id">
                         {{ recipient.name }}
                     </option>
                 </select>
@@ -68,6 +68,7 @@ export default {
                 message: '',
             },
             recipients: [],  // This will be populated from the API
+            recipientsWithAuthoriser: [],
             url: '',  // This will be the URL to follow for authorisation
             currentUser: window.Laravel.user || { name: 'Guest' }, // Default to 'Guest' if user is not available
             errors: {},
@@ -104,6 +105,11 @@ export default {
             axios.get('/api/recipients')
                 .then(response => {
                     this.recipients = response.data;
+                    console.log(this.recipients);
+
+                    this.recipientsWithAuthoriser = this.recipients.filter(recipient => 
+                        recipient.roles && recipient.roles.some(role => role.name.toLowerCase().includes('authoriser'))
+                    );
                 })
                 .catch(error => {
                     console.error('Error fetching recipients:', error);
