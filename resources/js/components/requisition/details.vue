@@ -35,12 +35,10 @@
                                 </span>
                                 <span v-else>No entries captured</span>
                             </span>
-                            <span v-else-if="requisition.status_id === 3">
+                            <span v-else-if="requisition.status_id == 3 || requisition.status_id == 4 || requisition.status_id >= 5">
                                 Transaction value: R{{ parseFloat(totalDepositAmount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}
                             </span>
-                            <span v-else-if="requisition.status_id >= 5">
-                                Transaction value: R{{ parseFloat(totalDepositAmount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}
-                            </span>
+                           
                         </p>
                     </div>
                     <!-- <div class="col-md-3" v-if="requisition.status_id !== 1">
@@ -64,7 +62,7 @@
                     
                 </div>
             </div>
-            <div class="col-md-3 incomplete box" :class="{'current': requisition.status_id == 3, 'complete': requisition.status_id >= 5}">
+            <div class="col-md-3 incomplete box" :class="{'current': requisition.status_id == 3, 'complete': requisition.status_id >= 5, 'complete': (requisition.status_id == 4 && requisition.authorization_status)}">
                 <div class="status-card row pt-2">
                     <div class="col-md-10">
                         <h6 class="fw-bold">Authorization</h6>
@@ -79,16 +77,22 @@
                             
                             
                         </div>
+                        <div v-else-if="requisition.status_id == 4" class="txt-xs mb-0 mt-3">
+                            Last signed on: {{ formatDate(requisition.authorized_at) }}
+                        </div>
                         <div v-else-if="requisition.status_id >= 5" class="txt-xs mb-0 mt-3">
                             Last signed on: {{ formatDate(requisition.authorized_at) }}
                         </div>
-                        <p v-else class="status-value mb-0 mt-3">{{ authorizationStatus }}</p>
+                        <!-- <p v-else class="status-value mb-0 mt-3">{{ authorizationStatus }} 2</p> -->
                     </div>
                     <div class="col-md-2" v-if="requisition.status_id == 3">
                         <span class="badge bg-info" v-if="requisition && requisition.payments && requisition.payments.length > 0">
                             0 / {{requisition.payments.length}}
                         </span>
                         <span class="badge bg-info" v-else>0 / 0</span>                                
+                    </div>
+                    <div class="col-md-2" v-if="requisition.status_id == 4">
+                        <i class="fa fa-check-circle bg-green" aria-hidden="true"></i>
                     </div>
                     <div class="col-md-2" v-if="requisition.status_id >= 5">
                         <i class="fa fa-check-circle bg-green" aria-hidden="true"></i>
@@ -109,7 +113,7 @@
                         </p>
                         <p class="status-value mb-0 mt-3" v-else-if="requisition.deposits && requisition.deposits.length > 0 && !requisition.funding_status">
                             <span>Mark as received on entry(s)</span><br/>
-                            <span class="mb-2"><a class="btn btn-sm btn-white btn-default-default" @click="fundDeposit">Fund</a></span>
+                            <span class="mb-2"><a class="btn btn-sm btn-white btn-default-default mb-2" @click="fundDeposit">Fund</a></span>
                             
                         </p>
                        <!--  <p class="status-value mb-0 mt-3" v-else="requisition.funding_status">
@@ -475,7 +479,7 @@
                             
                         </div>
                         <div class="card-body">
-                            <div v-if="requisition.status_id == 3 && !requisition.authorized_status">
+                            <div v-if="requisition.status_id == 3 && !requisition.authorization_status">
                                 <PermissionControl :roles="['admin', 'authoriser']">
                                     <div class="approve-box p-2 pull-right" style="border: solid 1px #40b1c5;background: #eafcff;">
                                         <div class="pl-0 pr-0">
@@ -493,7 +497,7 @@
                                 </PermissionControl>
                                 
                             </div>
-                            <div v-else-if="requisition.status_id >= 5">
+                            <div v-else-if="requisition.status_id >= 5 || requisition.authorization_status">
                                 <div class="approve-box p-2 pull-right" style="border: solid 1px #40b1c5;background: #eafcff;justify-content: flex-start;">
                                     <div class=""> <i class="fa fa-check mr-2 text-success"></i></div>
                                     <div class="pl-0 pr-0">
@@ -2080,13 +2084,16 @@ export default {
         },
         getStatusClass(statusId, fundingStatus, selectedSourceAccount) {
             let statusClass = '';
+            if(this.requisition.authorization_status){
+                return statusClass = 'complete';
+            }
 
             if (statusId === 1) {
                 statusClass = 'incomplete';
             } else if (statusId === 2) {
                 statusClass = 'incomplete current';
-            } else if (statusId === 3) {
-                return statusClass = 'complete';
+            } else if (statusId == 3 && !this.requisition.authorization_status) {
+                return statusClass = 'patialcomplete';
             } else if (statusId >= 5){
                 return statusClass = 'complete';
             }

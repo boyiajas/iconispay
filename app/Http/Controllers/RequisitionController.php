@@ -630,17 +630,20 @@ class RequisitionController extends Controller
         // Get the currently authenticated user ID
         $user = Auth::user();
         $awaitingAuthorizationStatusId = 3;
+        $awaitingFundingStatusId = 4;
         $awaitingAuthorizationCount = 0;
-        
+      
 
          // Check if the user has an 'admin' or 'authorizer' role
         if ($user->hasRole('admin') || $user->hasRole('authoriser') || $user->hasRole('bookkeeper')) {
             // If the user is an admin or authorizer, get all incomplete requisitions
-            $awaitingAuthorizationCount = Requisition::where('status_id', $awaitingAuthorizationStatusId)->count();
+            $awaitingAuthorizationCount = Requisition::whereIn('status_id', [$awaitingAuthorizationStatusId, $awaitingFundingStatusId])
+                                          ->whereNull('authorization_status')
+                                          ->count();
         } else {
             // Otherwise, get incomplete requisitions created by the user
             $awaitingAuthorizationCount = Requisition::where('created_by', $user->id)
-                                        ->where('status_id', $awaitingAuthorizationStatusId)
+                                        ->whereIn('status_id', [$awaitingAuthorizationStatusId, $awaitingFundingStatusId])
                                         ->count();
         }
        
@@ -779,6 +782,8 @@ class RequisitionController extends Controller
             'Settlement Failed' => 8,
         ];
 
+        $awaitingFundingStatusId = 4;
+
         // Get the currently authenticated user ID
         $user = Auth::user();
         $awaitingAuthorizationStatusId = 3;
@@ -815,7 +820,15 @@ class RequisitionController extends Controller
             // Get the status ID from the mapping
             $statusId = $statusMapping[$request->status]; //dd($statusId);
 
-            $query->where('status_id', $statusId);
+            if($statusId == 3){
+                $query->whereIn('status_id', [$statusId, $awaitingFundingStatusId])->whereNull('authorization_status'); // Fixed
+            }else if($statusId == 4){
+                $query->whereIn('status_id', [$statusId, $awaitingAuthorizationStatusId])->whereNull('funding_status');
+            }else{
+                $query->where('status_id', $statusId);
+            }
+
+            
         }
     
 
@@ -826,6 +839,18 @@ class RequisitionController extends Controller
                 $progress = '';
                 if ($requisition->authorization_status) {
                     $progress .= '<span class="badge bg-success me-1">Authorized</span>';
+                }
+                if($requisition->status_id == 3 && !$requisition->authorization_status){
+                    $progress .= '<span class="badge bg-default me-1">Authorized</span>';
+                }
+                if($requisition->status_id == 3 && !$requisition->authorization_status && !$requisition->funding_status){
+                    $progress .= '<span class="badge bg-default me-1">Funded</span>';
+                }
+                if ($requisition->status_id == 4) {
+                    $progress .= '<span class="badge bg-default me-1">Funded</span>';
+                }
+                if($requisition->status_id == 4 && !$requisition->authorization_status){
+                    $progress .= '<span class="badge bg-default me-1">Authorized</span>';
                 }
                 if ($requisition->funding_status) {
                     $progress .= '<span class="badge bg-success">Funded</span>';

@@ -1441,14 +1441,7 @@ export default {
                         render: function (data, type, row) {
                             // Conditionally display the fa-check icon
                             const showCheckIcon = (row.authorised === null || row.authorised === 0) && row.number_of_authorizer > 0;
-                            const isAdmin = null;
-                            for (let i = 0; i < this.user.roles.length; i++) {
-                                if (this.user.roles[i].name.toLowerCase().includes('admin')) {
-                                    isAdmin = true;
-                                    break; // Stop looping once an 'admin' role is found
-                                }
-                            }
-
+                            
                             //const isAdmin = this.user.roles.some(role => role.name.toLowerCase().includes('admin'));
                             return `
                                  ${showCheckIcon ? `<button class='btn btn-outline-info btn-sm authorize-firmaccount-btn' data-toggle='tooltip' title='Authorise this firm Account' data-id='${data.id}'><i class='fas fa-check text-success'></i></button>` : ''}
