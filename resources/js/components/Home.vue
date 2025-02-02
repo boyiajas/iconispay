@@ -75,14 +75,22 @@
                             </a>
                         </ul>
                     </div>
-                    <div class="col-md-4">
+                     <!-- Search Form -->
+                     <div class="col-md-4">
                         <h5>Search by File Reference:</h5>
-                        <div class="input-group mb-3">
-                            <input type="text" class="form-control" placeholder="File reference" aria-label="File reference">
+                        <div class="input-group mb-1">
+                            <input 
+                                type="text" 
+                                class="form-control" 
+                                placeholder="File reference" 
+                                v-model="searchQuery"
+                                @keyup.enter="searchRequisition"
+                            />
                             <div class="input-group-append">
-                                <button class="btn btn-primary" type="button">Go</button>
+                                <button class="btn btn-primary" type="button" @click="searchRequisition"><span id="searchBtnSpinner" class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span> Go</button>
                             </div>
                         </div>
+                        <p v-if="searchError" class="text-danger">{{ searchError }}</p>
                     </div>
                 </div>
             </div>
@@ -106,6 +114,8 @@ export default {
     },
     data() {
         return {
+            searchQuery: "",
+            searchError: "",
             loadingIncompleteRequisitions: false,
             loadingAwaitingAuthorization: false,
             loadingAwaitingFunding: false,
@@ -123,6 +133,34 @@ export default {
         };
     },
     methods: {
+        async searchRequisition() {
+            const searchBtnSpinner = document.getElementById('searchBtnSpinner');
+            searchBtnSpinner.classList.remove('d-none');           
+
+            this.searchError = "";
+            if (!this.searchQuery.trim()) {
+                this.searchError = "File reference is required.";
+                searchBtnSpinner.classList.add('d-none');
+                return;
+            }
+
+            try {
+                const response = await axios.post('/api/requisitions/search', {
+                    file_reference: this.searchQuery
+                });
+
+                if (response.status === 200 && response.data) {
+                    const requisitionId = response.data.id;
+                    window.location.href = `/matters/requisitions/${requisitionId}/details`;
+                } else {
+                    this.searchError = "No requisition found.";
+                }
+            } catch (error) {
+                this.searchError = "Error searching for requisition.";
+                console.error(error);
+            }
+            searchBtnSpinner.classList.add('d-none');
+        },
         // Method to load the incomplete requisitions
         loadIncompleteRequisitions() {
             this.loadingIncompleteRequisitions = true;

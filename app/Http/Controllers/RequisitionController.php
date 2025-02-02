@@ -128,6 +128,7 @@ class RequisitionController extends Controller
 
         if ($requisition) {
             return response()->json([
+                'id' => $requisition->id,  // Include ID for redirecting
                 'reason' => $requisition->reason,
                 'parties' => $requisition->parties,
             ]);
