@@ -988,7 +988,7 @@
                             <div class="mb-3 row">
                                 <label for="account_number" class="form-label col-sm-3">Account No.: *</label>
                                 <div class="col-sm-9">
-                                    <input type="text" v-model="paymentForm.account_number" class="form-control" required placeholder="Enter the account number">
+                                    <input type="text" v-model="paymentForm.account_number" class="form-control" required placeholder="Enter the account number" @input="validateAccountNumber">
                                     <div class="round mt-1" :style="{background:'#f2f2f2',border:'solid 1px #ddd',padding:'6px',paddingLeft:'12px',fontSize: '14px',color: (paymentForm.payments && paymentForm.payments.length > 0) ? '#097386' : '#666'}" >
 
                                         <b>Previously Paid:</b> {{paymentForm.previously_paid}}
@@ -1010,7 +1010,7 @@
                                 </div>
                             </div>
                             <div class="mb-0 row">
-                                <label for="account_holder" class="form-label col-sm-3">Account Holder: *</label>
+                                <label for="account_holder" v-if="this.paymentForm.account_holder_type" class="form-label col-sm-3">Account Holder: *</label>
                                 <div class="col-sm-9 row pr-0 mb-1" v-if="this.paymentForm.account_holder_type == 'natural'">
                                     <div class="col-sm-2 pr-0" id="initials">
                                         <input type="text" v-model="paymentForm.initials" class="form-control" placeholder="Initials" required>
@@ -1161,11 +1161,11 @@
                             <div class="mb-3 row">
                                 <label for="account_number" class="form-label col-sm-3">Account No.: *</label>
                                 <div class="col-sm-9">
-                                    <input type="text" v-model="editPaymentForm.account_number" class="form-control" required placeholder="Enter the account number">
+                                    <input type="text" v-model="editPaymentForm.account_number" class="form-control" required placeholder="Enter the account number" @input="validateAccountNumber">
                                 </div>
                             </div>
                             <div class="mb-3 row">
-                                <label for="account_holder" class="form-label col-sm-3">Account Holder: *</label>
+                                <label for="account_holder" v-if="this.editPaymentForm.account_holder_type" class="form-label col-sm-3">Account Holder: *</label>
                                 <div class="col-sm-9 row pr-0" v-if="this.editPaymentForm.account_holder_type == 'natural'">
                                     <div class="col-sm-2 pr-0" id="initials">
                                         <input type="text" v-model="editPaymentForm.initials" class="form-control" placeholder="Initials" required>
@@ -1602,6 +1602,11 @@ export default {
         //this.requisition = requisitionStore.requisition;
     },
     methods: {
+        validateAccountNumber(event) {
+            // Remove any non-numeric characters
+            this.editPaymentForm.account_number = this.editPaymentForm.account_number.replace(/\D/g, '');
+            this.paymentForm.account_number = this.paymentForm.account_number.replace(/\D/g, '');
+        },
         // Fetch all users for selection
         fetchUsers() {
             axios.get('/api/recipients')
