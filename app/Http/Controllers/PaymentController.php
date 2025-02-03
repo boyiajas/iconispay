@@ -223,7 +223,11 @@ class PaymentController extends Controller
 
         // Retrieve the selected payments and mark them as processed
         $paymentIds = $validated['paymentIds'];
-        Payment::whereIn('id', $paymentIds)->update(['status' => 'processed']);
+        //Payment::whereIn('id', $paymentIds)->update(['status' => 'processed']);
+        Payment::whereIn('id', $paymentIds)->update([
+            'status' => 'processed',
+            'mark_processed_at' => now() // Set the processed timestamp
+        ]);
 
         return response()->json(['message' => 'Payments marked as processed successfully.'], 200);
     }

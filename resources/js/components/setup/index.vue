@@ -692,10 +692,10 @@ export default {
             users: [], // Users list
             editUser: {
                 id: null,
-                name: "Peter Pan",
-                email: "boyiajas@gmail.com",
-                password: "testing",
-                password_confirmation: "testing",
+                name: "",
+                email: "",
+                password: "",
+                password_confirmation: "",
                 is_admin: false,
                 authoriser_role: false,
                 bookkeeper_role: false, 

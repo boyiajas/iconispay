@@ -763,6 +763,9 @@ class RequisitionController extends Controller
 
         $firmAccount = $fileUpload->firmAccount;
 
+        //here we want to insert the export file date
+        
+
         FileHistoryLog::logFileHistory($fileUpload->id, 'Downloaded Payaway File', "Downloaded the payaway file {$firmAccount->institution->short_name} - {$firmAccount->account_number} ({$fileUpload->generated_at->format('Ymd Hi')})");
 
         // Stream the file to the browser

@@ -15,8 +15,8 @@ class PaidByDateReportExport implements FromCollection, WithHeadings
 
     public function __construct($fromDate, $toDate)
     {
-        $this->fromDate = $fromDate;
-        $this->toDate = $toDate;
+        $this->fromDate = Carbon::parse($fromDate)->startOfDay();
+        $this->toDate = Carbon::parse($toDate)->endOfDay();
     }
 
     /**
@@ -29,6 +29,8 @@ class PaidByDateReportExport implements FromCollection, WithHeadings
             'Amount',
             'Date Exported',
             'Date Paid',
+            'Requisition Created By',
+            'Requisition Approved By',
             'To Account Number',
             'To Payment Institution Name',
             'To Branch Code',
@@ -59,10 +61,6 @@ class PaidByDateReportExport implements FromCollection, WithHeadings
      */
     public function collection(): Collection
     {
-        // Parse and format the date range
-        $fromDate = Carbon::parse($this->fromDate)->startOfDay();
-        $toDate = Carbon::parse($this->toDate)->endOfDay();
-
         // Load payments within the date range, with relationships
         $payments = Payment::with([
             'sourceFirmAccount.institution',
@@ -72,10 +70,13 @@ class PaidByDateReportExport implements FromCollection, WithHeadings
             'payToFirmAccount.institution',
             'payToFirmAccount.category',
             'requisition.matter',
+            'requisition.user', // User who created the requisition
+            'requisition.authorizedBy', // User who approved the requisition
+            'requisition.fileUploads', // Get fill uploads assosciated with the requisition
         ])
         //->whereBetween('created_at', [$this->fromDate, $this->toDate])
-        ->whereHas('requisition', function ($query) use ($fromDate, $toDate) {
-            $query->whereBetween('completed_at', [$fromDate, $toDate]);
+        ->whereHas('requisition', function ($query){
+            $query->whereBetween('completed_at', [$this->fromDate, $this->toDate]);
         })
         ->get();
 
@@ -85,11 +86,17 @@ class PaidByDateReportExport implements FromCollection, WithHeadings
             $payToAccount = $payment->payToAccount;
             $sourceFirmAccount = $payment->sourceFirmAccount;
 
+            // Get the first `generated_at` date from FileUploads associated with the Requisition
+            $dateExported = optional($payment->requisition->fileUploads->first())->generated_at;
+
             return [
                 $payment->requisition->file_reference ?? 'N/A',
                 number_format($payment->amount, 2),
-                $payment->date_exported ? Carbon::parse($payment->date_exported)->format('Y/m/d') : 'N/A',
-                $payment->date_paid ? Carbon::parse($payment->date_paid)->format('Y/m/d') : 'N/A',
+                //$payment->exported_at ? Carbon::parse($payment->exported_at)->format('Y/m/d') : 'N/A',
+                optional($dateExported)->format('Y/m/d') ?? 'N/A', // Mapped `date_exported`
+                $payment->date_paid ? Carbon::parse($payment->mark_processed_at)->format('Y/m/d') : 'N/A',
+                optional($payment->requisition->user)->name ?? 'N/A',         // Requisition Created By
+                optional($payment->requisition->authorizedBy)->name ?? 'N/A', // Requisition Approved By
                 $payToAccount->account_number ?? 'N/A',
                 $payToAccount->institution->name ?? 'N/A',
                 $payToAccount->branch_code ?? 'N/A',

@@ -21,6 +21,7 @@ class Payment extends Model
         'recipient_reference',
         'user_id',
         'status',
+        'mark_processed_at',
         'authorised',
         'verified',
         'verification_status',
