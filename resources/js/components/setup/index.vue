@@ -12,9 +12,11 @@
             <li class="nav-item" role="presentation">
                 <a class="nav-link" id="firm-accounts-tab" data-bs-toggle="tab" href="#firm-accounts" role="tab" aria-controls="firm-accounts" aria-selected="false" @click="initializeFirmAccounts">Firm Accounts</a>
             </li>
-            <li class="nav-item" role="presentation">
-                <a class="nav-link" id="audit-trail-tab" data-bs-toggle="tab" href="#audit-trail" role="tab" aria-controls="audit-trail" aria-selected="false">Audit Trail</a>
-            </li>
+            <PermissionControl :roles="['admin']">
+                <li class="nav-item" role="presentation">
+                    <a class="nav-link" id="audit-trail-tab" data-bs-toggle="tab" href="#audit-trail" role="tab" aria-controls="audit-trail" aria-selected="false">Audit Trail</a>
+                </li>
+            </PermissionControl>
             <li class="nav-item" role="presentation">
                 <a class="nav-link" id="deactivated-users-tab" data-bs-toggle="tab" href="#deactivated-users" role="tab" aria-controls="deactivated-users" aria-selected="false" @click="loadDeactivatedUsers">Deactivated Users</a>
             </li>
@@ -661,6 +663,7 @@
 <script>
 import axios from 'axios';
 import $ from 'jquery';
+import PermissionControl from '../permission/PermissionControl.vue';
 /* import 'datatables.net';
 import 'datatables.net-bs5'; */
 import { useToast } from 'vue-toastification';
@@ -674,6 +677,9 @@ export default {
             required: true
         },
         
+    },
+    components: {
+        PermissionControl
     },
     data() {
         return {

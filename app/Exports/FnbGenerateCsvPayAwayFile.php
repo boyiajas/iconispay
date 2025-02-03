@@ -26,14 +26,19 @@ class FnbGenerateCsvPayAwayFile implements FromCollection
 
         // Determine the number of columns in the table data
         $columnCount = count($tableData[0] ?? []);
-        
-        // Add the first three rows manually
+
+        // Add the first three rows manually, ensuring column alignment
         $formattedData = collect([
-            ['BInSol - U ver 1.00'], // First row
-            [$date],          // Second row
-            [$firmAccountNumber, '62257431140'],   // Third row split into two columns
-            []                      // Empty row before the table
+            array_pad(['BInSol - U ver 1.00'], $columnCount, ''), // First row
+            array_pad([$date], $columnCount, ''),                // Second row
+            array_pad([$firmAccountNumber, '62257431140'], $columnCount, ''), // Third row
+            array_fill(0, $columnCount, ''),                    // Empty row before the table
         ]);
+        
+       // Add the table data
+       foreach ($tableData as $row) {
+            $formattedData->push($row);
+        }
 
         // Add the headers as the fourth row
         $formattedData->push([

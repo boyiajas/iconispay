@@ -358,7 +358,7 @@ class RequisitionController extends Controller
             'authorization_status' => 1,                  // Set authorization status to approved
             'status_id' => $requisition->status_id,       // Use the updated status based on firmAccount category_id
             'authorized_user_id' => auth()->id(),         // Set the current user as the authorizer
-            'authorized_at' => Carbon::now(),            // Set the current time for authorization
+            'authorized_at' => now(),            // Set the current time for authorization
             'locked' => 1, 
             'locked_at' => Carbon::now(),
             'locked_by' => auth()->id(),
@@ -428,6 +428,7 @@ class RequisitionController extends Controller
 
         // Log the history
         logHistory($requisition->id, 'Approve Requisition', 'Requisition was approved.');
+        \Log::info("After Approval: authorized_at = " . $requisition->authorized_at);
 
         return response()->json($requisitionData);
 
@@ -586,16 +587,17 @@ class RequisitionController extends Controller
         $user = Auth::user();
         $incompleteStatusId = 2;
         $incompleteCount = 0;
+        $defaultStatusId = 1;
         
 
          // Check if the user has an 'admin' or 'authorizer' role
         if ($user->hasRole('admin') || $user->hasRole('authoriser') || $user->hasRole('bookkeeper')) {
             // If the user is an admin or authorizer, get all incomplete requisitions
-            $incompleteCount = Requisition::where('status_id', $incompleteStatusId)->count();
+            $incompleteCount = Requisition::whereIn('status_id', [$incompleteStatusId, $defaultStatusId])->count();
         } else {
             // Otherwise, get incomplete requisitions created by the user
             $incompleteCount = Requisition::where('created_by', $user->id)
-                                        ->where('status_id', $incompleteStatusId)
+                                        ->whereIn('status_id', [$incompleteStatusId, $defaultStatusId])
                                         ->count();
         }
         
@@ -824,7 +826,9 @@ class RequisitionController extends Controller
             // Get the status ID from the mapping
             $statusId = $statusMapping[$request->status]; //dd($statusId);
 
-            if($statusId == 3){
+            if($statusId == 2){
+                $query->whereIn('status_id', [$statusId, 1]);
+            }else if($statusId == 3){
                 $query->whereIn('status_id', [$statusId, $awaitingFundingStatusId])->whereNull('authorization_status'); // Fixed
             }else if($statusId == 4){
                 $query->whereIn('status_id', [$statusId, $awaitingAuthorizationStatusId])->whereNull('funding_status');

@@ -17,7 +17,7 @@ use Maatwebsite\Excel\Facades\Excel;
 
 class BeneficiaryAccountController extends Controller
 {
-    public function index()
+    public function indexBackup()
     {
          // Get the FirmAccount data with related 'institution'
          $beneficiaryAccounts = BeneficiaryAccount::with('institution','category','accountType')
@@ -49,7 +49,44 @@ class BeneficiaryAccountController extends Controller
 
          // Use the DataTables facade to return data in the required format
          return DataTables::of($beneficiaryAccounts)->make(true);
+    } 
+
+    public function index()
+    {
+        // Retrieve only beneficiary accounts that have at least one authorizer OR are verified
+        $beneficiaryAccounts = BeneficiaryAccount::with('institution', 'category', 'accountType')
+            ->where(function ($query) {
+                $query->whereHas('authorizers') // Ensure at least one authorizer exists
+                    ->orWhere('verified', '>', 0); // OR ensure verified is greater than zero
+            })
+            ->get()
+            ->map(function ($beneficiaryAccount) {
+                // Count the number of authorizers
+                $authorizerCount = $beneficiaryAccount->authorizers()->count();
+                $numberOfAuthorizer = $beneficiaryAccount->number_of_authorizer ?? 0;
+
+                if (!$beneficiaryAccount->authorised) {
+                    if ($authorizerCount > 0 && $authorizerCount == $numberOfAuthorizer) {
+                        // If authorizer count matches required, mark as authorised
+                        $beneficiaryAccount->authorised = 1;
+                        $beneficiaryAccount->save();
+                    } else {
+                        // Otherwise, set a progress indicator
+                        $beneficiaryAccount->authorizer_progress = "$authorizerCount of $numberOfAuthorizer";
+                    }
+                } else {
+                    // If already authorized, set progress as complete
+                    $beneficiaryAccount->authorizer_progress = "$authorizerCount of $numberOfAuthorizer";
+                }
+
+                return $beneficiaryAccount;
+            });
+
+        // Return the data formatted for DataTables
+        return DataTables::of($beneficiaryAccounts)->make(true);
     }
+
+
 
     public function showBeneficiaryAndFirm($beneficiaryId, $accountNumber)
     {
