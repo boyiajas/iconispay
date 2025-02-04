@@ -22,7 +22,7 @@ use App\Http\Controllers\MatterController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\PaymentController;
 use App\Http\Controllers\ReportController;
-
+use App\Http\Controllers\Auth\ForgotPasswordController;
 
 
 
@@ -166,6 +166,9 @@ Route::group(['middleware' => 'no_cache'], function (){
         Route::get('/firm-accounts/all-accounts', [FirmAccountController::class, 'getAllFirmAccounts']);
         // User Management Routes
         Route::resource('users', UserController::class);
+        Route::post('/users/reset-password', [ForgotPasswordController::class, 'sendResetLinkEmail'])->middleware(['role:admin']);
+        Route::post('/users/{id}/deactivate', [UserController::class, 'deactivateAccount'])->middleware(['role:admin']);
+        Route::post('/users/{id}/activate', [UserController::class, 'activateAccount'])->middleware(['role:admin']);
         Route::post('/import-users', [UserController::class, 'importUsers']);
         Route::get('/requisitions/{requisition}/notifications', [NotificationController::class, 'index']);
         Route::post('/requisitions/{requisition}/notifications', [NotificationController::class, 'store']);

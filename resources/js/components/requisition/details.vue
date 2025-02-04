@@ -367,7 +367,7 @@
                                     <!-- Loop through deposits if they exist -->
                                     <div v-if="requisition && requisition.payments && requisition.payments.length > 0" class="deposit-section row ml-0 mt-1 mb-0 p-0">
                                         <div v-for="payment in requisition.payments" :key="payment.id" class="col-md-12 row mb-2 lighthover p-0">
-                                            <div class="col-md-3">
+                                            <div class="col-md-3" @click="openViewPaymentModal(payment)">
                                                 <span v-if="payment.beneficiary_account && payment.beneficiary_account.verification_status == 'successful'">
                                                     <i class="far fa-check-circle mr-2 mt-1 text-success" ref="popoverIcon" 
                                                     data-bs-toggle="popover" 
@@ -391,7 +391,7 @@
                                                 </span>
                                                 {{ payment.description }}
                                             </div>
-                                            <div class="col-md-3" v-bind:style="payment.beneficiary_account && payment.beneficiary_account.authorised === 1 ? { background: '#f2f2f2', border: '1px solid #ddd', padding: '6px 12px', fontSize: '14px'/* , color: '#666' */ } : {}">
+                                            <div class="col-md-3" @click="openViewPaymentModal(payment)" v-bind:style="payment.beneficiary_account && payment.beneficiary_account.authorised === 1 ? { background: '#f2f2f2', border: '1px solid #ddd', padding: '6px 12px', fontSize: '14px'/* , color: '#666' */ } : {}">
                                                 <div>
                                                     <b>{{ payment.beneficiary_account?.account_holder_type === 'natural' 
                                                         ? payment.beneficiary_account?.initials + " " + payment.beneficiary_account?.surname 
@@ -404,7 +404,7 @@
                                                     {{ payment.beneficiary_account?.account_number }}
                                                 </div>
                                             </div>
-                                            <div class="col-md-4">
+                                            <div class="col-md-4" @click="openViewPaymentModal(payment)">
                                                 <div><span class="text-secondary">My Ref:</span> {{ payment.my_reference }}</div>
                                                 <div><span class="text-secondary">Recipient Ref:</span> {{ payment.recipient_reference }}</div>
                                             </div>
@@ -999,7 +999,7 @@
                                         <!-- Collapsible list of previous payments -->
                                         <div :class="['collapse', { show: showPayments }]" id="previousPaymentsDropdown" v-if="paymentForm && paymentForm.payments">
                                             <ul class="list-unstyled mt-2">
-                                                <li v-for="payment in paymentForm.payments" :key="payment.id" class="row">
+                                                <li v-for="payment in paymentForm.payments.slice(0, 3)" :key="payment.id" class="row">
                                                     <div class="col-md-4"><i class="far fa-check-square bg-green mr-2" aria-hidden="true"></i> {{ formatDate(payment.created_at) }}</div>
                                                     <div class="col-md-4">R{{ payment.amount }}</div>
                                                     <div class="col-md-4"><a :href="`/matters/requisitions/${payment.requisition_id}/details`">{{ payment.description }}</a></div>                                                    
@@ -1034,7 +1034,11 @@
                             <div class="mb-2 row" v-if="this.paymentForm.account_holder_type == 'juristic'">
                                 <label for="id_number" class="form-label col-sm-3">Registration No.:</label>
                                 <div class="col-sm-9">
-                                    <input type="text" v-model="paymentForm.registration_number" class="form-control" placeholder="Enter the registration number or leave blank if not applicable">
+                                    <input type="text" v-model="paymentForm.registration_number" class="form-control" 
+                                        @input="validateRegistrationNumber"
+                                        maxlength="15"
+                                        placeholder="Enter registration no 1234/123456/12 or leave blank if not applicable"
+                                    >
                                 </div>
                             </div>
                             <div class="mb-2 row">
@@ -1189,7 +1193,12 @@
                             <div class="mb-3 row" v-if="this.editPaymentForm.account_holder_type == 'juristic'">
                                 <label for="id_number" class="form-label col-sm-3">Registration No.:</label>
                                 <div class="col-sm-9">
-                                    <input type="text" v-model="editPaymentForm.registration_number" class="form-control" placeholder="Enter the registration number or leave blank if not applicable">
+                                    <input type="text" v-model="editPaymentForm.registration_number" class="form-control" 
+                                        @input="validateRegistrationNumber"
+                                        maxlength="15"
+                                        placeholder="Enter registration no 1234/123456/12 or leave blank if not applicable"
+                                    >
+                                    
                                 </div>
                             </div>
                             <div class="mb-3 row">
@@ -1267,6 +1276,179 @@
                             </div>
                             <div class="form-check col-sm-9">
                                 <button type="button" class="btn btn-primary pull-right ml-1 btn-sm" @click="updatePayment">Update</button>
+                                <button type="button" class="btn btn-secondary pull-right btn-sm" data-bs-dismiss="modal" @click="closeModal">Cancel</button>
+                                
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- View Payment Modal -->
+    <div class="modal fade" id="viewPaymentModal" tabindex="-1" aria-labelledby="viewPaymentModalLabel" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="viewPaymentModalLabel">View Payment <span class="txt-xs text-white">for payment number # {{ viewPaymentForm.id }}</span></h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" @click="closeModal"></button>
+                </div>
+                <div class="modal-body">
+                    <form>
+                                               
+                        <!-- Category -->
+                        <div class="mb-2 row">
+                            <label for="category" class="form-label col-sm-3">Category: </label>
+                            <div class="col-sm-9 text-secondary">
+                                {{ viewPaymentForm.category_name }}
+                                
+                            </div>
+                        </div>
+                        
+                        <!-- Account -->
+                        <div class="mb-2 row">
+                            <label for="account" class="form-label col-sm-3">Account:</label>
+                            <div class="col-sm-9 text-secondary">
+                                -- {{ viewPaymentForm.account_holder_type }} Person --
+                            </div>
+                        </div>
+                        
+                        <!-- Hidden section for New Account details (visible when a new account is selected) -->
+                        <div v-if="showEditAccountDetails">
+                            <h6 class="mb-2 mt-4">Account Details (Ad-hoc) 
+                                <span class="pull-right">AVS <span class="btn btn-default-default btn-sm">View</span></span>
+                            </h6>
+                            <hr class="mt-3"/>
+                            <div class="mb-2 row">
+                                <label for="account_number" class="form-label col-sm-3">Account No.: </label>
+                                <div class="col-sm-9 text-secondary">
+                                    {{ viewPaymentForm.account_number }}
+
+                                    <div class="round mt-1" :style="{background:'#f2f2f2',border:'solid 1px #ddd',padding:'6px',paddingLeft:'12px',fontSize: '14px',color: (paymentForm.payments && paymentForm.payments.length > 0) ? '#097386' : '#666'}" >
+
+                                        <b>Previously Paid:</b> {{paymentForm.previously_paid}}
+                                        <button v-if="paymentForm && paymentForm.payments" class="btn btn-link p-0 float-end" type="button"  @click="toggleCollapsePaymentShow" data-bs-target="#previousPaymentsDropdown" :aria-expanded="showPayments" aria-controls="previousPaymentsDropdown">
+                                            <i :class="showPayments ? 'fa fa-chevron-up' : 'fa fa-chevron-down'"></i>
+                                        </button>
+
+                                        <!-- Collapsible list of previous payments -->
+                                        <div :class="['collapse', { show: showPayments }]" id="previousPaymentsDropdown" v-if="paymentForm && paymentForm.payments">
+                                            <ul class="list-unstyled mt-2">
+                                                <li v-for="payment in paymentForm.payments.slice(0, 3)" :key="payment.id" class="row">
+                                                    <div class="col-md-4"><i class="far fa-check-square bg-green mr-2" aria-hidden="true"></i> {{ formatDate(payment.created_at) }}</div>
+                                                    <div class="col-md-4">R{{ payment.amount }}</div>
+                                                    <div class="col-md-4"><a :href="`/matters/requisitions/${payment.requisition_id}/details`">{{ payment.description }}</a></div>                                                    
+                                                </li>
+                                            </ul>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="mb-2 row">
+                                <label for="account_holder" v-if="this.viewPaymentForm.account_holder_type" class="form-label col-sm-3">Account Holder: </label>
+                                <div class="col-sm-9 text-secondary pr-0" v-if="this.viewPaymentForm.account_holder_type == 'natural'">
+                                    {{ viewPaymentForm.initials }} {{ viewPaymentForm.surname }}
+                                    
+                                </div>
+                                <div class="col-sm-9 text-secondary" v-if="this.viewPaymentForm.account_holder_type == 'juristic'">
+                                    {{ viewPaymentForm.company_name }}
+                                   
+                                </div>
+                                
+                            </div>
+                            
+                            <div class="mb-2 row" v-if="this.viewPaymentForm.account_holder_type == 'natural'">
+                                <label for="id_number" class="form-label col-sm-3">ID No. / Passport No.:</label>
+                                <div class="col-sm-9 text-secondary">
+                                    {{ viewPaymentForm.id_number }}
+                                </div>
+                            </div>
+                            <div class="mb-2 row" v-if="this.viewPaymentForm.account_holder_type == 'juristic'">
+                                <label for="id_number" class="form-label col-sm-3">Registration No.:</label>
+                                <div class="col-sm-9 text-secondary">
+                                    {{ viewPaymentForm.registration_number }}
+                                    
+                                </div>
+                            </div>
+                            <div class="mb-2 row">
+                                <label for="account_type" class="form-label col-sm-3">Account Type: </label>
+                                <div class="col-sm-9 text-secondary">
+                                    {{ viewPaymentForm.account_type.name }}
+                                </div>
+                            </div>
+                            <div class="mb-2 row">
+                                <label for="institution" class="form-label col-sm-3">Institution: </label>
+                                <div class="col-sm-9 text-secondary">
+
+                                    {{ viewPaymentForm.institution.name }}
+                                    
+                                </div>
+                            </div>
+                            <div class="mb-2 row">
+                                <label for="branch_code" class="form-label col-sm-3">Branch Code: </label>
+                                <div class="col-sm-9 text-secondary">
+                                    {{ viewPaymentForm.branch_code }}
+                                    
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Transaction Information -->
+                        <h6 class="mb-1 mt-4">Transaction Information</h6>
+                        <hr class="mt-0"/>
+                        <div class="mb-2 row">
+                            <label for="description" class="form-label col-sm-3">Description: </label>
+                            <div class="col-sm-9 text-secondary">
+                                {{ viewPaymentForm.description }}
+                                
+                            </div>
+                        </div>
+                        <div class="mb-2 row">
+                            <label for="amount" class="form-label col-sm-3">Amount: </label>
+                            <div class="col-sm-9 text-secondary">
+                                {{ viewPaymentForm.amount }}
+                                
+                            </div>
+                        </div>
+                        <div class="mb-2 row">
+                            <label for="my_reference" class="form-label col-sm-3">My Reference: </label>
+                            <div class="col-sm-9 text-secondary">
+                                {{ viewPaymentForm.my_reference }}
+                                
+                            </div>
+                        </div>
+                        <div class="mb-2 row">
+                            <label for="recipient_reference" class="form-label col-sm-3">Recipient Reference:</label>
+                            <div class="col-sm-9 text-secondary">
+                                {{ viewPaymentForm.recipient_reference }}
+                                
+                            </div>
+                        </div>
+                        <!-- Payment Status -->
+                        <h6 class="mb-1 mt-4">Payment Status</h6>
+                        <hr class="mt-0"/>
+                        <div class="mb-2 row">
+                            <label for="description" class="form-label col-sm-3">Status Date: </label>
+                            <div class="col-sm-9 text-secondary">
+                                -- {{ 'Not Available' }} --
+                                
+                            </div>
+                        </div>
+                        <div class="mb-2 row">
+                            <label for="amount" class="form-label col-sm-3">File Status Description: </label>
+                            <div class="col-sm-9 text-secondary">
+                                {{  }}
+                                
+                            </div>
+                        </div>
+                        <hr class="mt-0 mb-0"/>
+                        <div class="mb-0 mt-2 row">
+                            <div class="col-sm-3">
+                                
+                            </div>
+                            <div class="form-check col-sm-9">
+                               
                                 <button type="button" class="btn btn-secondary pull-right btn-sm" data-bs-dismiss="modal" @click="closeModal">Cancel</button>
                                 
                             </div>
@@ -1460,6 +1642,7 @@ export default {
             depositModalInstance: null,
             editDepositModalInstance: null,
             editPaymentModalInstance: null,
+            viewPaymentModalInstance: null,
             createPaymentModalInstance: null,
             beneficiaryDetails: null, // Object to hold selected beneficiary details
             showAwsModelInstance: null,
@@ -1551,6 +1734,27 @@ export default {
                 requisition_id: '',
                 firm_account_id: '',
             },
+            viewPaymentForm: {
+                category_name: '',
+                category_id: '',
+                account_holder_type: '',
+                account_number: '',
+                initials: '',
+                surname: '',
+                company_name: '',
+                id_number: '',
+                registration_number: '',
+                account_type: { id: null, name: null},
+                institution: { id: null},
+                branch_code: '',
+                verified: '',
+                description: '',
+                amount: '',
+                my_reference: '',  // Example reference
+                recipient_reference: '',
+                requisition_id: '',
+                firm_account_id: '',
+            },
             errors: {}
         };
     },
@@ -1601,7 +1805,28 @@ export default {
         //const requisitionStore = useRequisitionStore();
         //this.requisition = requisitionStore.requisition;
     },
+    watch: {
+        categories: {
+            handler() {
+                if (this.viewPaymentForm.category_id) {
+                    let selectedCategory = this.categories.find(cat => cat.id === this.viewPaymentForm.category_id);
+                    this.viewPaymentForm.category_name = selectedCategory ? selectedCategory.name : '';
+                }
+            },
+            deep: true,
+            immediate: true
+        }
+    },
     methods: {
+        validateRegistrationNumber() {
+            const value = this.paymentForm.registration_number;
+            const pattern = /^\d{4}\/\d{6}\/\d{2}$/;
+
+            // If the input doesn't match the pattern, show an error message
+            if (!pattern.test(value)) {
+                this.paymentForm.registration_number = value.replace(/[^0-9/]/g, ''); // Allow only numbers and "/"
+            }
+        },
         validateAccountNumber(event) {
             // Remove any non-numeric characters
             this.editPaymentForm.account_number = this.editPaymentForm.account_number.replace(/\D/g, '');
@@ -1819,6 +2044,53 @@ export default {
                     });
                 });
         },
+
+        openViewPaymentModal(payment) {
+
+
+            this.showAccountDetails = true;
+            this.loadCategories();
+            this.loadAccountTypes();
+            this.loadInstitutions();
+            //console.log(payment);
+
+            // Set the edit form data to the selected deposit values
+            this.viewPaymentForm.id = payment.id;
+            this.viewPaymentForm.description = payment.description;
+            this.viewPaymentForm.amount = payment.amount;
+            this.viewPaymentForm.verified = payment.beneficiary_account?.verified;
+            this.viewPaymentForm.my_reference = payment.my_reference;
+            this.viewPaymentForm.recipient_reference = payment.recipient_reference;
+            this.viewPaymentForm.account_number = payment.beneficiary_account?.account_number;
+            this.viewPaymentForm.account_holder_type = payment.beneficiary_account?.account_holder_type;
+            this.viewPaymentForm.initials = payment.beneficiary_account?.initials;
+            this.viewPaymentForm.surname = payment.beneficiary_account?.surname;
+            this.viewPaymentForm.company_name = payment.beneficiary_account?.company_name;
+            this.viewPaymentForm.id_number = payment.beneficiary_account?.id_number;
+            this.viewPaymentForm.registration_number = payment.beneficiary_account?.registration_number;
+            this.viewPaymentForm.institution = payment.beneficiary_account?.institution;
+            this.viewPaymentForm.branch_code = payment.beneficiary_account?.branch_code;
+            // Set category_id before checking category name
+            this.viewPaymentForm.category_id = payment.category_id;
+            this.viewPaymentForm.account_type = payment.beneficiary_account?.account_type;
+
+            this.loadBeneficiaryDetails(payment?.beneficiary_account_id, payment.beneficiary_account?.account_number);
+
+            console.log(payment);
+        
+
+            // Ensure categories exist before finding the name
+            if (this.categories.length > 0) {
+                let selectedCategory = this.categories.find(cat => cat.id === payment.category_id);
+                this.viewPaymentForm.category_name = selectedCategory ? selectedCategory.name : '';
+            }
+            // Show the modal
+            this.viewPaymentModalInstance = new bootstrap.Modal(document.getElementById('viewPaymentModal'));
+            this.viewPaymentModalInstance.show();
+
+            //console.log(deposit);
+        },
+        
         openEditPaymentModal(payment) {
 
 
@@ -2054,18 +2326,31 @@ export default {
                         this.paymentForm.account_holder_type = selectedBeneficiary.account_holder_type;
                         this.paymentForm.registration_number = selectedBeneficiary.registration_number;
                         this.paymentForm.verified = selectedBeneficiary.verified == 1;
-                        this.paymentForm.payments = selectedBeneficiary.payments; 
+                        //this.paymentForm.payments = selectedBeneficiary.payments; 
                         this.paymentForm.authorised = selectedBeneficiary.authorised;
                         this.paymentForm.display_text = selectedBeneficiary.display_text;
                         this.paymentForm.authorizers = selectedBeneficiary.authorizers;
 
+                        // Format all payment amounts correctly
+                        this.paymentForm.payments = selectedBeneficiary.payments.map(payment => ({
+                            ...payment,
+                            amount: parseFloat(payment.amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+                        }));
+
+                        this.viewPaymentForm.payments = this.paymentForm.payments;
+
                         // Populate the previously paid field
                         if (selectedBeneficiary.payments.length > 0) {
                             const firstPayment = selectedBeneficiary.payments[0];
-                            this.paymentForm.previously_paid = `${this.formatDate(firstPayment.created_at)} - R${firstPayment.amount}`;
+                            this.paymentForm.previously_paid = `${this.formatDate(firstPayment.created_at)} - R${parseFloat(firstPayment.amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
+                            this.viewPaymentForm.previously_paid = this.paymentForm.previously_paid;
                         } else {
                             this.paymentForm.previously_paid = "No previous payment";
-                        } 
+                            this.viewPaymentForm.previously_paid = "No previous payment";
+                        }
+
+                        this.beneficiaryDetails = this.paymentForm;
+                       
 
                         this.paymentForm.category = selectedBeneficiary.category.id;
                         this.paymentForm.account_type = selectedBeneficiary.account_type;
@@ -2549,6 +2834,9 @@ export default {
             }
             if(this.editPaymentModalInstance){
                 this.editPaymentModalInstance.hide();
+            }
+            if(this.viewPaymentModalInstance){
+                this.viewPaymentModalInstance.hide();
             }
             if(this.createPaymentModalInstance){
                 this.createPaymentModalInstance.hide();

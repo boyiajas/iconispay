@@ -36,7 +36,7 @@
 
             <p>Please follow this URL: <a :href="url" target="_blank">{{ url }}</a></p>
 
-            <p>Kind Regards,<br>{{ currentUser.name }}</p>
+            <p>Kind Regards,<br/><br/>{{ currentUser.name }}</p>
 
             <div class="d-flex justify-content-between mt-4">
                 <button type="button" class="btn btn-secondary" @click="cancel">Cancel</button>

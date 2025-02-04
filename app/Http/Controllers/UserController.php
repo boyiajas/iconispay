@@ -39,17 +39,38 @@ class UserController extends Controller
         return User::where('id', '!=', Auth::user()->id)->with('roles')->get();
     }
 
+    public function deactivateAccount(Request $request, $id)
+    {
+        $user = User::findOrFail($id);
+        $user->status = 'inactive'; // Assuming status field exists
+        $user->save();
+
+        return response()->json(['message' => 'User account has been locked.']);
+    }
+
+    public function activateAccount(Request $request, $id)
+    {
+        $user = User::findOrFail($id);
+        $user->status = 'active'; // Assuming status field exists
+        $user->save();
+
+        return response()->json(['message' => 'User account has been locked.']);
+    }
+
     public function deactivatedUsers(Request $request)
     {
         // Get only active users with their roles
-        $users = User::where('status', 'inactive')->with('roles')->get();
+        $users = User::where('status', 'inactive')->with('roles', 'latestCertificate')->get();
 
         // Use the DataTables facade to format the data
         return DataTables::of($users)
             ->addColumn('role', function ($user) {
                 // Combine all role names into a single string
-                return $user->roles->pluck('name')->implode(', ');
+                return $user->roles->map(function ($role) {
+                    return '<span class="badge badge-primary btn-primary">' . $role->name . '</span>';
+                })->implode(' ');
             })
+            ->rawColumns(['role']) // Ensure the HTML for badges is rendered
             ->make(true);
     }
 

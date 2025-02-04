@@ -4,7 +4,7 @@
         <!-- Tab Navigation -->
         <ul class="nav nav-tabs mb-0" id="setupTab" role="tablist">
             <li class="nav-item" role="presentation">
-                <a class="nav-link active" id="users-tab" data-bs-toggle="tab" href="#users" role="tab" aria-controls="users" aria-selected="true">Users</a>
+                <a class="nav-link active" id="users-tab" data-bs-toggle="tab" href="#users" role="tab" aria-controls="users" aria-selected="true" @click="loadUsers">Users</a>
             </li>
             <li class="nav-item" role="presentation">
                 <a class="nav-link" id="beneficiary-accounts-tab" data-bs-toggle="tab" href="#beneficiary-accounts" role="tab" aria-controls="beneficiary-accounts" aria-selected="false" @click="initializeBeneficiaryAccounts">Beneficiary Accounts</a>
@@ -230,8 +230,8 @@
                                 <label class="form-check-label" for="bookkeeper_role">Request Bookkeeper Role</label>
                             </div>
                             <div class="form-check mb-1 pull-right">
-                                <button type="submit" class="btn btn-primary mt-2 mr-1">Save</button>
-                                <button type="button" class="btn btn-secondary mt-2" @click="closeModal">Cancel</button>
+                                <button type="submit" class="btn btn-primary mt-2 mr-1 btn-sm">Save</button>
+                                <button type="button" class="btn btn-secondary mt-2 btn-sm" @click="closeModal">Cancel</button>
                             </div>
                         </form>
                     </div>
@@ -249,6 +249,34 @@
                     </div>
                     <div class="modal-body">
                         <form @submit.prevent="updateUser">
+                            <div class="pl-2 p-3 mb-3" style="background-color:#eee;border-radius: 5px;">
+                                <!-- Account -->
+                                <div class="mb-0 row">
+                                    <label for="account" class="form-label col-sm-5">Username:</label>
+                                    <div class="col-sm-7 text-secondary">
+                                        {{ editUser.email }} 
+                                    </div>
+                                </div>
+                                <div class="mb-0 row">
+                                    <label for="account" class="form-label col-sm-5">Email Confirmed:</label>
+                                    <div class="col-sm-7 text-secondary">
+                                        {{ (editUser.email_verify) ? 'Yes' : 'No'  }} 
+                                    </div>
+                                </div>
+                                <div class="mb-0 row">
+                                    <label for="account" class="form-label col-sm-5">Account Locked Out:</label>
+                                    <div class="col-sm-7 text-secondary">
+                                        {{ (editUser.active == 'active') ? 'No' : 'Yes'  }} 
+                                    </div>
+                                </div>
+                                <div class="mb-0 row">
+                                    <label for="account" class="form-label col-sm-5">Has Certificate:</label>
+                                    <div class="col-sm-7 text-secondary">
+                                        {{ (editUser.latest_certificate) ? 'Yes' : 'No'}} 
+                                    </div>
+                                </div>
+                            </div>
+
                             <!-- Full Name -->
                             <div class="mb-3">
                                 <label for="editName" class="form-label">Full Name:</label>
@@ -261,16 +289,9 @@
                                 <input type="email" v-model="editUser.email" id="editEmail" class="form-control" required />
                             </div>
 
-                            <!-- Password -->
-                            <div class="mb-3">
-                                <label for="editPassword" class="form-label">New Password:</label>
-                                <input type="password" v-model="editUser.password" id="editPassword" class="form-control" placeholder="Enter new password" />
-                            </div>
-
-                            <!-- Confirm Password -->
-                            <div class="mb-3">
-                                <label for="editPasswordConfirmation" class="form-label">Confirm Password:</label>
-                                <input type="password" v-model="editUser.password_confirmation" id="editPasswordConfirmation" class="form-control" placeholder="Confirm new password" />
+                            <div class="form-group mb-3">
+                                <label for="cell_number">Cell Number:</label>
+                                <input type="text" v-model="editUser.cell_number" class="form-control" id="editNumber" placeholder="Enter cell phone number">
                             </div>
 
                             <!-- Role Checkboxes -->
@@ -288,9 +309,13 @@
                             </div>
 
                             <!-- Buttons -->
-                            <div class="d-flex justify-content-end">
-                                <button type="submit" class="btn btn-primary me-2">Save Changes</button>
-                                <button type="button" class="btn btn-secondary" @click="closeModal">Cancel</button>
+                            <div class="d-flex justify-content-end mt-2">
+                                <button type="submit" class="btn btn-primary me-2 btn-sm">Save</button>
+                                <button type="button" class="btn btn-default-default me-2 btn-sm" @click="resetUserPassword"><span class="fas fa-sync-alt"></span> Reset Password</button>
+
+                                <button type="button" class="btn btn-danger me-2 btn-sm" v-if="editUser.active == 'active'" @click="lockUserAccount"><span class="fa fa-lock"></span> Lock</button>
+                                <button type="button" class="btn btn-danger me-2 btn-sm" v-else @click="unlockUserAccount"><span class="fa fa-unlock"></span> Un-Lock</button>
+                                <button type="button" class="btn btn-secondary btn-sm" @click="closeModal">Cancel</button>
                             </div>
                         </form>
                     </div>
@@ -323,8 +348,8 @@
                     <a :href="sampleFileUrl" class="btn btn-link" download>Download Sample File</a>
                    
                     <div class="d-flex justify-content-end">
-                        <button type="submit" class="btn btn-primary me-2"><span id="importAccountButtonSpinner" class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span> Import</button>
-                        <button type="button" class="btn btn-secondary" @click="closeModal">Cancel</button>
+                        <button type="submit" class="btn btn-primary me-2 btn-sm"><span id="importAccountButtonSpinner" class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span> Import</button>
+                        <button type="button" class="btn btn-secondary btn-sm" @click="closeModal">Cancel</button>
                     </div>
                     </form>
                 </div>
@@ -480,9 +505,9 @@
                             <!-- Save and Delete Buttons -->
                             <div class="form-group mb-3 row">
                                 <div class="col-sm-10 offset-sm-2" style="text-align: end;">
-                                    <button type="submit" class="btn btn-primary">Save Changes</button>
-                                    <button type="button" class="btn btn-danger ml-1" @click="confirmDelete">Delete</button>
-                                    <button type="button" class="btn btn-secondary ml-1" @click="closeModal">Cancel</button>
+                                    <button type="submit" class="btn btn-primary btn-sm">Save Changes</button>
+                                    <button type="button" class="btn btn-danger ml-1 btn-sm" @click="confirmDelete">Delete</button>
+                                    <button type="button" class="btn btn-secondary ml-1 btn-sm" @click="closeModal">Cancel</button>
                                 </div>
                             </div>
                         </form>
@@ -538,8 +563,8 @@
                                 <input type="file" ref="importFile" id="importFile" class="form-control" accept=".xlsx, .csv" required>
                             </div>
                             <div class="d-flex justify-content-end">
-                                <button type="submit" class="btn btn-primary me-2"><span id="importButtonSpinner" class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span> Import</button>
-                                <button type="button" class="btn btn-secondary" @click="closeModal">Cancel</button>
+                                <button type="submit" class="btn btn-primary me-2 btn-sm"><span id="importButtonSpinner" class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span> Import</button>
+                                <button type="button" class="btn btn-secondary btn-sm" @click="closeModal">Cancel</button>
                             </div>
                         </form>
                     </div>
@@ -700,11 +725,14 @@ export default {
                 id: null,
                 name: "",
                 email: "",
+                email_verify: "",
                 password: "",
                 password_confirmation: "",
                 is_admin: false,
                 authoriser_role: false,
                 bookkeeper_role: false, 
+                latest_certificate: false,
+                active: false,
             }, // Object to hold user data for editing
             sourceAccountsTable: [],
             
@@ -746,6 +774,51 @@ export default {
         return { toast };
     },
     methods: {
+        async resetUserPassword() {
+            try {
+
+                const response = await axios.post(`/api/users/reset-password`, {email:this.editUser.email});
+                this.toast.success(response.data.message || 'User account reset password successfully!');
+                this.closeModal();
+                //alert(response.data.message);
+            } catch (error) {
+                console.error("Error resetting password:", error.response.data);
+                this.toast.error(error.response.data.message || 'An error occurred while trying to reset password.');
+                this.closeModal();
+            }
+        },
+        async lockUserAccount() {
+            try {
+                const response = await axios.post(`/api/users/${this.editUser.id}/deactivate`);
+                this.toast.success(response.data.message || 'User account de-activated successfully!');
+                this.loadUsers();
+                this.closeModal();
+
+            } catch (error) {
+
+                this.toast.error(error.response.data.message || 'An error occurred while trying to de-activate user account.');
+                console.error("Error locking account:", error.response?.data || error.message);
+               
+                this.loadUsers();
+                this.closeModal();
+            }
+        },
+        async unlockUserAccount() {
+            try {
+                const response = await axios.post(`/api/users/${this.editUser.id}/activate`);
+                
+                this.toast.success(response.data.message || 'User account activated successfully!');
+                this.closeModal();
+                this.loadDeactivatedUsers();
+
+            } catch (error) {
+                this.toast.error(error.response.data.message || 'An error occurred while trying to activate user account.');
+                console.error("Error activate account:", error.response?.data || error.message);
+                //message	"User does not have the right roles."
+                this.closeModal();
+            }
+            
+        },
         loadCategories() {
             axios.get('/api/categories').then(response => {
                 this.categories = response.data;
@@ -951,23 +1024,25 @@ export default {
                     {
                         data: null,
                         render: function (data) { 
-
+                            
                              // Check if the user has only the 'user' role
                             const hasOnlyUserRole = data.roles.length === 1 && data.roles[0].name === "user";
+                            const certificateId = data.latest_certificate?.id ?? null;
+
                            
                             
-                            if (!data.latest_certificate) {
+                            if (!certificateId) {
                                 
                                 return `
-                                    <button class="btn btn-outline-info btn-sm me-2 edit-user-btn" data-user-id="${data.id}" title="Edit User"><i class="fas fa-user-edit"></i></button>
+                                    <button class="btn btn-outline-info btn-sm me-2 edit-user-btn" data-user-id="${data.id}" data-certificate-id="${certificateId}" title="Edit User"><i class="fas fa-user-edit"></i></button>
                                     ${!hasOnlyUserRole ? `
                                     <button class="btn btn-outline-info btn-sm me-2 generate-certificate-btn" data-user-id="${data.id}" title="Generate Certificate"><i class="fas fa-certificate"></i></button>` : ''}
                                     <button class="btn btn-outline-danger btn-sm delete-user-btn" data-user-id="${data.id}" title="Delete user"><i class="fas fa-trash" ></i></button>
                                 `;
                             } else {
                                 return `
-                                    <button class="btn btn-outline-info btn-sm me-2 edit-user-btn" data-user-id="${data.id}" title="Edit User"><i class="fas fa-user-edit" ></i></button>
-                                    <button class="btn btn-outline-success btn-sm me-2 download-certificate-btn" data-certificate-id="${data.latest_certificate?.id}" title="Download Certificate"><i class="fas fa-download"></i></button>
+                                    <button class="btn btn-outline-info btn-sm me-2 edit-user-btn" data-user-id="${data.id}" data-certificate-id="${certificateId}" title="Edit User"><i class="fas fa-user-edit" ></i></button>
+                                    <button class="btn btn-outline-success btn-sm me-2 download-certificate-btn" data-certificate-id="${certificateId}" title="Download Certificate"><i class="fas fa-download"></i></button>
                                     <button class="btn btn-outline-danger btn-sm delete-user-cert-btn" data-user-id="${data.id}" title="Delete user certificate"><i class="fas fa-user-times" ></i></button>
                                     <button class="btn btn-outline-danger btn-sm delete-user-btn" data-user-id="${data.id}" title="Delete user"><i class="fas fa-trash" ></i></button>
                                 `;
@@ -1007,10 +1082,12 @@ export default {
                     $(row).find('.edit-user-btn').on('click', (event) => { 
                         
                         const userId = $(event.currentTarget).data('user-id');
+                        const certificateId = $(event.currentTarget).data('certificate-id') || null; // Ensure it's null if not found
+                       
                         const user = this.usersTable
                             .data()
                             .toArray()
-                            .find((u) => u.id === userId);
+                            .find((u) => u.id === userId); 
 
                         if (user) {
 
@@ -1024,12 +1101,16 @@ export default {
                                 id: user.id || null, // Ensure the user ID is included for updates
                                 name: user.name || "",
                                 email: user.email || "",
+                                email_verify: user.email_verified_at || "",
+                                active: user.status,
                                 password: "", // Reset password fields
                                 password_confirmation: "",
                                 is_admin: roles.includes("admin"),
                                 authoriser_role: roles.includes("authoriser"),
                                 bookkeeper_role: roles.includes("bookkeeper"),
+                                latest_certificate: certificateId,
                             };
+                            console.log(this.editUser);
 
                             this.openEditUserModal();
                         }
@@ -1176,6 +1257,7 @@ export default {
                     type: 'GET',
                     dataSrc: 'data' // Assumes the API response has a `data` field
                 },
+                
                 columns: [
                     { data: 'email' },
                     { data: 'name' },
@@ -1185,10 +1267,26 @@ export default {
                     {
                         data: null,
                         render: function (data) {
-                            return `
-                                <button class="btn btn-outline-info btn-sm me-2"><i class="fas fa-edit"></i></button>
-                                <button class="btn btn-outline-danger btn-sm"><i class="fas fa-lock"></i></button>
-                            `;
+
+                            const certificateId = data.latest_certificate?.id ?? null;
+                            const hasOnlyUserRole = data.roles.length === 1 && data.roles[0].name === "user";
+
+                            if (!certificateId) {
+                                
+                                return `
+                                    <button class="btn btn-outline-info btn-sm me-2 edit-user-btn" data-user-id="${data.id}" data-certificate-id="${certificateId}" title="Edit User"><i class="fas fa-user-edit"></i></button>
+                                    ${!hasOnlyUserRole ? `
+                                    <button class="btn btn-outline-info btn-sm me-2 generate-certificate-btn" data-user-id="${data.id}" title="Generate Certificate"><i class="fas fa-certificate"></i></button>` : ''}
+                                    <button class="btn btn-outline-danger btn-sm delete-user-btn" data-user-id="${data.id}" title="Delete user"><i class="fas fa-trash" ></i></button>
+                                `;
+                            } else {
+                                return `
+                                    <button class="btn btn-outline-info btn-sm me-2 edit-user-btn" data-user-id="${data.id}" data-certificate-id="${certificateId}" title="Edit User"><i class="fas fa-user-edit" ></i></button>
+                                    <button class="btn btn-outline-success btn-sm me-2 download-certificate-btn" data-certificate-id="${certificateId}" title="Download Certificate"><i class="fas fa-download"></i></button>
+                                    <button class="btn btn-outline-danger btn-sm delete-user-cert-btn" data-user-id="${data.id}" title="Delete user certificate"><i class="fas fa-user-times" ></i></button>
+                                    <button class="btn btn-outline-danger btn-sm delete-user-btn" data-user-id="${data.id}" title="Delete user"><i class="fas fa-trash" ></i></button>
+                                `;
+                            }
                         }
                     }
                 ],
@@ -1198,6 +1296,48 @@ export default {
                 lengthMenu: [ [10, 25, 50, 100], [10, 25, 50, 100] ],
                 searching: true,
                 autoWidth: true
+            });
+
+            // Event listener for delete button
+            $('#deactivated-users-table tbody').on('click', '.activate-account-btn', (event) => {
+                const id = $(event.currentTarget).data('user-id');
+                this.unlockUserAccount(id);
+            });
+
+            $('#deactivated-users-table tbody').on('click', '.edit-user-btn', (event) => { 
+                        
+                const userId = $(event.currentTarget).data('user-id');
+                const certificateId = $(event.currentTarget).data('certificate-id') || null; // Ensure it's null if not found
+                
+                const user = this.deactivatedUsersTable
+                    .data()
+                    .toArray()
+                    .find((u) => u.id === userId); 
+
+                if (user) {
+
+                    // Normalize roles
+                    const roles = Array.isArray(user.roles)
+                        ? user.roles.map((role) => (typeof role === "object" ? role.name : role))
+                        : [];
+
+                        // Populate `editUser`
+                    this.editUser = {
+                        id: user.id || null, // Ensure the user ID is included for updates
+                        name: user.name || "",
+                        email: user.email || "",
+                        email_verify: user.email_verified_at || "",
+                        password: "", // Reset password fields
+                        password_confirmation: "",
+                        is_admin: roles.includes("admin"),
+                        authoriser_role: roles.includes("authoriser"),
+                        bookkeeper_role: roles.includes("bookkeeper"),
+                        latest_certificate: certificateId,
+                        active: user.status,
+                    };
+
+                    this.openEditUserModal();
+                }
             });
         },
         addUser() {
