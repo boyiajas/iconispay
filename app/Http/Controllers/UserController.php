@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Controllers\Auth\ForgotPasswordController;
 use App\Jobs\SendNewUserNotificationJob;
 use App\Models\User;
 use DataTables;
@@ -55,6 +56,22 @@ class UserController extends Controller
         $user->save();
 
         return response()->json(['message' => 'User account has been locked.']);
+    }
+
+    public function resetAccount(Request $request)
+    {
+        $user = User::where('email', $request->email)->first();
+
+        if ($user) {
+            $user->google2fa_secret = null;
+            $user->save();
+
+            // Forward the request to ForgotPasswordController
+            return app(ForgotPasswordController::class)->sendResetLinkEmail($request);
+        }
+
+        return response()->json(['error' => 'Unable to reset password, Email does not exist'], 400);
+
     }
 
     public function deactivatedUsers(Request $request)

@@ -156,8 +156,11 @@ Route::group(['middleware' => 'no_cache'], function (){
         return view('google2fa.index');
     })->name('2fa.verify')->middleware(['auth']);
 
-
     Auth::routes();
+    
+    Route::post('password/email', [UserController::class, 'resetAccount'])->name('password.email');
+    
+    //Auth::routes();
 
     Route::prefix('api')->middleware(['auth'])->group(function(){
 
@@ -166,7 +169,7 @@ Route::group(['middleware' => 'no_cache'], function (){
         Route::get('/firm-accounts/all-accounts', [FirmAccountController::class, 'getAllFirmAccounts']);
         // User Management Routes
         Route::resource('users', UserController::class);
-        Route::post('/users/reset-password', [ForgotPasswordController::class, 'sendResetLinkEmail'])->middleware(['role:admin']);
+        Route::post('/users/reset-password', [UserController::class, 'resetAccount'])->middleware(['role:admin']);
         Route::post('/users/{id}/deactivate', [UserController::class, 'deactivateAccount'])->middleware(['role:admin']);
         Route::post('/users/{id}/activate', [UserController::class, 'activateAccount'])->middleware(['role:admin']);
         Route::post('/import-users', [UserController::class, 'importUsers']);
