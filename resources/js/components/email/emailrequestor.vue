@@ -70,6 +70,7 @@ export default {
         return {
             requisition: {},  // Initialize as an empty object
             emailForm: {
+                recipientId: '',
                 recipient: '',
                 subject: '',
                 greeting: 'Dear',
@@ -108,6 +109,7 @@ export default {
                 .then(response => {
                     this.requisition = response.data || {};  // Set requisition data or empty object
                     console.log(this.requisition);
+                    this.emailForm.recipientId = this.requisition?.user?.id;
                     this.emailForm.greeting = 'Dear '+this.requisition?.user?.name;
                     this.emailForm.recipient = this.requisition?.user?.name;
                     // Set subject and message after requisition is loaded
@@ -129,6 +131,8 @@ export default {
 
             const buttonSpinner = document.getElementById('buttonSpinner');
             buttonSpinner.classList.remove('d-none');
+
+            console.log(this.emailForm);
             
             axios.post('/api/send-email/requestor-notification', this.emailForm)
                 .then(response => {

@@ -99,7 +99,7 @@
                 <h1>{{ $emailData['greeting'] }}</h1>
                 <p>{{ $emailData['message'] }}</p>
                 <p>Please follow the link below to authorize:</p>
-                <a href="{{ $emailData['url'] }}" class="btn" target="_blank">Authorize Now</a>
+                <a href="{{ $emailData['url'] }}" class="btn" target="_blank">View Requisition</a>
                 <p>For any issues, please contact us directly.</p>
                 <p>Kind regards,<br>{{ $emailData['senderName'] }}</p>
             </td>

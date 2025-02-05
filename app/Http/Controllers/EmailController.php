@@ -23,19 +23,19 @@ class EmailController extends Controller
     public function sendRequestorNotificationEmail(Request $request)
     {
         $request->validate([
-            'recipient' => 'required|exists:users,id',
+            'recipientId' => 'required|exists:users,id',
             'subject' => 'required|string|max:255',
             'greeting' => 'nullable|string|max:255',
             'message' => 'required|string',
         ]);
 
-        $recipient = User::find($request->recipient);
+        $recipient = User::find($request->recipientId);
         $baseUrl = config('app.url'); // Use environment variable for base URL
         $url = "{$baseUrl}/matters/requisitions/{$recipient->id}/details";
         
         $emailData = [
             'subject' => $request->subject,
-            'greeting' => $request->greeting ?? 'Dear Signatory,',
+            'greeting' => $request->greeting ?? 'Dear Requestor,',
             'message' => $request->message ?? '',
             'url' => (string) $url,
             'senderName' => (string) auth()->user()->name,
