@@ -182,6 +182,9 @@ Route::group(['middleware' => 'no_cache'], function (){
         
         Route::get('/beneficiary-accounts/search', [BeneficiaryAccountController::class, 'search']);
         Route::resource('/beneficiary-accounts', BeneficiaryAccountController::class);
+
+       
+        Route::get('/onceoff-accounts', [BeneficiaryAccountController::class, 'getOnceOffAccounts']);
         Route::get('/beneficiary-accounts/{beneficiaryId?}/{accountNumber?}', [BeneficiaryAccountController::class, 'showBeneficiaryAndFirm']);
         
         Route::post('/beneficiary-accounts/{sourceAccountId}/authorize', [BeneficiaryAccountController::class, 'authorise']);

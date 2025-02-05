@@ -21,6 +21,10 @@ class BeneficiaryAccountController extends Controller
     {
          // Get the FirmAccount data with related 'institution'
          $beneficiaryAccounts = BeneficiaryAccount::with('institution','category','accountType')
+            ->where(function ($query) {
+                $query->whereHas('authorizers') // Ensure at least one authorizer exists
+                    ->orWhere('verified', '>', 0); // OR ensure verified is greater than zero
+            })
          ->get()
         ->map(function ($beneficiaryAccount) {
             // Check if the firm account has not been authorized
@@ -56,9 +60,13 @@ class BeneficiaryAccountController extends Controller
         // Retrieve only beneficiary accounts that have at least one authorizer OR are verified
         $beneficiaryAccounts = BeneficiaryAccount::with('institution', 'category', 'accountType')
             ->where(function ($query) {
-                $query->whereHas('authorizers') // Ensure at least one authorizer exists
+                $query->where('number_of_authorizer', '<>', null) // Ensure at least one authorizer exists
                     ->orWhere('verified', '>', 0); // OR ensure verified is greater than zero
             })
+            /* ->where(function ($query) {
+                $query->whereHas('authorizers') // Ensure at least one authorizer exists
+                    ->orWhere('verified', '>', 0); // OR ensure verified is greater than zero
+            }) */
             ->get()
             ->map(function ($beneficiaryAccount) {
                 // Count the number of authorizers
@@ -84,6 +92,41 @@ class BeneficiaryAccountController extends Controller
 
         // Return the data formatted for DataTables
         return DataTables::of($beneficiaryAccounts)->make(true);
+    }
+
+    public function getOnceOffAccounts()
+    {
+        // Retrieve only beneficiary accounts that have at least one authorizer OR are verified
+        $onceoffAccounts = BeneficiaryAccount::with('institution', 'category', 'accountType')
+            ->where(function ($query) {
+                $query->where('number_of_authorizer', null) // Ensure at least one authorizer exists
+                    ->orWhere('verified', 0); // OR ensure verified is greater than zero
+            })
+            ->get()
+            ->map(function ($onceoffAccounts) {
+                // Count the number of authorizers
+                $authorizerCount = $onceoffAccounts->authorizers()->count();
+                $numberOfAuthorizer = $onceoffAccounts->number_of_authorizer ?? 0;
+
+                if (!$onceoffAccounts->authorised) {
+                    if ($authorizerCount > 0 && $authorizerCount == $numberOfAuthorizer) {
+                        // If authorizer count matches required, mark as authorised
+                        $onceoffAccounts->authorised = 1;
+                        $onceoffAccounts->save();
+                    } else {
+                        // Otherwise, set a progress indicator
+                        $onceoffAccounts->authorizer_progress = "$authorizerCount of $numberOfAuthorizer";
+                    }
+                } else {
+                    // If already authorized, set progress as complete
+                    $onceoffAccounts->authorizer_progress = "$authorizerCount of $numberOfAuthorizer";
+                }
+
+                return $onceoffAccounts;
+            });
+
+        // Return the data formatted for DataTables
+        return DataTables::of($onceoffAccounts)->make(true);
     }
 
 

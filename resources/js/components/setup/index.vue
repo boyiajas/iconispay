@@ -12,14 +12,23 @@
             <li class="nav-item" role="presentation">
                 <a class="nav-link" id="firm-accounts-tab" data-bs-toggle="tab" href="#firm-accounts" role="tab" aria-controls="firm-accounts" aria-selected="false" @click="initializeFirmAccounts">Firm Accounts</a>
             </li>
+            
+            <PermissionControl :roles="['admin']">
+                <li class="nav-item" role="presentation">
+                    <a class="nav-link" id="onceoff-accounts-tab" data-bs-toggle="tab" href="#onceoff-accounts" role="tab" aria-controls="onceoff-accounts" aria-selected="false" @click="initializeOnceOffAccounts">Once Off Accounts</a>
+                </li>
+            </PermissionControl>
             <PermissionControl :roles="['admin']">
                 <li class="nav-item" role="presentation">
                     <a class="nav-link" id="audit-trail-tab" data-bs-toggle="tab" href="#audit-trail" role="tab" aria-controls="audit-trail" aria-selected="false">Audit Trail</a>
                 </li>
             </PermissionControl>
-            <li class="nav-item" role="presentation">
-                <a class="nav-link" id="deactivated-users-tab" data-bs-toggle="tab" href="#deactivated-users" role="tab" aria-controls="deactivated-users" aria-selected="false" @click="loadDeactivatedUsers">Deactivated Users</a>
-            </li>
+            <PermissionControl :roles="['admin']">
+                <li class="nav-item" role="presentation">
+                    <a class="nav-link" id="deactivated-users-tab" data-bs-toggle="tab" href="#deactivated-users" role="tab" aria-controls="deactivated-users" aria-selected="false" @click="loadDeactivatedUsers">Deactivated Users</a>
+                </li>
+            </PermissionControl>
+            
         </ul>
 
         <!-- Tab Content -->
@@ -95,6 +104,34 @@
                     </div>
                     <div class="card-body">
                         <table id="beneficiary-accounts-table" class="table table-bordered table-striped display nowrap" style="width:100%">
+                            <thead>
+                                <tr>
+                                    <th>Display</th>
+                                    <th>Category</th>
+                                    <th>Account Holder</th>
+                                    <th width="10%">Account</th>
+                                    <th width="15%">Institution</th>
+                                    <th width="10%">Authorised</th>
+                                    <th width="12%">Actions</th>
+                                </tr>
+                            </thead>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Once off Accounts Tab -->
+            <div class="tab-pane fade" id="onceoff-accounts" role="tabpanel" aria-labelledby="onceoff-accounts-tab">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between">
+                        <h5>Once Off Accounts</h5>
+                        <div>
+                            <button class="btn btn-white btn-sm me-2" @click="openImportAccountModal('onceoff')"><i class="fas fa-upload"></i> Import Once Off Accounts</button>
+                            <router-link to="/onceoff/new" class="btn btn-white btn-sm">+ New Once Off Account</router-link>
+                        </div>
+                    </div>
+                    <div class="card-body">
+                        <table id="onceoff-accounts-table" class="table table-bordered table-striped display nowrap" style="width:100%">
                             <thead>
                                 <tr>
                                     <th>Display</th>
@@ -572,60 +609,118 @@
             </div>
         </div>
 
-        <!-- Firm Account Details Modal start here -->
-         <!-- Modal -->
+        <!-- Firm Account Details Modal -->
         <div class="modal fade" id="firmAccountModal" tabindex="-1" role="dialog" aria-labelledby="firmAccountModalLabel" aria-hidden="true">
             <div class="modal-dialog modal-lg" role="document">
                 <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="firmAccountModalLabel">Firm Account Details</h5>
-                    <button type="button" class="close" data-dismiss="modal" aria-label="Close" @click="closeModal">
-                    <span aria-hidden="true">&times;</span>
-                    </button>
-                </div>
-                <div class="modal-body">
-                    <!-- Account Holder Section -->
-                    <div class="account-holder-section">
-                    <h6>{{ firmAccount.name }} - {{ firmAccount.accountNumber }}</h6>
-                    <p><strong>Account Holder ({{ firmAccount.holderType }}):</strong></p>
-                    <p>Name: {{ firmAccount.holderName }}</p>
-                    <p>Registration #: {{ firmAccount.registrationNumber }}</p>
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="firmAccountModalLabel">Firm Account Details</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close" @click="closeModal">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
                     </div>
+                    <div class="modal-body">
+                        <!-- Account Holder Section -->
+                        <div class="account-holder-section">
+                            <h4>{{ firmAccount?.name }} - {{ firmAccount?.accountNumber }}</h4>
+                            <p class="mb-2 mt-4">Account Holder <span class="text-secondary">({{ firmAccount?.holderType }})</span></p>
+                            <div class="pl-2 p-2 mb-3" style="background-color:#eee; border-radius: 5px;">
+                                <div class="row mb-2">
+                                    <div class="col-md-5">
+                                        <span class="bold">Name: </span>
+                                    </div>
+                                    <div class="col-md-7">
+                                        <span class="text-secondary">{{ firmAccount?.name }}</span>
+                                    </div>
+                                </div>
+                                <div class="row mb-2">
+                                    <div class="col-md-5">
+                                        <span class="bold">Registration # </span>
+                                    </div>
+                                    <div class="col-md-7">
+                                        <span class="text-secondary">{{ firmAccount?.registrationNumber }}</span>
+                                    </div>
+                                </div>                            
+                            </div>
+                        </div>
 
-                    <!-- Account Details Section -->
-                    <div class="account-details-section">
-                    <h6>Account Details</h6>
-                    <p><strong>Account #:</strong> {{ firmAccount.accountNumber }}</p>
-                    <p><strong>Institution:</strong> {{ firmAccount.institution }}</p>
-                    <p><strong>Branch:</strong> {{ firmAccount.branch }}</p>
-                    <p><strong>Account Description:</strong> {{ firmAccount.accountDescription }}</p>
-                    <p><strong>File Type:</strong> {{ firmAccount.fileType }}</p>
-                    <p><strong>Method:</strong> {{ firmAccount.method }}</p>
-                    </div>
+                        <!-- Account Details Section -->
+                        <div class="account-details-section">
+                            <p class="mb-2 mt-4">Account Details</p>
+                            <div class="pl-2 p-2 mb-3" style="background-color:#eee; border-radius: 5px;">
+                                <div class="row mb-2">
+                                    <div class="col-md-5">
+                                        <span class="bold">Account #: </span>
+                                    </div>
+                                    <div class="col-md-7">
+                                        <span class="text-secondary">{{ firmAccount?.accountNumber }}</span>
+                                    </div>
+                                </div>
+                                <div class="row mb-2">
+                                    <div class="col-md-5">
+                                        <span class="bold">Institution: </span>
+                                    </div>
+                                    <div class="col-md-7">
+                                        <span class="text-secondary">{{ firmAccount?.institution }}</span>
+                                    </div>
+                                </div>
+                                <div class="row mb-2">
+                                    <div class="col-md-5">
+                                        <span class="bold">Branch: </span>
+                                    </div>
+                                    <div class="col-md-7">
+                                        <span class="text-secondary">{{ firmAccount?.branch }}</span>
+                                    </div>
+                                </div>
+                                <div class="row mb-2">
+                                    <div class="col-md-5">
+                                        <span class="bold">Account Description: </span>
+                                    </div>
+                                    <div class="col-md-7">
+                                        <span class="text-secondary">{{ firmAccount?.accountDescription }}</span>
+                                    </div>
+                                </div> 
+                                <div class="row mb-2">
+                                    <div class="col-md-5">
+                                        <span class="bold">File Type: </span>
+                                    </div>
+                                    <div class="col-md-7">
+                                        <span class="text-secondary">{{ firmAccount?.fileType }}</span>
+                                    </div>
+                                </div> 
+                                <div class="row mb-2">
+                                    <div class="col-md-5">
+                                        <span class="bold">Method: </span>
+                                    </div>
+                                    <div class="col-md-7">
+                                        <span class="text-secondary">{{ firmAccount?.method }}</span>
+                                    </div>
+                                </div>                            
+                            </div>
+                        </div>
 
-                    <!-- AVS Section -->
-                    <div class="avs-section alert alert-success">
-                    <strong>AVS Successfully Matched on {{ firmAccount.avsMatchedAt }}</strong>
-                    <button class="btn btn-sm btn-secondary ml-2" @click="showAvsDetails">Show Details</button>
-                    </div>
+                        <!-- AVS Section -->
+                        <div class="avs-section alert alert-success pb-3 pt-2">
+                            AVS Successfully Matched on {{ firmAccount?.avsMatchedAt }}
+                            <button class="btn btn-sm btn-light btn-default-default pull-right" @click="showAvsDetails">Show Details</button>
+                        </div>
 
-                    <!-- Authorizations Section -->
-                    <div class="authorization-section">
-                    <h6>Authorisations</h6>
-                    <div class="authorization-box alert alert-success">
-                        <strong>{{ firmAccount?.authorizer?.name }}</strong> on {{ firmAccount?.authorizedAt }}
-                        <p>logged in as <em>{{ firmAccount?.authorizer?.email }}</em></p>
+                        <!-- Authorizations Section -->
+                        <div class="authorization-section">
+                            <h6>Authorisations</h6>
+                            <div class="authorization-box alert alert-success pb-3 pt-2">
+                                <strong>{{ firmAccount?.authorizer?.name }}</strong> on {{ firmAccount?.authorizedAt }}
+                                <p>Logged in as <em>{{ firmAccount?.authorizer?.email }}</em></p>
+                            </div>
+                        </div>
                     </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal" @click="closeModal">Close</button>
                     </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-dismiss="modal" @click="closeModal">Close</button>
-                </div>
                 </div>
             </div>
         </div>
-
-        <!-- Firm Account Details Modal ends here -->
+        <!-- Firm Account Details Modal Ends Here -->
 
          <!-- Beneficiary Account Details Modal start here -->
          <!-- Modal -->
@@ -641,40 +736,101 @@
                 <div class="modal-body">
                     <!-- Account Holder Section -->
                     <div class="account-holder-section">
-                    <h6>{{ beneficiaryAccount?.name }} - {{ beneficiaryAccount?.accountNumber }}</h6>
-                    <p><strong>Account Holder ({{ beneficiaryAccount?.holderType }}):</strong></p>
-                    <p>Name: {{ beneficiaryAccount?.holderName }}</p>
-                    <p>Registration #: {{ beneficiaryAccount?.registrationNumber }}</p>
+                        <h4>{{ beneficiaryAccount?.name }} - {{ beneficiaryAccount?.accountNumber }}</h4>
+                        <p class="mb-2 mt-4">Account Holder <span class="text-secondary">({{ beneficiaryAccount?.holderType }})</span></p>
+                        <div class="pl-2 p-2 mb-3" style="background-color:#eee;border-radius: 5px;">
+                            <div class="row mb-2">
+                                <div class="col-md-5">
+                                    <span class="bold">Name: </span>
+                                </div>
+                                <div class="col-md-7">
+                                    <span class="text-secondary">{{ beneficiaryAccount?.holderName }}</span>
+                                </div>
+                            </div>
+                            <div class="row mb-2">
+                                <div class="col-md-5">
+                                    <span class="bold">Registration # </span>
+                                </div>
+                                <div class="col-md-7">
+                                    <span class="text-secondary">{{ beneficiaryAccount?.registrationNumber }}</span>
+                                </div>
+                            </div>                            
+                        </div>
                     </div>
 
                     <!-- Account Details Section -->
                     <div class="account-details-section">
-                    <h6>Account Details</h6>
-                    <p><strong>Account #:</strong> {{ beneficiaryAccount?.accountNumber }}</p>
-                    <p><strong>Institution:</strong> {{ beneficiaryAccount?.institution }}</p>
-                    <p><strong>Branch:</strong> {{ beneficiaryAccount?.branch }}</p>
-                    <p><strong>Account Description:</strong> {{ beneficiaryAccount?.accountDescription }}</p>
-                    <p><strong>File Type:</strong> {{ beneficiaryAccount?.fileType }}</p>
-                    <p><strong>Method:</strong> {{ beneficiaryAccount?.method }}</p>
+                        <p class="mb-2 mt-4">Account Details </p>
+                        <div class="pl-2 p-2 mb-3" style="background-color:#eee;border-radius: 5px;">
+                            <div class="row mb-2">
+                                <div class="col-md-5">
+                                    <span class="bold">Account #: </span>
+                                </div>
+                                <div class="col-md-7">
+                                    <span class="text-secondary">{{ beneficiaryAccount?.accountNumber }}</span>
+                                </div>
+                            </div>
+                            <div class="row mb-2">
+                                <div class="col-md-5">
+                                    <span class="bold">Institution: </span>
+                                </div>
+                                <div class="col-md-7">
+                                    <span class="text-secondary">{{ beneficiaryAccount?.institution }}</span>
+                                </div>
+                            </div>
+                            <div class="row mb-2">
+                                <div class="col-md-5">
+                                    <span class="bold">Branch: </span>
+                                </div>
+                                <div class="col-md-7">
+                                    <span class="text-secondary">{{ beneficiaryAccount?.branch }}</span>
+                                </div>
+                            </div>
+                            <div class="row mb-2">
+                                <div class="col-md-5">
+                                    <span class="bold">Account Description: </span>
+                                </div>
+                                <div class="col-md-7">
+                                    <span class="text-secondary">{{ beneficiaryAccount?.accountDescription }}</span>
+                                </div>
+                            </div> 
+                            <div class="row mb-2">
+                                <div class="col-md-5">
+                                    <span class="bold">File Type: </span>
+                                </div>
+                                <div class="col-md-7">
+                                    <span class="text-secondary">{{ beneficiaryAccount?.fileType }}</span>
+                                </div>
+                            </div> 
+                            <div class="row mb-2">
+                                <div class="col-md-5">
+                                    <span class="bold">Method: </span>
+                                </div>
+                                <div class="col-md-7">
+                                    <span class="text-secondary">{{ beneficiaryAccount?.method }}</span>
+                                </div>
+                            </div>                            
+                        </div>
+                        
                     </div>
 
                     <!-- AVS Section -->
-                    <div class="avs-section alert alert-success">
-                    <strong>AVS Successfully Matched on {{ beneficiaryAccount?.avsMatchedAt }}</strong>
-                    <button class="btn btn-sm btn-secondary ml-2" @click="showAvsDetails">Show Details</button>
+                    <div class="avs-section alert alert-success pb-3 pt-2">
+                        AVS Successfully Matched on {{ beneficiaryAccount?.avsMatchedAt }}
+                        <button class="btn btn-sm btn-light btn-default-default pull-right" @click="showAvsDetails">Show Details</button>
                     </div>
 
                     <!-- Authorizations Section -->
                     <div class="authorization-section">
                     <h6>Authorisations</h6>
-                    <div class="authorization-box alert alert-success">
+                    <div class="authorization-box alert alert-success pb-3 pt-2">
                         <strong>{{ beneficiaryAccount?.authorizer?.name }}</strong> on {{ beneficiaryAccount?.authorizedAt }}
                         <p>logged in as <em>{{ beneficiaryAccount?.authorizer?.email }}</em></p>
                     </div>
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-dismiss="modal" @click="closeModal">Close</button>
+                    <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal" @click="closeModal">Close</button>
                 </div>
                 </div>
             </div>
@@ -759,7 +915,8 @@ export default {
             editAccountModalInstance: null,
             importModalInstance: null,
             firmAccount: {}, // Store the selected firm account data for editing
-            beneficiaryAccount: [],
+            beneficiaryAccount: {},
+            beneficiaryAccountsTable: [],
         };
     },
     mounted() {
@@ -1592,13 +1749,14 @@ export default {
                             return `
                                  ${showCheckIcon ? `<button class='btn btn-outline-info btn-sm authorize-firmaccount-btn' data-toggle='tooltip' title='Authorise this firm Account' data-id='${data.id}'><i class='fas fa-check text-success'></i></button>` : ''}
                                  ${isAdmin ? `<button class="btn btn-outline-secondary btn-sm edit-firmaccount-btn" data-toggle="tooltip" title="Edit this firm Account" data-id="${row.id}"><i class="fas fa-edit"></i></button>` : ''}
-                                  ${!showCheckIcon ? '<button class="btn btn-outline-info btn-sm view-firmaccount-btn" data-toggle="tooltip" title="View this firm Account"><i class="fas fa-search"></i></button>' : ''}
+                                  ${!showCheckIcon ? `<button class="btn btn-outline-info btn-sm view-firmaccount-btn" data-toggle="tooltip" title="View this firm Account" data-id="${row.id}"><i class="fas fa-search"></i></button>` : ''}
                                 
                                 <button class="btn btn-outline-danger btn-sm delete-firmaccount-btn" data-toggle="tooltip" title="Delete this firm Account" data-id="${data.id}"><i class="fas fa-trash"></i></button>
                             `;
                         }
                     }
                 ],
+                
                 createdRow: function(row, data, dataIndex) {
                     // Apply style to all <td> elements
                     $('td', row).css('word-wrap', 'break-word').css('white-space', 'normal');
@@ -1626,11 +1784,39 @@ export default {
 
             // Event listener for delete button
             $('#source-accounts-table tbody').on('click', '.view-firmaccount-btn', (event) => {
-                //const id = $(event.currentTarget).data('id');
-                //this.confirmFirmAccountDelete(id);
-                //alert('testing view from firmaccount');
-                this.viewFirmAccountModalInstance = new bootstrap.Modal(document.getElementById('firmAccountModal'));
-                this.viewFirmAccountModalInstance.show();
+                const id = $(event.currentTarget).data('id');
+
+                const firmaccountId = $(event.currentTarget).data('id');
+                //this.confirmDelete(id);
+                //alert('testing view beneficiary ');
+                const firmaccount = this.sourceAccountsTable
+                    .data()
+                    .toArray()
+                    .find((f) => f.id === firmaccountId);  console.log(firmaccount);
+
+                    if (firmaccount) {
+                        this.firmAccount = {
+                            name: firmaccount.display_text || "N/A",
+                            accountNumber: firmaccount.account_number || "N/A",
+                            holderType: firmaccount.account_holder_type || "N/A",
+                            holderName: firmaccount.company_name || firmaccount.surname || "N/A",
+                            registrationNumber: firmaccount.registration_number || "N/A",
+                            institution: firmaccount.institution?.name || "N/A",
+                            branch: firmaccount.branch_name || "N/A",
+                            accountDescription: firmaccount.category?.name || "N/A",
+                            fileType: firmaccount.account_type?.name || "N/A",
+                            method: firmaccount.my_reference || "N/A",
+                            avsMatchedAt: firmaccount.avs_verified_at || "N/A",
+                            authorizer: {
+                                name: firmaccount.authorized_user?.name || "N/A",
+                                email: firmaccount.authorized_user?.email || "N/A",
+                            },
+                            authorizedAt: firmaccount.authorized_at || "N/A",
+                        };
+
+                        this.viewBeneficiaryAccountModalInstance = new bootstrap.Modal(document.getElementById("firmAccountModal"));
+                        this.viewBeneficiaryAccountModalInstance.show();
+                    }
             });
 
             // Event listener for delete button
@@ -1687,16 +1873,52 @@ export default {
                             return `
                                  ${showCheckIcon ? `<button class='btn btn-outline-info btn-sm authorize-beneficiary-btn' data-toggle='tooltip' title='Authorise this beneficiary Account' data-id='${data.id}'><i class='fas fa-check text-success'></i></button>` : ''}
                                  ${isAdmin ? `<button class="btn btn-outline-secondary btn-sm edit-beneficiary-btn" data-toggle="tooltip" title="Edit this beneficiary Account" data-id="${data.id}"><i class="fas fa-edit"></i></button>` : ''}
-                                  ${!showCheckIcon ? '<button class="btn btn-outline-info btn-sm view-beneficiary-btn" data-toggle="tooltip" title="View this beneficiary Account"><i class="fas fa-search"></i></button>' : ''}
+                                  ${!showCheckIcon ? `<button class="btn btn-outline-info btn-sm view-beneficiary-btn" data-toggle="tooltip" title="View this beneficiary Account" data-id="${data.id}"><i class="fas fa-search"></i></button>` : ''}
                                 
                                 <button class="btn btn-outline-danger btn-sm delete-beneficiary-btn" data-toggle="tooltip" title="Delete this beneficiary Account" data-id="${data.id}"><i class="fas fa-trash"></i></button>
                             `;
                         }
                     }
                 ],
-                createdRow: function(row, data, dataIndex) {
+                createdRow: (row, data, dataIndex) => {
                     // Apply style to all <td> elements
-                    $('td', row).css('word-wrap', 'break-word').css('white-space', 'normal');
+                    //$('td', row).css('word-wrap', 'break-word').css('white-space', 'normal');
+
+                    $(row).find('.view-beneficiary-btn').on('click', (event) => { 
+                        
+                        const beneficiaryId = $(event.currentTarget).data('id');
+                        //this.confirmDelete(id);
+                        //alert('testing view beneficiary ');
+                        const beneficiary = this.beneficiaryAccountsTable
+                            .data()
+                            .toArray()
+                            .find((b) => b.id === beneficiaryId); console.log(beneficiaryId);
+
+                            if (beneficiary) {
+                                this.beneficiaryAccount = {
+                                    name: beneficiary.display_text || "N/A",
+                                    accountNumber: beneficiary.account_number || "N/A",
+                                    holderType: beneficiary.account_holder_type || "N/A",
+                                    holderName: beneficiary.company_name || beneficiary.surname || "N/A",
+                                    registrationNumber: beneficiary.registration_number || "N/A",
+                                    institution: beneficiary.institution?.name || "N/A",
+                                    branch: beneficiary.branch_name || "N/A",
+                                    accountDescription: beneficiary.category?.name || "N/A",
+                                    fileType: beneficiary.account_type?.name || "N/A",
+                                    method: beneficiary.my_reference || "N/A",
+                                    avsMatchedAt: beneficiary.avs_verified_at || "N/A",
+                                    authorizer: {
+                                        name: beneficiary.authorized_user?.name || "N/A",
+                                        email: beneficiary.authorized_user?.email || "N/A",
+                                    },
+                                    authorizedAt: beneficiary.authorized_at || "N/A",
+                                };
+
+                                this.viewBeneficiaryAccountModalInstance = new bootstrap.Modal(document.getElementById("beneficiaryAccountModal"));
+                                this.viewBeneficiaryAccountModalInstance.show();
+                            }
+                    });
+
                 },
                 responsive: true,
                 paging: true,
@@ -1721,15 +1943,6 @@ export default {
                 this.confirmDelete(id);
             });
 
-            // Event listener for delete button
-            $('#beneficiary-accounts-table tbody').on('click', '.view-beneficiary-btn', (event) => {
-                //const id = $(event.currentTarget).data('id');
-                //this.confirmDelete(id);
-                //alert('testing view beneficiary ');
-                this.viewBeneficiaryAccountModalInstance = new bootstrap.Modal(document.getElementById('beneficiaryAccountModal'));
-                this.viewBeneficiaryAccountModalInstance.show();
-            });
-
              // Event listener for delete button
              $('#beneficiary-accounts-table tbody').on('click', '.authorize-beneficiary-btn', (event) => {
                
@@ -1737,10 +1950,108 @@ export default {
                 this.confirmBeneficiaryAuhtorize(id);
             });
         },
+        // Initialize the Beneficiary Accounts DataTable
+       initializeOnceOffAccounts() {
+            if ($.fn.dataTable.isDataTable('#onceoff-accounts-table')) {
+                $('#onceoff-accounts-table').DataTable().destroy(); // Destroy existing instance if already initialized
+            }
+
+            const isAdmin = this.user.roles.some(role => role.name.toLowerCase().includes('admin'));
+
+            this.onceoffAccountsTable = $('#onceoff-accounts-table').DataTable({
+                processing: true,
+                serverSide: true,
+                ajax: {
+                    url: '/api/onceoff-accounts',
+                    type: 'GET',
+                    dataSrc: 'data', // Assumes the API response has a `data` field
+                    error: (xhr, error, thrown) => {
+                        console.error('Error fetching data:', error, thrown);
+                        //alert('An error occurred while fetching the data. Please try again later.');
+                    }
+                },
+                columns: [
+                    { data: 'display_text' },
+                    { data: 'category.name' },
+                    { data: 'company_name' },
+                    { data: 'account_number' },
+                    { data: 'institution.name' },
+                    { 
+                        data: 'authorizer_progress',
+                        render: (data, type, row) => {
+                            if (row.authorised && row.authorised > 0) { //console.log("data is ");console.log(data); console.log("row data"); console.log(row);
+                                return '<span class="custom-badge-success form-control"><i class="fas fa-check text-success"></i></span>';
+                            }
+                            return `<i class="custom-badge-primary form-control">${data}</i>`;
+                        }
+                    },
+                    {
+                        data: null,
+                        render: function (data, type, row) {
+                            // Conditionally display the fa-check icon
+                            const showCheckIcon = (row.authorised === null || row.authorised === 0) && row.number_of_authorizer > 0;
+                            
+
+
+                            //const isAdmin = this.user.roles.some(role => role.name.toLowerCase().includes('admin'));
+                            return `
+                                 ${showCheckIcon ? `<button class='btn btn-outline-info btn-sm authorize-onceoff-btn' data-toggle='tooltip' title='Authorise this onceoff Account' data-id='${data.id}'><i class='fas fa-check text-success'></i></button>` : ''}
+                                 ${isAdmin ? `<button class="btn btn-outline-secondary btn-sm edit-onceoff-btn" data-toggle="tooltip" title="Edit this onceoff Account" data-id="${data.id}"><i class="fas fa-edit"></i></button>` : ''}
+                                  ${!showCheckIcon ? '<button class="btn btn-outline-info btn-sm view-onceoff-btn" data-toggle="tooltip" title="View this onceoff Account"><i class="fas fa-search"></i></button>' : ''}
+                                
+                                <button class="btn btn-outline-danger btn-sm delete-onceoff-btn" data-toggle="tooltip" title="Delete this onceoff Account" data-id="${data.id}"><i class="fas fa-trash"></i></button>
+                            `;
+                        }
+                    }
+                ],
+                createdRow: function(row, data, dataIndex) {
+                    // Apply style to all <td> elements
+                    $('td', row).css('word-wrap', 'break-word').css('white-space', 'normal');
+                },
+                responsive: true,
+                paging: true,
+                pageLength: 10,
+                lengthMenu: [ [10, 25, 50, 100], [10, 25, 50, 100] ],
+                searching: true,
+                autoWidth: true,
+                wrap: true,
+            });
+
+            // Event listener for edit button
+            $('#onceoff-accounts-table tbody').on('click', '.edit-onceoff-btn', (event) => {
+                
+                const id = $(event.currentTarget).data('id');
+                //this.editBeneficiaryAccount(id);
+                this.openEditModal('onceoff', id);
+            });
+
+            // Event listener for delete button
+            $('#onceoff-accounts-table tbody').on('click', '.delete-onceoff-btn', (event) => {
+                const id = $(event.currentTarget).data('id');
+                this.confirmDelete(id);
+            });
+
+            // Event listener for delete button
+            $('#onceoff-accounts-table tbody').on('click', '.view-onceoff-btn', (event) => {
+                //const id = $(event.currentTarget).data('id');
+                //this.confirmDelete(id);
+                //alert('testing view onceoff ');
+                this.viewBeneficiaryAccountModalInstance = new bootstrap.Modal(document.getElementById('onceoffAccountModal'));
+                this.viewBeneficiaryAccountModalInstance.show();
+            });
+
+             // Event listener for delete button
+             $('#onceoff-accounts-table tbody').on('click', '.authorize-onceoff-btn', (event) => {
+               
+                const id = $(event.currentTarget).data('id');
+                this.confirmOnceOffAuhtorize(id);
+            });
+        },
         // Method to load both accounts when Firm Accounts tab is clicked
         loadAccounts() {
             this.initializeSourceAccounts();
             this.initializeBeneficiaryAccounts();
+            this.initializeOnceOffAccounts();
         }
     }
 };
