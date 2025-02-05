@@ -520,11 +520,17 @@
                         </div>
                         <div class="pr-3">
                             
-                            <div class="input-group mb-3 mt-2">
-                                
-                                <input type="text" class="form-control ml-2" placeholder="File reference" aria-label="File reference">
+                            <div class="input-group mb-3 mt-2">  
+                                <p v-if="searchError" class="text-danger mr-2">{{ searchError }}</p>                              
+                                <input 
+                                    type="text" 
+                                    class="form-control" 
+                                    placeholder="File reference" 
+                                    v-model="searchQuery"
+                                    @keyup.enter="searchRequisition"
+                                />
                                 <div class="input-group-append">
-                                    <button class="btn btn-primary" type="button">Go</button>
+                                    <button class="btn btn-primary" @click="searchRequisition" type="button"><span id="searchBtnSpinner" class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span> Go</button>
                                 </div>
                             </div>
                         </div>
@@ -1755,6 +1761,8 @@ export default {
                 requisition_id: '',
                 firm_account_id: '',
             },
+            searchQuery: "",
+            searchError: "",
             errors: {}
         };
     },
@@ -3419,6 +3427,51 @@ export default {
             };
             this.errors = {};
             this.showAccountDetails = false;
+        },
+
+        async searchRequisition() {
+            const searchBtnSpinner = document.getElementById('searchBtnSpinner');
+            searchBtnSpinner.classList.remove('d-none');           
+
+            this.searchError = "";
+            if (!this.searchQuery.trim()) {
+                this.searchError = "File reference is required.";
+                searchBtnSpinner.classList.add('d-none');
+                return;
+            }
+
+            try {
+                const response = await axios.post('/api/requisitions/search', {
+                    file_reference: this.searchQuery
+                });
+
+                const store = useRequisitionStore();
+
+                if (response.data?.redirect) {
+                    window.location.href = response.data.redirect;
+                } else if (response.data?.requisitions?.length > 1) {
+                    store.setRequisitions(response.data.requisitions); // Store multiple results
+                    this.$router.push({ name: "filteredmatters" }); // Navigate to matters page
+                    /* this.$router.push({ 
+                        name: "filteredmatters", 
+                        params: { requisitions: response.data?.requisitions } 
+                    }); */
+                } else {
+                    this.searchError = "No requisition found.";
+                    //alert("No requisitions found.");
+                }
+
+                /* if (response.status === 200 && response.data) {
+                    const requisitionId = response.data.id;
+                    window.location.href = `/matters/requisitions/${requisitionId}/details`;
+                } else {
+                    this.searchError = "No requisition found.";
+                } */
+            } catch (error) {
+                this.searchError = "Error searching for requisition.";
+                console.error(error);
+            }
+            searchBtnSpinner.classList.add('d-none');
         },
         // Print the current page
         printPage() {
