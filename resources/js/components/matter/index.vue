@@ -22,27 +22,27 @@
             </div>
         </div>
         <div class="card">
-        <div class="card-header">
-            <h6>All Matters</h6>
-        </div>
-        <div class="card-body">
-        <!-- Matters Table with DataTable -->
-        <div class="">
-            <table id="matters-table" class="table table-bordered display nowrap" style="width:100%">
-                <thead>
-                    <tr class="table-secondary">
-                        <th>Created By</th>
-                        <th>File Reference</th>
-                        <th>Reason</th>
-                        <th>Properties</th>
-                        <th>Parties</th>
-                        <!-- <th>Status</th> -->
-                        <th>Progress</th>
-                        <th v-if="canAction">Action</th>
-                    </tr>
-                </thead>
-            </table>
-        </div>
+            <div class="card-header">
+                <h6>All Matters</h6>
+            </div>
+            <div class="card-body">
+            <!-- Matters Table with DataTable -->
+            <div class="">
+                <table id="matters-table" class="table table-bordered display nowrap" style="width:100%">
+                    <thead>
+                        <tr class="table-secondary">
+                            <th>Created By</th>
+                            <th>File Reference</th>
+                            <th>Reason</th>
+                            <th>Properties</th>
+                            <th>Parties</th>
+                            <!-- <th>Status</th> -->
+                            <th>Progress</th>
+                            <th v-if="canAction">Action</th>
+                        </tr>
+                    </thead>
+                </table>
+            </div>
         </div>
         </div>
     </div>
@@ -57,6 +57,13 @@ import { userCan } from '../permission/userCan';
 
 export default {
     name: 'Matters',
+    props: {
+        user: {
+            type: Object,
+            required: true
+        },
+        
+    },
     data() {
         return {
             filterStatus: '',
@@ -105,6 +112,9 @@ export default {
             }
         },
         initializeDataTable() {
+            
+            const isAdmin = this.user.roles.some(role => role.name.toLowerCase().includes('admin'));
+
             this.mattersTable = $('#matters-table').DataTable({
                 processing: true,
                 serverSide: true,
@@ -129,7 +139,19 @@ export default {
                     /* { data: 'status_id', name: 'status_id', render: (data) => this.getStatusName(data) }, */
                     { data: 'progress', name: 'progress' },
                     // Conditionally add the Action column if the user has the admin role
-                    ...(this.canAction ? [{ data: 'id', name: 'id', orderable: false, searchable: false, render: (data) => this.actionButtons(data) }] : [])
+                    {
+                        data: null,
+                        render: function (data, type, row) {                         
+
+                            //const isAdmin = this.user.roles.some(role => role.name.toLowerCase().includes('admin'));
+                            return `
+                                                                
+                                 ${isAdmin ? `<button class="btn btn-sm btn-outline-secondary edit-matter-btn" data-toggle="tooltip" title="Edit this Matter" data-id="${data.id}"><i class="fas fa-edit"></i></button>` : ''}
+                                  ${isAdmin ? `<button class="btn btn-sm btn-outline-danger edit-matter-btn" data-toggle="tooltip" title="Delete this Matter" data-id="${data.id}"><i class="fas fa-trash-alt"></i></button>` : ''}
+                                
+                            `;
+                        }
+                    },
                     //{ data: 'id', name: 'id', orderable: false, searchable: false, render: (data) => this.actionButtons(data) }
                 ],
                 responsive: true,
@@ -163,20 +185,7 @@ export default {
                 });
             }
         },
-        actionButtons(matterId) {
-            // Conditionally render action buttons only if the user has admin role
-            if (!this.canAction) {
-                return ''; // Return an empty string if the user is not an admin
-            }
-            return `
-                <button class="btn btn-sm btn-outline-primary" onclick="event.stopPropagation(); editMatter(${matterId})">
-                    <i class="fas fa-edit"></i> Edit
-                </button>
-                <button class="btn btn-sm btn-outline-danger" onclick="event.stopPropagation(); deleteMatter(${matterId})">
-                    <i class="fas fa-trash-alt"></i> Delete
-                </button>
-            `;
-        },
+        
         getStatusName(statusId) {
             const status = this.statuses.find(s => s.id === statusId);
             return status ? status.name : '';

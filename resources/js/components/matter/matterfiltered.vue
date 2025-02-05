@@ -87,6 +87,9 @@ export default {
                         render: function (data, type, row) {
                             let progress = "";
 
+                            if(row.status_id === 7){
+                                return '<span class="badge bg-success me-1">Settled Successfully</span>';
+                            }
                             if (row.authorization_status) {
                                 progress += '<span class="badge bg-success me-1">Authorized</span>';
                             }
@@ -96,9 +99,9 @@ export default {
                             if (row.status_id === 3 && !row.authorization_status && !row.funding_status) {
                                 progress += '<span class="badge bg-default me-1">Funded</span>';
                             }
-                            if (row.status_id === 4) {
+                           /*  if (row.status_id === 4) {
                                 progress += '<span class="badge bg-default me-1">Funded</span>';
-                            }
+                            } */
                             if (row.status_id === 4 && !row.authorization_status) {
                                 progress += '<span class="badge bg-default me-1">Authorized</span>';
                             }

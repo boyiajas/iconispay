@@ -61,6 +61,9 @@ class RequisitionController extends Controller
         return Datatables::of($query)
             ->addColumn('progress', function ($requisition) {
                 $progress = '';
+                if($requisition->status_id == 7){
+                    return '<span class="badge bg-success me-1">Settled Successfully</span>';
+                }
                 if ($requisition->authorization_status) {
                     $progress .= '<span class="badge bg-success me-1">Authorized</span>';
                 }else{
@@ -845,6 +848,9 @@ class RequisitionController extends Controller
             if (!isset($statusMapping[$request->status])) {
                 return response()->json(['error' => 'Invalid status'], 400);
             }
+            
+            $today = Carbon::today();
+
 
             // Get the status ID from the mapping
             $statusId = $statusMapping[$request->status]; //dd($statusId);
@@ -855,6 +861,8 @@ class RequisitionController extends Controller
                 $query->whereIn('status_id', [$statusId, $awaitingFundingStatusId])->whereNull('authorization_status'); // Fixed
             }else if($statusId == 4){
                 $query->whereIn('status_id', [$statusId, $awaitingAuthorizationStatusId])->whereNull('funding_status');
+            }else if($statusId == 7){
+                $query->where('status_id', $statusId)->whereDate('updated_at', $today);
             }else{
                 $query->where('status_id', $statusId);
             }
@@ -868,6 +876,10 @@ class RequisitionController extends Controller
         return Datatables::of($query)
             ->addColumn('progress', function ($requisition) {
                 $progress = '';
+
+                if($requisition->status_id == 7){
+                    return '<span class="badge bg-success me-1">Settled Successfully</span>';
+                }
                 if ($requisition->authorization_status) {
                     $progress .= '<span class="badge bg-success me-1">Authorized</span>';
                 }
@@ -877,9 +889,9 @@ class RequisitionController extends Controller
                 if($requisition->status_id == 3 && !$requisition->authorization_status && !$requisition->funding_status){
                     $progress .= '<span class="badge bg-default me-1">Funded</span>';
                 }
-                if ($requisition->status_id == 4) {
+               /*  if ($requisition->status_id == 4) {
                     $progress .= '<span class="badge bg-default me-1">Funded</span>';
-                }
+                } */
                 if($requisition->status_id == 4 && !$requisition->authorization_status){
                     $progress .= '<span class="badge bg-default me-1">Authorized</span>';
                 }
