@@ -80,7 +80,7 @@ export default {
             });
         },
         initializeDataTable() {
-            console.log(this.status);
+            //console.log(this.status);
             this.mattersTable = $('#matters-status-table').DataTable({
                 processing: true,
                 serverSide: true,

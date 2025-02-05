@@ -16,6 +16,7 @@ import FileManagement from './account/filemanagement.vue';
 import AllTransactionsForAFile from './account/alltransactionsforafile.vue';
 import ReadyForPayment from './report/readyForPayment.vue';
 import PaidByDate from './report/paidByDate.vue';
+import MatterFiltered from './matter/matterfiltered.vue';
 
 // Define Vue Router routes, excluding the /contact route
 const routes = [
@@ -33,6 +34,11 @@ const routes = [
         name: 'detailsrequisition',
         component: DetailsRequisition,
         props: true // Enables passing route parameters as props to the component
+    },
+    {   path: "/filtered-matters", 
+        name: "filteredmatters", 
+        component: MatterFiltered, 
+        //props: true 
     },
     {
         path: '/accounts/:id/edit',

@@ -101,6 +101,7 @@
 <script>
 import axios from 'axios';
 import PermissionControl from './permission/PermissionControl.vue';  // Import the Can component
+import { useRequisitionStore } from './store/datastore';
 
 export default {
     components: {
@@ -149,12 +150,28 @@ export default {
                     file_reference: this.searchQuery
                 });
 
-                if (response.status === 200 && response.data) {
+                const store = useRequisitionStore();
+
+                if (response.data?.redirect) {
+                    window.location.href = response.data.redirect;
+                } else if (response.data?.requisitions?.length > 1) {
+                    store.setRequisitions(response.data.requisitions); // Store multiple results
+                    this.$router.push({ name: "filteredmatters" }); // Navigate to matters page
+                    /* this.$router.push({ 
+                        name: "filteredmatters", 
+                        params: { requisitions: response.data?.requisitions } 
+                    }); */
+                } else {
+                    this.searchError = "No requisition found.";
+                    //alert("No requisitions found.");
+                }
+
+                /* if (response.status === 200 && response.data) {
                     const requisitionId = response.data.id;
                     window.location.href = `/matters/requisitions/${requisitionId}/details`;
                 } else {
                     this.searchError = "No requisition found.";
-                }
+                } */
             } catch (error) {
                 this.searchError = "Error searching for requisition.";
                 console.error(error);

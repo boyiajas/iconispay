@@ -122,19 +122,42 @@ class RequisitionController extends Controller
             'file_reference' => 'required|string|max:150',
         ]);
 
-        $requisition = Requisition::where('file_reference', $request->file_reference)
-            ->latest('created_at') // Get the most recent requisition
-            ->first();
+        $searchTerm = strtolower($request->file_reference);
 
-        if ($requisition) {
+        $user = Auth::user();
+        $requisitions = [];
+        
+
+        // Check if the user has an 'admin' or 'authorizer' role
+        if ($user->hasRole('admin') || $user->hasRole('authoriser') || $user->hasRole('bookkeeper')) {
+            // If the user is an admin or authorizer, get all incomplete requisitions
+            //$query = Requisition::with('user','lockedBy','payments','payments.beneficiaryAccount');
+            $requisitions = Requisition::whereRaw("LOWER(file_reference) LIKE ?", ["%{$searchTerm}%"])
+            ->with('user')
+            ->latest('created_at')
+            ->get();
+        } else {
+            // Otherwise, get incomplete requisitions created by the user
+            $requisitions = Requisition::whereRaw("LOWER(file_reference) LIKE ?", ["%{$searchTerm}%"])
+            ->where('created_by', $user->id)
+            ->with('user')
+            ->latest('created_at')
+            ->get();
+            //$query = Requisition::with('user','lockedBy','payments','payments.beneficiaryAccount')->where('created_by', $user->id)->get();
+            //$matters = Matter::with('status', 'user')::where('created_by', $user->id)->get();
+        }
+    
+        
+
+        if ($requisitions->count() === 1) {
             return response()->json([
-                'id' => $requisition->id,  // Include ID for redirecting
-                'reason' => $requisition->reason,
-                'parties' => $requisition->parties,
+                'redirect' => url("/matters/requisitions/{$requisitions->first()->id}/details"),
             ]);
         }
 
-        return response()->json(null, 202);
+        return response()->json([
+            'requisitions' => $requisitions,
+        ]);
     }
 
 
