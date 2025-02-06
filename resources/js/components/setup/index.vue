@@ -1725,7 +1725,7 @@ export default {
                 columns: [
                     { data: 'display_text' },
                     { data: 'category.name' },
-                    { data: 'account_holder' },
+                    { data: 'company_name' },
                     { data: 'account_number' },
                     { data: 'institution.name' },
                    /*  { data: 'aggregated', render: data => data ? '<i class="fas fa-check text-success"></i>' : '' }, */

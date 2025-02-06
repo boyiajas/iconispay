@@ -373,16 +373,23 @@
                                                     data-bs-toggle="popover" 
                                                     data-bs-placement="top" 
                                                     title="Account details complete, AVS verified account" 
-                                                    data-bs-content="Account details complete, No AVS verification done"></i>
+                                                    data-bs-content="Account details complete, AVS verified account"></i>
                                                 </span>
-                                                <span v-else-if="payment.beneficiary_account.verified && payment.beneficiary_account.verified != 'successful'">
-                                                    <i class="fas fa-ban mr-2 mt-1 text-danger" ref="popoverIcon" 
+                                                <span v-else-if="payment.beneficiary_account.verified == '1' && payment.beneficiary_account.verification_status == 'failed'">
+                                                    <i class="fas fa-times-circle mr-2 mt-1 text-danger" ref="popoverIcon" 
                                                     data-bs-toggle="popover" 
                                                     data-bs-placement="top" 
                                                     title="AVS verification failed, Invalid account / details" 
+                                                    data-bs-content="AVS verification failed, Invalid account / details"></i>
+                                                </span>
+                                                <span v-else-if="payment.beneficiary_account.verification_status == 'pending'">
+                                                    <i class="fas fa-exclamation-circle text-warning mr-2 mt-1" ref="popoverIcon" 
+                                                    data-bs-toggle="popover" 
+                                                    data-bs-placement="top" 
+                                                    title="Account details complete, No AVS verification done" 
                                                     data-bs-content="Account details complete, No AVS verification done"></i>
                                                 </span>
-                                                <span v-else-if="!payment.verified">
+                                                <span v-else-if="payment.beneficiary_account.verified != '1'">
                                                     <i class="far fa-square bg-green mr-2 mt-1 text-success" ref="popoverIcon" 
                                                     data-bs-toggle="popover" 
                                                     data-bs-placement="top" 
@@ -1076,15 +1083,21 @@
                                 <div class="col-sm-9">
                                     <div class="pl-2" style="background-color:#eee;border-radius: 5px;">
                                         <div class="form-check pt-2 pb-2">
-                                            <input class="form-check-input" type="checkbox" id="gridCheck" v-model="paymentForm.verified">
-                                            <label class="form-check-label" for="gridCheck">
-                                                Verify account holder and account details
-                                            </label>
+                                            <span v-if="paymentForm.verified === 1">
+                                                <input  class="form-check-input" type="checkbox" id="create-payment-verify-Check"  :checked="paymentForm.verified === 1" :disabled="paymentForm.verified === 1">
+                                                <label class="form-check-label" for="gridCheck">
+                                                    Completed for account holder and account details
+                                                </label>
+                                            </span>
+                                            <span v-else>
+                                                <input class="form-check-input" type="checkbox" id="create-payment-verify-Check" v-model="paymentForm.verified">
+                                                <label class="form-check-label" for="gridCheck">
+                                                    Verify account holder and account details
+                                                </label>
+                                            </span>
                                         </div>
                                     </div>
-                                </div>
-                                
-                               
+                                </div> 
                             </div>
                         </div>
                         
@@ -1236,10 +1249,18 @@
                                 <div class="col-sm-9">
                                     <div class="pl-2" style="background-color:#eee;border-radius: 5px;">
                                         <div class="form-check pt-2 pb-2">
-                                            <input class="form-check-input" type="checkbox" id="gridCheck" v-model="editPaymentForm.verified">
-                                            <label class="form-check-label" for="gridCheck">
-                                                Verify account holder and account details
-                                            </label>
+                                            <span v-if="editPaymentForm.verified === 1">
+                                                <input  class="form-check-input" type="checkbox" id="gridCheck"  :checked="editPaymentForm.verified === 1" :disabled="editPaymentForm.verified === 1">
+                                                <label class="form-check-label" for="gridCheck">
+                                                    Completed for account holder and account details
+                                                </label>
+                                            </span>
+                                            <span v-else>
+                                                <input class="form-check-input" type="checkbox" id="gridCheck" v-model="editPaymentForm.verified">
+                                                <label class="form-check-label" for="gridCheck">
+                                                    Verify account holder and account details
+                                                </label>
+                                            </span>
                                         </div>
                                     </div>
                                 </div>
@@ -1413,7 +1434,7 @@
                         <div class="mb-2 row">
                             <label for="amount" class="form-label col-sm-3">Amount: </label>
                             <div class="col-sm-9 text-secondary">
-                                {{ viewPaymentForm.amount }}
+                                R{{ parseFloat(viewPaymentForm.amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}
                                 
                             </div>
                         </div>
@@ -1464,7 +1485,7 @@
             </div>
         </div>
     </div>
-
+    
     <!-- AVS Result Modal -->
     <div class="modal fade" id="avsResultModal" tabindex="-1" aria-labelledby="avsResultModalLabel" aria-hidden="true">
         <div class="modal-dialog modal-lg">
@@ -1474,14 +1495,7 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" @click="closeModal"></button>
                 </div>
                 <div class="modal-body">
-                    <div v-if="!avsResult && !avsResult.avs_verified_at" class="account-verification-inprocess">
-                        <p class="form-label mt-3 mb-4">The entry was successfully saved</p>
-                        <div class="alert alert-info p-2" role="alert">
-                            <h6><span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Verifying AVS</h6>
-                        </div>
-                        <p class="form-label mt-4 mb-0">This may take up to <b>2 minutes</b>. You may close this dialog and continue working, editing this entry later to see the result</p>
-                    </div>
-                    <div v-else class="account-verification-result">
+                    <div v-if="avsResult && avsResult.avs_verified_at" class="account-verification-result">
                         <p class="form-label mt-3 mb-4">The entry was successfully saved</p>
                         <div class="alert alert-success p-2 mb-4" role="alert" v-if="avsResult && avsResult.account_found">
                             <h6>The account holder matched the account details</h6>
@@ -1558,9 +1572,16 @@
                         <p><strong>Name:</strong> {{ avsResult.holder_name }} <span v-if="avsResult.holder_matched" class="text-success">✔ Matched</span></p>
                         <p><strong>Registration No.:</strong> {{ avsResult.registration_no || 'Not Supplied' }}</p> -->
                     </div>
+                    <div v-else class="account-verification-inprocess">
+                        <p class="mt-3 mb-4 text-secondary">The entry was successfully saved</p>
+                        <div class="alert alert-info p-2 pb-0" role="alert">
+                            <h6 class="text-primary"><span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Verifying AVS</h6>
+                        </div>
+                        <p class="mt-4 mb-0 text-secondary">This may take up to <b>2 minutes</b>. You may close this dialog and continue working, editing this entry later to see the result</p>
+                    </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" @click="closeModal">Close</button>
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal" @click="closeModal">Close</button>
                 </div>
             </div>
         </div>
@@ -1651,7 +1672,7 @@ export default {
             viewPaymentModalInstance: null,
             createPaymentModalInstance: null,
             beneficiaryDetails: null, // Object to hold selected beneficiary details
-            showAwsModelInstance: null,
+            showAvsModelInstance: null,
             documentForm: {
                 description: '',
                 file: null
@@ -1711,6 +1732,7 @@ export default {
                 institution: { id: null},
                 branch_code: '',
                 verified: '',
+                verification_status: '',
                 description: '',
                 amount: '',
                 my_reference: '',  // Example reference
@@ -1733,6 +1755,7 @@ export default {
                 institution: { id: null},
                 branch_code: '',
                 verified: '',
+                verification_status: '',
                 description: '',
                 amount: '',
                 my_reference: '',  // Example reference
@@ -1754,6 +1777,7 @@ export default {
                 institution: { id: null},
                 branch_code: '',
                 verified: '',
+                verification_status: '',
                 description: '',
                 amount: '',
                 my_reference: '',  // Example reference
@@ -2113,6 +2137,7 @@ export default {
             this.editPaymentForm.description = payment.description;
             this.editPaymentForm.amount = payment.amount;
             this.editPaymentForm.verified = payment.beneficiary_account?.verified;
+            this.editPaymentForm.verification_status = payment.beneficiary_account?.verification_status;
             this.editPaymentForm.my_reference = payment.my_reference;
             this.editPaymentForm.recipient_reference = payment.recipient_reference;
             this.editPaymentForm.account_number = payment.beneficiary_account?.account_number;
@@ -2126,7 +2151,7 @@ export default {
             this.editPaymentForm.institution = payment.beneficiary_account?.institution;
             this.editPaymentForm.branch_code = payment.beneficiary_account?.branch_code;
             this.editPaymentForm.category = payment.category_id;
-            //console.log(this.editPaymentForm);
+            console.log(this.editPaymentForm);
             // Convert funded from 1 or 0 to boolean true/false
             //this.editDepositForm.funded = deposit.funded === 1;
             // Set the deposit date if available, format to 'YYYY-MM-DD' if necessary
@@ -2169,10 +2194,16 @@ export default {
                             title: 'Error'
                         });
                     }
-
-                   
                     // Close the modal
                     this.closeModal();
+
+                    if(this.editPaymentForm.verified && this.editPaymentForm.verification_status !== 'successful'){
+                        // Show the AVS Result Modal after verification
+                        this.showAvsModelInstance = new bootstrap.Modal(document.getElementById('avsResultModal'));
+                        this.showAvsModelInstance.show();
+
+                        this.performAvsVerification(this.editPaymentForm);
+                    }
                 })
                 .catch(error => {
                     if (error.response && error.response.data.errors) {
@@ -2201,22 +2232,7 @@ export default {
                             title: 'Success'
                         });
                     }
-                   // Response contains the updated deposit
-                    /* const updatedDeposit = response.data;
-
-                    // Find the index of the deposit in the deposits array
-                    const index = this.selectedSourceAccount.deposits.findIndex(deposit => deposit.id === updatedDeposit.id);
-
-                    // If found, update the deposit in the array
-                    if (index !== -1) {
-                        // Replace the old deposit with the updated one
-                        this.selectedSourceAccount.deposits.splice(index, 1, updatedDeposit);
-                    }
-                    this.toast.success(response.data.message, {
-                        title: 'Success'
-                    });
-                    // Close the modal
-                    this.closeModal(); */
+                   
                 })
                 .catch(error => {
                     if (error.response && error.response.data.errors) {
@@ -2532,34 +2548,6 @@ export default {
             this.documentForm.file = event.target.files[0];
         },
 
-        // Load history logs for the requisition
-        /* loadHistoryData() {
-            if (this.documentsTable) {
-                this.documentsTable.ajax.reload();
-                return;
-            }
-
-            this.documentsTable = $('#history-table').DataTable({
-                processing: true,
-                serverSide: true,
-                ajax: `/api/requisitions/${this.requisitionId}/history`,
-                columns: [
-                    { data: 'user.email', name: 'user.email', defaultContent: 'System' },
-                    { data: 'action', name: 'action' },
-                    { data: 'details', name: 'details' },
-                    { data: 'created_at', name: 'created_at', render: (data) => moment(data).format('YYYY-MM-DD HH:mm:ss') }
-                ],
-                order: [[3, 'desc']],
-            });
-            /* axios.get(`/api/requisitions/${this.requisitionId}/history`)
-                .then(response => {
-                    this.historyLogs = response.data;
-                })
-                .catch(error => {
-                    console.error('Error loading history logs:', error);
-                }); *
-        }, */
-
         loadHistoryData() {
             if (this.historyTable) {
                 this.historyTable.ajax.reload(); // Reload the table if already initialized
@@ -2849,8 +2837,8 @@ export default {
             if(this.createPaymentModalInstance){
                 this.createPaymentModalInstance.hide();
             }
-            if(this.showAvsModal){
-                this.showAwsModelInstance.hide();
+            if(this.showAvsModelInstance){
+                this.showAvsModelInstance.hide();
             }
         },
         // Save requisition (stub method for future implementation)
@@ -2935,12 +2923,6 @@ export default {
                         //this.requisition.funding_status = 1;
                         this.closeModal();
                     }
-
-                    // Close the modal if "Save" was clicked
-                   // if (!stayInModal) {
-                        //this.fundingStatus = 'Completed on '+response.data.created_at;
-                        //this.depositModalInstance.hide();
-                    //}
 
                     // Reset the form after submission
                     this.resetForm();
@@ -3237,6 +3219,7 @@ export default {
             this.paymentForm.id_number = account.id_number;
             this.paymentForm.registration_number = account.registration_number;
             this.paymentForm.verified = account.verified;
+            
             this.paymentForm.payments = account.payments;
             this.paymentForm.authorised = account.authorised;
 
@@ -3331,8 +3314,12 @@ export default {
                     }
                     this.closeModal();
                     
-                    if(this.paymentForm.verified){
-                        this.performAvsVerification();
+                    if(this.paymentForm.verified && !this.beneficiaryDetails.verified){
+                        // Show the AVS Result Modal after verification
+                        this.showAvsModelInstance = new bootstrap.Modal(document.getElementById('avsResultModal'));
+                        this.showAvsModelInstance.show();
+
+                        this.performAvsVerification(this.paymentForm);
                     }else{
                         this.resetPaymentForm();
                     }
@@ -3354,12 +3341,12 @@ export default {
         },
 
         // Perform AVS Verification using Axios
-        performAvsVerification() {
+        performAvsVerification(paymentForm) { 
             axios.post('/api/avs/verify', {
-                    account_number: this.paymentForm.account_number,
-                    branch_code: this.paymentForm.branch_code,
-                    account_holder: this.paymentForm.account_holder,
-                    account_holder_type: this.paymentForm.account_holder_type,
+                    account_number: paymentForm.account_number,
+                    branch_code: paymentForm.branch_code,
+                    account_holder: paymentForm.account_holder,
+                    account_holder_type: paymentForm.account_holder_type,
                 })
                 .then(response => {
                     this.avsResult = response.data; console.log("this is the value of avs result " , response.data);
@@ -3371,11 +3358,9 @@ export default {
                     }else{
 
                     }
-                    this.showAvsModal = true;
+                    //this.showAvsModal = true;
                     
-                    // Show the AVS Result Modal after verification
-                    this.showAwsModelInstance = new bootstrap.Modal(document.getElementById('avsResultModal'));
-                    this.showAwsModelInstance.show();
+                    
                     // Reset the form after submission
                     this.resetPaymentForm();
                 })

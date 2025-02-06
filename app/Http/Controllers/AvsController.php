@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use \AvsHelper;
 use App\Models\Avs;
 use App\Models\BeneficiaryAccount;
+use App\Models\FirmAccount;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Validator;
@@ -38,10 +39,32 @@ class AvsController extends Controller
             return response()->json(['error' => $validator->errors()], 422);
         }
 
-        // Find the beneficiary account
+       /*  // Find the beneficiary account
         $beneficiaryAccount = BeneficiaryAccount::where('account_number', $request->account_number)
             ->where('branch_code', $request->branch_code)
-            ->first();
+            ->first(); */
+        
+        $beneficiaryAccount = null;
+
+        if ($request->account_number) {
+            $beneficiaryAccount = BeneficiaryAccount::where('account_number', $request->account_number)
+                                        ->where('branch_code', $request->branch_code)->first();
+    
+            if ($beneficiaryAccount) {
+                $beneficiaryAccount->update([
+                    'verification_status' => 'pending'
+                ]);
+            } else {
+                $beneficiaryAccount = FirmAccount::where('account_number', $request->account_number)
+                                        ->where('branch_code', $request->branch_code)->first();
+    
+                if ($beneficiaryAccount) {
+                    $beneficiaryAccount->update([
+                        'verification_status' => 'pending'
+                    ]);
+                }
+            }
+        }
 
         if (!$beneficiaryAccount) {
             return response()->json(['error' => 'Beneficiary account not found.'], 404);

@@ -117,3 +117,8 @@ a{
 .multiselect__tag{
     background: #40b1c5 !important;
 }
+
+.form-check-input:checked {
+    background-color: #40b1c5 !important;
+    border-color: #40b1c5 !important;
+  }
