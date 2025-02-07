@@ -1196,10 +1196,6 @@ export default {
 
                     }
                     //this.showAvsModal = true;
-                    
-                    
-                    // Reset the form after submission
-                    this.resetPaymentForm();
                 })
                 .catch(error => {
                     console.error('AVS Verification failed:', error);
