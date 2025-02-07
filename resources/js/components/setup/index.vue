@@ -1382,6 +1382,9 @@ export default {
                     }
                 ],
                 createdRow: (row, data, dataIndex) => {
+
+                    $('td', row).css('word-wrap', 'break-word').css('white-space', 'normal');
+
                     $(row).find('.generate-certificate-btn').on('click', (event) => {
                         const userId = $(event.currentTarget).data('user-id');
                         if (userId) {
@@ -1621,6 +1624,12 @@ export default {
                         }
                     }
                 ],
+
+                createdRow: (row, data, dataIndex) => {
+                    
+                    $('td', row).css('word-wrap', 'break-word').css('white-space', 'normal');
+                    
+                }, 
                 responsive: true,
                 paging: true,
                 pageLength: 10,
