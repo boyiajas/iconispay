@@ -3352,6 +3352,8 @@ export default {
                     branch_code: paymentForm.branch_code,
                     account_holder: paymentForm.account_holder,
                     account_holder_type: paymentForm.account_holder_type,
+                    registration_number: paymentForm?.registrationNumber,
+                    id_number: paymentForm?.idNumber,
                 })
                 .then(response => {
                     this.avsResult = response.data; console.log("this is the value of avs result " , response.data);

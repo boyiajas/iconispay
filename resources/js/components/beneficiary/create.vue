@@ -142,10 +142,18 @@
                         <div class="col-sm-10">
                             <div class="pl-2" style="background-color:#eee;border-radius: 5px;">
                                 <div class="form-check pt-2 pb-2">
-                                    <input class="form-check-input" type="checkbox" id="gridCheck" v-model="beneficiaryAccount.verified">
-                                    <label class="form-check-label" for="gridCheck">
-                                        Verify account holder and account details
-                                    </label>
+                                    <span v-if="beneficiaryAccount.verified === 1">
+                                        <input  class="form-check-input" type="checkbox" id="gridCheck"  :checked="beneficiaryAccount.verified === 1" :disabled="beneficiaryAccount.verified === 1">
+                                        <label class="form-check-label" for="gridCheck">
+                                            Completed for account holder and account details
+                                        </label>
+                                    </span>
+                                    <span v-else>
+                                        <input class="form-check-input" type="checkbox" id="gridCheck" v-model="beneficiaryAccount.verified">
+                                        <label class="form-check-label" for="gridCheck">
+                                            Verify account holder and account details
+                                        </label>
+                                    </span>
                                 </div>
                             </div>
                         </div>
@@ -176,8 +184,8 @@
             </div>
         </div>
 
-         <!-- AVS Result Modal Start here -->
-         <div class="modal fade" id="avsResultModal" tabindex="-1" aria-labelledby="avsResultModalLabel" aria-hidden="true">
+          <!-- AVS Result Modal -->
+        <div class="modal fade" id="avsResultModal" tabindex="-1" aria-labelledby="avsResultModalLabel" aria-hidden="true">
             <div class="modal-dialog modal-lg">
                 <div class="modal-content">
                     <div class="modal-header">
@@ -185,14 +193,7 @@
                         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" @click="closeModal"></button>
                     </div>
                     <div class="modal-body">
-                        <div v-if="!avsResult && !avsResult.avs_verified_at" class="account-verification-inprocess">
-                            <p class="form-label mt-3 mb-4">The entry was successfully saved</p>
-                            <div class="alert alert-info p-2" role="alert">
-                                <h6><span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Verifying AVS</h6>
-                            </div>
-                            <p class="form-label mt-4 mb-0">This may take up to <b>2 minutes</b>. You may close this dialog and continue working, editing this entry later to see the result</p>
-                        </div>
-                        <div v-else class="account-verification-result">
+                        <div v-if="avsResult && avsResult.avs_verified_at" class="account-verification-result">
                             <p class="form-label mt-3 mb-4">The entry was successfully saved</p>
                             <div class="alert alert-success p-2 mb-4" role="alert" v-if="avsResult && avsResult.account_found">
                                 <h6>The account holder matched the account details</h6>
@@ -269,9 +270,16 @@
                             <p><strong>Name:</strong> {{ avsResult.holder_name }} <span v-if="avsResult.holder_matched" class="text-success">✔ Matched</span></p>
                             <p><strong>Registration No.:</strong> {{ avsResult.registration_no || 'Not Supplied' }}</p> -->
                         </div>
+                        <div v-else class="account-verification-inprocess">
+                            <p class="mt-3 mb-4 text-secondary">The entry was successfully saved</p>
+                            <div class="alert alert-info p-2 pb-0" role="alert">
+                                <h6 class="text-primary"><span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Verifying AVS</h6>
+                            </div>
+                            <p class="mt-4 mb-0 text-secondary">This may take up to <b>2 minutes</b>. You may close this dialog and continue working, editing this entry later to see the result</p>
+                        </div>
                     </div>
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" @click="closeModal">Close</button>
+                        <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal" @click="closeModal">Close</button>
                     </div>
                 </div>
             </div>
@@ -314,7 +322,7 @@ export default {
             institutions: [], // This will hold the list of institutions fetched from the API
             avsResult: {},  // Store the AVS result data
 
-            showAwsModelInstance: null,
+            showAvsModelInstance: null,
         };
     },
     mounted() {
@@ -371,18 +379,20 @@ export default {
                     branch_code: this.beneficiaryAccount.branchCode,
                     account_holder: this.beneficiaryAccount.displayText,
                     account_holder_type: this.beneficiaryAccount.accountHolderType,
-                    registration_number: this.beneficiaryAccount.registrationNumber,
-                    id_number: this.beneficiaryAccount.idNumber,
+                    registration_number: this.beneficiaryAccount?.registrationNumber,
+                    id_number: this.beneficiaryAccount?.idNumber,
                 })
                 .then(response => {
+
                     this.avsResult = response.data; console.log("this is the value of avs result " , response.data);
-                    this.showAvsModal = true;
-                    
-                    // Show the AVS Result Modal after verification
-                    this.showAwsModelInstance = new bootstrap.Modal(document.getElementById('avsResultModal'));
-                    this.showAwsModelInstance.show();
-                    // Reset the form after submission
-                    this.resetForm();
+                    if (response.success && response.data.errmsg) {
+                        this.toast.error(response.data ? response.errmsg : 'No response data', {
+                            title: 'Error'
+                        });
+                        
+                    }else{
+
+                    }
                 })
                 .catch(error => {
                     console.error('AVS Verification failed:', error);
@@ -412,26 +422,39 @@ export default {
         },
         // Save the beneficiary account details
         saveBeneficiaryAccount() {
+            //alert('FirmAccount account created successfully!');
+            const verifiedStatus = this.beneficiaryAccount.verified;
+            this.beneficiaryAccount.verified = 0;
+
             axios.post('/api/beneficiary-accounts', this.beneficiaryAccount)
-                .then(response => {console.log(response);
+                .then(response => {//console.log(response);
                     // Check the status of the response and display the appropriate toast message
                     if (response.status === 201) {
                         this.toast.success('Firm account created successfully!', {
                             title: 'Success'
                         });
                     } 
-                    if(this.beneficiaryAccount.verified){
-                        this.performAvsVerification();
-                        
+                    if(verifiedStatus){
+                        // Show the AVS Result Modal after verification
+                        this.showAvsModelInstance = new bootstrap.Modal(document.getElementById('avsResultModal'));
+                        this.showAvsModelInstance.show();
+
+                        this.performAvsVerification(this.beneficiaryAccount);
+                         // Reset the form after submission
+                        this.resetForm();
+
                     }else{
-                        //this.resetForm();
+                        this.resetForm();
                     }
-                    //this.resetForm();
                 })
                 .catch(error => {
                     console.error('Error creating beneficiary account:', error);
+
+                    this.toast.error(error.response ? error.response?.data?.message : 'No response data', {
+                            title: 'Error'
+                        });
                     // Handle any errors that occur during the request
-                    if (error.response) {
+                    /* if (error.response) {
                         // Server responded with a status other than 2xx
                         if (error.response.status === 400) {
                             this.toast.info(error.response.data.message || 'Bad Request', {
@@ -442,7 +465,7 @@ export default {
                         this.toast.error(error.response ? error.response.data : 'No response data', {
                             title: 'Error'
                         });
-                    }
+                    } */
                 });
         },
 
@@ -471,8 +494,8 @@ export default {
         },
         closeModal() {
             //const newUserModal = bootstrap.Modal.getInstance(document.getElementById('newUserModal'));
-            if(this.showAvsModal){
-                this.showAwsModelInstance.hide();
+            if(this.showAvsModelInstance){
+                this.showAvsModelInstance.hide();
             }
         },
         // Handle cancel button

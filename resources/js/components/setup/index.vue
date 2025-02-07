@@ -1187,6 +1187,8 @@ export default {
                     branch_code: accountData.branch_code,
                     account_holder: accountData.account_holder,
                     account_holder_type: accountData.account_holder_type,
+                    registration_number: accountData?.registrationNumber,
+                    id_number: accountData?.idNumber,
                 })
                 .then(response => {
                     this.avsResult = response.data; console.log("this is the value of avs result " , response.data);
@@ -1840,8 +1842,8 @@ export default {
         deleteBeneficiaryAccount(id) {
             axios.delete(`/api/beneficiary-accounts/${id}`)
                 .then(response => {
-                    this.modalInstance.hide();
-                    this.initializeFirmAccounts(); // Reload table data
+                    //this.modalInstance.hide();
+                    this.initializeBeneficiaryAccounts(); // Reload table data
                 })
                 .catch(error => console.error('Error deleting firm account:', error));
         },
