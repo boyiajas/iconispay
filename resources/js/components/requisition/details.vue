@@ -2180,6 +2180,8 @@ export default {
         },
 
         updatePayment() {
+            const verifiedStatus = this.editPaymentForm.verified;
+            this.editPaymentForm.verified = 0;
             axios.put(`/api/payments/${this.editPaymentForm.id}`, this.editPaymentForm)
                 .then(response => {
                    // Response contains the updated payment
@@ -2197,7 +2199,7 @@ export default {
                     // Close the modal
                     this.closeModal();
 
-                    if(this.editPaymentForm.verified && this.editPaymentForm.verification_status !== 'successful'){
+                    if(verifiedStatus && this.editPaymentForm.verification_status !== 'successful'){
                         // Show the AVS Result Modal after verification
                         this.showAvsModelInstance = new bootstrap.Modal(document.getElementById('avsResultModal'));
                         this.showAvsModelInstance.show();
@@ -3294,6 +3296,9 @@ export default {
                 this.paymentForm.existing_beneficiary = false; // Indicate a new beneficiary
             }
 
+            const verifiedStatus = this.paymentForm.verified;
+            this.paymentForm.verified = 0;
+
             axios.post('/api/payments', this.paymentForm)
                 .then(response => {
                     //console.log('Payment created successfully:', response.data);
@@ -3314,7 +3319,7 @@ export default {
                     }
                     this.closeModal();
                     
-                    if(this.paymentForm.verified && !this.beneficiaryDetails.verified){
+                    if(verifiedStatus && !this.beneficiaryDetails.verification_status !== 'successful'){
                         // Show the AVS Result Modal after verification
                         this.showAvsModelInstance = new bootstrap.Modal(document.getElementById('avsResultModal'));
                         this.showAvsModelInstance.show();

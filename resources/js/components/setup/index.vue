@@ -1141,6 +1141,9 @@ export default {
             });
         },
         updateAccount() {
+
+            const verifiedStatus = this.accountData.verified;
+            this.accountData.verified = 0;
             axios.put(`/api/${this.editingAccountType}-accounts/${this.accountData.id}`, this.accountData)
                 .then(response => {
                    // Response contains the updated payment
@@ -1159,7 +1162,7 @@ export default {
                     // Close the modal
                     this.closeModal();
 
-                    if(this.accountData.verified && this.accountData.verification_status !== 'successful'){
+                    if(verifiedStatus && this.accountData.verification_status !== 'successful'){
                         // Show the AVS Result Modal after verification
                         this.showAvsModelInstance = new bootstrap.Modal(document.getElementById('avsResultModal'));
                         this.showAvsModelInstance.show();
@@ -2057,7 +2060,7 @@ export default {
                 ],
                 createdRow: (row, data, dataIndex) => {
                     // Apply style to all <td> elements
-                    //$('td', row).css('word-wrap', 'break-word').css('white-space', 'normal');
+                    $('td', row).css('word-wrap', 'break-word').css('white-space', 'normal');
 
                     $(row).find('.view-beneficiary-btn').on('click', (event) => { 
                         
