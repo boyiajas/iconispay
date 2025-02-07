@@ -85,7 +85,7 @@ class AvsController extends Controller
         $request_data = [
             "operator" => "AutTstOp",
             "accountNumber" => $beneficiaryAccount->account_number,
-            "accountType" => $this->getBackendAccountType($beneficiaryAccount, $accountTypeMapping),//e.g. 01 -Current/cheque, 02 -savings, 03 -transmission, 04 - bond, 06 - subscription, 00 - if this is not known
+            "accountType" => $this->getBackendAccountType($beneficiaryAccount->account_number, $accountTypeMapping),//e.g. 01 -Current/cheque, 02 -savings, 03 -transmission, 04 - bond, 06 - subscription, 00 - if this is not known
             "branchCode" => $beneficiaryAccount->branch_code,
             "initials" => $beneficiaryAccount->initials,
             "idNumber" => $beneficiaryAccount->id_number ?? $beneficiaryAccount->registration_number,
@@ -96,10 +96,10 @@ class AvsController extends Controller
         ];
 
         // Use the helper class to send the request
-        //$avsResult = AvsHelper::send_request($request_data);
+        $avsResult = AvsHelper::send_request($request_data);
 
         // Simulate AVS response based on the provided data
-        $avsResult = $this->avsHelperSimulation($request_data);
+        //$avsResult = $this->avsHelperSimulation($request_data);
 
         // Handle the response
         if ($avsResult['status_code'] === 200) {
@@ -116,8 +116,16 @@ class AvsController extends Controller
         }
     }
 
-    private function getBackendAccountType(BeneficiaryAccount $beneficiaryAccount, array $accountTypeMapping)
+    private function getBackendAccountType($accountNumber, array $accountTypeMapping)
     {
+        
+        $beneficiaryAccount = BeneficiaryAccount::where('account_number', $accountNumber)->first();
+
+        if(!$beneficiaryAccount){
+
+            $beneficiaryAccount = FirmAccount::where('account_number', $accountNumber)->first();
+        }
+        
         // Retrieve the name of the account type from the relationship
         $accountTypeName = $beneficiaryAccount->accountType->name ?? 'Unknown';
     
