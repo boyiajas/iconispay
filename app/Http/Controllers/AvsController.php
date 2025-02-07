@@ -88,7 +88,7 @@ class AvsController extends Controller
             "accountType" => $this->getBackendAccountType($beneficiaryAccount->account_number, $accountTypeMapping),//e.g. 01 -Current/cheque, 02 -savings, 03 -transmission, 04 - bond, 06 - subscription, 00 - if this is not known
             "branchCode" => $beneficiaryAccount->branch_code,
             "initials" => $beneficiaryAccount->initials,
-            "idNumber" => $beneficiaryAccount->id_number ?? $beneficiaryAccount->registration_number,
+            "idNumber" => $beneficiaryAccount->id_number ?? preg_replace('/\D/', '', $beneficiaryAccount->registration_number),
             "lastName" => $beneficiaryAccount->surname,
             "phoneNumber" => "",
             "emailAddress" => "test@test.co.za",
