@@ -190,7 +190,8 @@ class BeneficiaryAccountController extends Controller
         
         try {
             // Load the necessary relationships and format the response data
-            $beneficiaryAccount->load('authorizers.user', 'institution', 'accountType','category');
+           /*  $beneficiaryAccount->load('authorizers.user', 'institution', 'accountType','category');
+            //return response()->json($beneficiaryAccount->load('institution','deposits.user','accountType','payments.user','payments.accountType', 'payments.institution'));
 
             // Construct the response data to include all required fields for the frontend
             $response = [
@@ -212,9 +213,19 @@ class BeneficiaryAccountController extends Controller
                 'authorised' => $beneficiaryAccount->authorised,
                 'display_text' => $beneficiaryAccount->display_text,
                 'authorizersDetails' => $beneficiaryAccount->getAuthorizerDetails(),
+                
             ];
 
-            return response()->json($response);
+            return response()->json($response); */
+            return response()->json($beneficiaryAccount->load([
+                'authorizers.user',
+                'institution',
+                'accountType',
+                'category',/*
+                'payments' => function ($query) {
+                    $query->with('requisition', 'payToFirmAccount', 'beneficiaryAccount');
+                } */
+            ]));
 
         } catch (\Exception $e) {
             // Log the error message

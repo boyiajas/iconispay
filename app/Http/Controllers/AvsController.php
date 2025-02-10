@@ -7,12 +7,23 @@ use App\Models\Avs;
 use App\Models\BeneficiaryAccount;
 use App\Models\FirmAccount;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
+use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Http;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 
 class AvsController extends Controller
 {
+    private $maxAttempts = 3; // Number of failed attempts before lockout
+    private $lockoutTime = 76800; // Lockout time in seconds (1280 minutes) (21 hours)
+
+    private $dev_username = 'iconis';
+    private $dev_password = 'test123';
+
+    private $prod_username = 'iconispay';
+    private $prod_password = '1c0n1SP4Y$ON2o';
     /**
      * Display a listing of the resource.
      */
@@ -140,6 +151,8 @@ class AvsController extends Controller
         return '00';
     }
 
+
+
     private function avsHelperSimulation(array $data)
     {
         $simulatedResponse = [
@@ -219,7 +232,7 @@ class AvsController extends Controller
             } elseif ($pid === 0) {
                 // Child process: handle callback
                 sleep(10);
-                Http::withBasicAuth('iconis', 'test123')->post($callbackUrl, $callbackData);
+                Http::withBasicAuth($this->dev_username, $this->dev_password)->post($callbackUrl, $callbackData);
                 exit(0);
             }
             // Parent process continues
@@ -227,13 +240,142 @@ class AvsController extends Controller
             // Fallback: non-blocking sleep and execution
             register_shutdown_function(function () use ($callbackUrl, $callbackData) {
                 sleep(10);
-                Http::withBasicAuth('iconis', 'test123')->post($callbackUrl, $callbackData);
+                Http::withBasicAuth($this->dev_username, $this->dev_password)->post($callbackUrl, $callbackData);
             });
         }
 
         return $simulatedResponse;
     }
 
+    /**
+     * Check if AVS verification is successful.
+     *
+     * @param array $codes
+     * @return bool
+     */
+    private function isAvsVerificationSuccessful(array $codes): bool
+    {
+        return collect($codes)->every(fn($code) => $code === '00');
+    }
+
+
+    /**
+     * Authenticate the incoming request.
+     *
+     * @param Request $request
+     * @return bool
+     */
+    private function authenticateRequest(Request $request)
+    {
+        $username = trim($request->header('PHP_AUTH_USER'));
+        $password = trim($request->header('PHP_AUTH_PW'));
+
+        $hashedPassword = Hash::make($this->dev_password);
+       
+        return $username === 'iconis' && Hash::check($password, $hashedPassword);;
+    }
+
+    /**
+     * Handle AVS callback.
+     *
+     * @param Request $request
+     * @return \Illuminate\Http\JsonResponse
+     */
+    public function handleAvsCallback(Request $request)
+    {
+        $ip = $request->ip();
+        $cacheKey = "avs_callback_attempts_{$ip}";
+
+        // Check if IP is locked out
+        if (Cache::has("locked_out_{$ip}")) {
+            return response()->json(['error' => 'Too many failed attempts. Try again later.'], 429);
+        }
+
+        // Authenticate the request
+        if (!$this->authenticateRequest($request)) {
+            Cache::increment($cacheKey);
+            $attempts = Cache::get($cacheKey, 0);
+
+            if ($attempts >= $this->maxAttempts) {
+                Cache::put("locked_out_{$ip}", true, $this->lockoutTime);
+                Cache::forget($cacheKey);
+                Log::warning("IP $ip has been locked out due to multiple failed callback authentication attempts.");
+                return response()->json(['error' => 'Too many failed attempts. You are locked out.'], 429);
+            }
+
+            Log::warning('AVS Callback Unauthorized Access Attempt', ['IP' => $ip, 'username' => $request->header('PHP_AUTH_USER'), 'password' => $request->header('PHP_AUTH_PW')]);
+
+            /* Log::warning('AVS Callback Unauthorized Access Attempt', [
+                'username' => $request->header('PHP_AUTH_USER')
+            ]); */
+            return response()->json(['error' => 'Unauthorized'], 401);
+        }
+
+        // Reset failed attempts on successful authentication
+        Cache::forget($cacheKey);
+
+        // Process AVS Response Data
+        $data = $request->all();
+        $accountNumber = $data['Response']['accountNumber'] ?? null;
+
+        if (!$accountNumber) {
+            Log::warning('AVS Callback Missing Account Number', ['data' => $data]);
+            return response()->json(['error' => 'Invalid request, missing account number'], 400);
+        }
+
+        // Fetch Beneficiary or Firm Account
+        $account = BeneficiaryAccount::where('account_number', $accountNumber)->first()
+            ?? FirmAccount::where('account_number', $accountNumber)->first();
+
+        if ($account) {
+            // Determine verification status based on AVS responses
+            $avsResponses = [
+                $data['Response']['accountExists'],
+                $data['Response']['accountOpen'],
+                $data['Response']['accountTypeValid'],
+                $data['Response']['accountTypeValid'],
+                '00', // Branch Code
+                $data['Response']['lastNameMatch'],
+                $data['Response']['initialMatch'],
+                '00' // Registration Number
+            ];
+
+             // Log the AVS responses with context
+            Log::info('AVS Responses:', ['avs_responses' => $avsResponses]);
+
+            $verificationStatus = $this->isAvsVerificationSuccessful($avsResponses) ? 'successful' : 'failed';
+
+            // Update account verification details
+            $account->update([
+                'verified' => true,
+                'verification_status' => $verificationStatus,
+                'account_found' => $data['Response']['accountExists'],
+                'account_open' => $data['Response']['accountOpen'],
+                'account_type_verified' => $data['Response']['accountTypeValid'],
+                'account_type_match' => $data['Response']['accountTypeValid'],
+                'branch_code_match' => '00',
+                'holder_name_match' => $data['Response']['lastNameMatch'],
+                'holder_initials_match' => $data['Response']['initialMatch'],
+                'registration_number_match' => '00',
+                'avs_verified_at' => now(),
+            ]);
+
+            Log::info("AVS Callback Processed Successfully for Account: {$accountNumber}", [
+                'account_id' => $account->id,
+                'verification_status' => $verificationStatus
+            ]);
+        } else {
+            Log::warning("AVS Callback Account Not Found: {$accountNumber}");
+        }
+
+        // Prepare response
+        return response()->json([
+            'message' => 'AVS Callback Processed Successfully',
+            'account_number' => $accountNumber,
+            'verification_status' => $verificationStatus ?? 'not found'
+        ], 200);
+    }
+    
     /**
      * Show the form for creating a new resource.
      */

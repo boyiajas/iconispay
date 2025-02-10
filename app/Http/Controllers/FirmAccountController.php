@@ -1094,7 +1094,7 @@ class FirmAccountController extends Controller
     public function show(FirmAccount $firmAccount)
     {
         // Return the firmAccount with any required relationships, such as the user who created it
-        return response()->json($firmAccount->load('institution','deposits.user','payments.user','payments.accountType', 'payments.institution'));
+        return response()->json($firmAccount->load('institution','deposits.user','accountType','payments.user','payments.accountType', 'payments.institution'));
     }
 
     public function getAllFirmAccounts()

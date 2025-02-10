@@ -431,8 +431,33 @@
                             </div>
 
                             <!-- Account Holder Section -->
-                            <h5>Account Holder</h5>
-                            <hr class="mt-0"/>
+                            <div class="mb-1 mt-0">Account Details (Ad-hoc) 
+                                <span class="pull-right text-danger" v-if="accountData.verification_status == 'failed'">
+                                    <i class="fas fa-times-circle mr-0 mt-1 text-danger" ref="popoverIcon" 
+                                                    data-bs-toggle="popover" 
+                                                    data-bs-placement="top" 
+                                                    title="AVS verification failed, Invalid account / details" 
+                                                    data-bs-content="AVS verification failed, Invalid account / details"></i>
+                                                    AVS {{ 'Warning - Invalid Account details' }} <span class="btn btn-default-default btn-sm text-primary" @click="viewAVSResult(accountData)">View</span>
+                                </span>
+                                <span class="pull-right text-success" v-if="accountData.verification_status == 'successful'">
+                                    <i class="far fa-check-circle mr-0 mt-1 text-success" ref="popoverIcon" 
+                                                    data-bs-toggle="popover" 
+                                                    data-bs-placement="top" 
+                                                    title="Account details complete, AVS verified account" 
+                                                    data-bs-content="Account details complete, AVS verified account"></i>
+                                                    AVS - {{ 'Successfully Matched' }} <span class="btn btn-default-default btn-sm text-primary" @click="viewAVSResult(accountData)">View</span>
+                                </span>
+                                <span class="pull-right text-primary" v-if="accountData.verification_status == 'pending'">
+                                    <i class="fas fa-info-circle mr-0 mt-1 text-primary" ref="popoverIcon" 
+                                                    data-bs-toggle="popover" 
+                                                    data-bs-placement="top" 
+                                                    title="AVS Account verificaiton pending" 
+                                                    data-bs-content="AVS Account verificaiton pending"></i>
+                                                    AVS - {{ 'Account verificaiton pending' }} <span class="btn btn-default-default btn-sm text-primary" @click="viewAVSResult(accountData)">View</span>
+                                </span>
+                            </div>
+                            <hr class="mt-2"/>
                             <div class="form-group mb-3 row">
                                 <label class="form-label col-sm-3" for="accountNumber">Account #: *</label>
                                 <div class="col-sm-9">
@@ -519,18 +544,14 @@
                             </div>
 
                             <!-- Verification Section -->
-                            <h5>Verification</h5>
+                            <div>Verification</div>
                             <hr class="mt-0"/>
-                            <div class="form-group mb-3 row">
+                            
+                            <div class="form-group mb-3 row" v-if="!accountData.avs_verified_at">
                                 <label for="verified" class="form-label col-sm-3">Verify Account:</label>
                                 <div class="col-sm-9 pl-4">
-                                    <span v-if="accountData.verified === 1">
-                                        <input  class="form-check-input" type="checkbox" id="gridCheck"  :checked="accountData.verified === 1" :disabled="accountData.verified === 1">
-                                        <label class="form-check-label" for="gridCheck">
-                                            Completed for account holder and account details
-                                        </label>
-                                    </span>
-                                    <span v-else>
+                                    
+                                    <span>
                                         <input class="form-check-input" type="checkbox" id="gridCheck" v-model="accountData.verified">
                                         <label class="form-check-label" for="gridCheck">
                                             Verify account holder and account details
@@ -854,7 +875,7 @@
 
         <!-- AVS Result Modal start here -->
 
-        <!-- AVS Result Modal -->
+         <!-- AVS Result Modal -->
         <div class="modal fade" id="avsResultModal" tabindex="-1" aria-labelledby="avsResultModalLabel" aria-hidden="true">
             <div class="modal-dialog modal-lg">
                 <div class="modal-content">
@@ -864,65 +885,98 @@
                     </div>
                     <div class="modal-body">
                         <div v-if="avsResult && avsResult.avs_verified_at" class="account-verification-result">
-                            <p class="form-label mt-3 mb-4">The entry was successfully saved</p>
-                            <div class="alert alert-success p-2 mb-4" role="alert" v-if="avsResult && avsResult.account_found">
+                            <!-- <p class="form-label mt-3 mb-4">The entry was successfully saved</p> -->
+                            <div class="alert alert-success p-2 mb-4" role="alert" v-if="getAvsStatus(
+                                avsResult.account_found, 
+                                avsResult.account_open, 
+                                avsResult.branch_code_match
+                                )">
                                 <h6>The account holder matched the account details</h6>
                             </div>
-                            <div class="alert alert-success p-2 mb-4" role="alert" v-else>
-                                <h6>The account holder fields did not match</h6>
+                            <div class="alert alert-danger p-2 mb-4" role="alert" v-else>
+                                <h6>The account information fields did not match</h6>
                             </div>
-                            <h5>Account Results 
+                            <div>Account Results 
                                 <span class="pull-right">
-                                    <span  class="text-success mr-4"><i class="far fa-check-square bg-green mr-1" aria-hidden="true"></i>Found</span>
-                                    <span  class="text-success"><i class="far fa-check-square bg-green mr-1" aria-hidden="true"></i>Open (for 3+ months)</span>
+
+                                    <span  class="text-success mr-4" v-if="getAvsStatus(avsResult.account_found)"><i class="far fa-check-square bg-green mr-1" aria-hidden="true"></i>Found</span>
+                                    <span  class="text-danger mr-4" v-else><i class="fas fa-times-circle mr-1" aria-hidden="true"></i>Found</span>
+
+                                    <span  class="text-success" v-if="getAvsStatus(avsResult.account_open)"><i class="far fa-check-square bg-green mr-1" aria-hidden="true"></i>Open (for 3+ months)</span>
+                                    <span  class="text-danger" v-else><i class="fas fa-times-circle mr-1" aria-hidden="true"></i>Open (for 3+ months)</span>
+                                    
                                 </span>
-                            </h5>
+                            </div>
                             <hr class="mt-0 mb-2">
                             <div class="row mb-0">
-                                    <div class="col-sm-3"><p class="pull-right"><strong>Number:</strong></p></div>
-                                    <div class="col-sm-5">{{ avsResult && avsResult.account_number }}</div>
-                                    <div class="col-sm-4"></div>
+                                    <div class="col-sm-3"><span class="pull-right"><strong>Number:</strong></span></div>
+                                    <div class="col-sm-5 text-secondary">{{ avsResult.account_number }}</div>
+                                    <div class="col-sm-4">
+                                        <span class="text-success" v-if="getAvsStatus(avsResult.account_found)"><i class="far fa-check-square bg-green mr-1" aria-hidden="true"></i> Matched</span>
+                                        <span class="text-danger" v-else><i class="fas fa-times-circle mr-1" aria-hidden="true"></i> Matched</span>
+                                    </div>
                             </div>
                             <div class="row mb-0">
-                                    <div class="col-sm-3"><p class="pull-right"><strong>Branch Code:</strong></p></div>
-                                    <div class="col-sm-5">{{ avsResult && avsResult.branch_code }}</div>
-                                    <div class="col-sm-4"></div>
+                                    <div class="col-sm-3"><span class="pull-right"><strong>Branch Code:</strong></span></div>
+                                    <div class="col-sm-5 text-secondary">{{ avsResult?.branch_code }}</div>
+                                    <div class="col-sm-4">
+                                        <span class="text-success" v-if="getAvsStatus(avsResult.branch_code_match)"><i class="far fa-check-square bg-green mr-1" aria-hidden="true"></i> Matched</span>
+                                        <span class="text-danger" v-else><i class="fas fa-times-circle mr-1" aria-hidden="true"></i> Matched</span>
+                                    </div>
                             </div>
                             <div class="row mb-0">
-                                    <div class="col-sm-3"><p class="pull-right"><strong>Account Type:</strong></p></div>
-                                    <div class="col-sm-5">{{ avsResult && avsResult.branch_code }}</div>
-                                    <div class="col-sm-4"> <span class="text-success" v-if="avsResult && avsResult.account_found"><i class="far fa-check-square bg-green mr-1" aria-hidden="true"></i> Matched</span></div>
+                                    <div class="col-sm-3"><span class="pull-right"><strong>Account Type:</strong></span></div>
+                                    <div class="col-sm-5 text-secondary">{{ avsResult?.account_type?.name }}</div>
+                                    <div class="col-sm-4">
+                                        <span class="text-success" v-if="getAvsStatus(avsResult.account_found)"><i class="far fa-check-square bg-green mr-1" aria-hidden="true"></i> Matched</span>
+                                        <span class="text-danger" v-else><i class="fas fa-times-circle mr-1" aria-hidden="true"></i> Matched</span>
+                                    </div>
                             </div>
                             <br/><br/>
-                            <h5>Account Holder Results</h5>
+                            <div>Account Holder Results</div>
                             <hr class="mt-0 mb-2">
                             <div v-if="avsResult && avsResult.account_holder_type == 'natural'">
                                 <div class="row mb-0">
-                                    <div class="col-sm-3"><p class="pull-right"><strong>Initials:</strong></p></div>
-                                    <div class="col-sm-5">{{ avsResult.initials }}</div>
-                                    <div class="col-sm-4"> <span class="text-success" v-if="avsResult && avsResult.holder_matched"><i class="far fa-check-square bg-green mr-1" aria-hidden="true"></i> Matched</span></div>
+                                    <div class="col-sm-3"><span class="pull-right"><strong>Initials:</strong></span></div>
+                                    <div class="col-sm-5 text-secondary">{{ avsResult.initials }}</div>
+                                    <div class="col-sm-4"> 
+                                        <span class="text-success" v-if="getAvsStatus(avsResult.holder_initials_match)"><i class="far fa-check-square bg-green mr-1" aria-hidden="true"></i> Matched</span>
+                                        <span class="text-danger" v-else><i class="fas fa-times-circle mr-1" aria-hidden="true"></i> Matched</span>
+                                    </div>
                                 </div>
                                 <div class="row mb-0">
-                                    <div class="col-sm-3"><p class="pull-right"><strong>Name:</strong></p></div>
-                                    <div class="col-sm-5">{{ avsResult.surname }}</div>
-                                    <div class="col-sm-4"> <span class="text-success" v-if="avsResult && avsResult.holder_matched"><i class="far fa-check-square bg-green mr-1" aria-hidden="true"></i> Matched</span></div>
+                                    <div class="col-sm-3"><span class="pull-right"><strong>Name:</strong></span></div>
+                                    <div class="col-sm-5 text-secondary">{{ avsResult.surname }}</div>
+                                    <div class="col-sm-4">
+                                        <span class="text-success" v-if="getAvsStatus(avsResult.holder_name_match)"><i class="far fa-check-square bg-green mr-1" aria-hidden="true"></i> Matched</span>
+                                        <span class="text-danger" v-else><i class="fas fa-times-circle mr-1" aria-hidden="true"></i> Matched</span>
+                                    </div>
                                 </div>
                                 <div class="row mb-0">
-                                    <div class="col-sm-3"><p class="pull-right"><strong>Id Number:</strong></p></div>
-                                    <div class="col-sm-5">{{ avsResult.id_number }}</div>
-                                    <div class="col-sm-4"> <span class="text-fade"><i class="far fa-square mr-1 disabled" aria-hidden="true"></i> Not Supplied</span></div>
+                                    <div class="col-sm-3"><span class="pull-right"><strong>Id Number:</strong></span></div>
+                                    <div class="col-sm-5 text-secondary">{{ avsResult.id_number }}</div>
+                                    <div class="col-sm-4">
+                                        <span class="text-fade"><i class="far fa-square mr-1 disabled" aria-hidden="true"></i> Not Supplied</span>
+                                        
+                                    </div>
                                 </div>
                             </div>
                             <div v-else>
                                 <div class="row mb-0">
-                                    <div class="col-sm-3"><p class="pull-right"><strong>Name:</strong></p></div>
-                                    <div class="col-sm-5">{{ avsResult && avsResult.holder_name }}</div>
-                                    <div class="col-sm-4"> <span class="text-success" v-if="avsResult && avsResult.holder_matched"><i class="far fa-check-square bg-green mr-1" aria-hidden="true"></i> Matched</span></div>
+                                    <div class="col-sm-3"><span class="pull-right"><strong>Name:</strong></span></div>
+                                    <div class="col-sm-5 text-secondary">{{ avsResult.company_name }}</div>
+                                    <div class="col-sm-4"> 
+                                        <span class="text-success" v-if="getAvsStatus(avsResult.holder_matched)"><i class="far fa-check-square bg-green mr-1" aria-hidden="true"></i> Matched</span>
+                                        <span class="text-danger" v-else><i class="fas fa-times-circle mr-1" aria-hidden="true"></i> Matched</span>
+                                    </div>
                                 </div>
                                 <div class="row mb-0">
-                                    <div class="col-sm-3"><p class="pull-right"><strong>Registration No.:</strong></p></div>
-                                    <div class="col-sm-5"></div>
-                                    <div class="col-sm-4"> <span class="text-fade"><i class="far fa-square mr-1 disabled" aria-hidden="true"></i> Not Supplied</span></div>
+                                    <div class="col-sm-3"><span class="pull-right"><strong>Registration No.:</strong></span></div>
+                                    <div class="col-sm-5 text-secondary">{{ avsResult.registration_number }}</div>
+                                    <div class="col-sm-4"> 
+                                        <span class="text-fade" v-if="!avsResult.registration_number"><i class="far fa-square mr-1 disabled" aria-hidden="true"></i> Not Supplied</span>
+
+                                    </div>
                                 </div>
                             </div>
                         
@@ -954,8 +1008,6 @@
                 </div>
             </div>
         </div>
-
-
         <!-- AVS Result Modal ends here -->
 
     </div>
@@ -1053,6 +1105,36 @@ export default {
         return { toast };
     },
     methods: {
+        getAvsStatus(...codes) {
+            return codes.every(code => code === "00");
+        },
+         // Open modal to choose source account
+         viewAVSResult(accountData) {
+            
+            this.closeModal();
+            this.avsResult.verified = accountData.verified;
+            this.avsResult.avs_verified_at = accountData.avs_verified_at;
+            this.avsResult.verification_status = accountData.verification_status;
+            this.avsResult.account_type_verified = accountData?.account_type_verified;
+            this.avsResult.account_type_match = accountData?.account_type_match;
+            this.avsResult.holder_name_match = accountData?.holder_name_match;
+            this.avsResult.holder_initials_match = accountData?.holder_initials_match;
+            this.avsResult.branch_code_match = accountData?.branch_code_match;
+            this.avsResult.branch_code = accountData?.branch_code;
+            this.avsResult.account_found = accountData?.account_found;
+            this.avsResult.account_open = accountData?.account_open;
+            this.avsResult.account_number = accountData?.account_number;
+            this.avsResult.registration_number = accountData?.registration_number;
+            this.avsResult.surname = accountData?.surname;
+            this.avsResult.initials = accountData?.initials;
+            this.avsResult.id_number = null;
+            this.avsResult.account_holder_type = accountData?.account_holder_type;
+            this.avsResult.account_type = accountData?.account_type;
+            this.avsResult.company_name = accountData?.company_name;
+
+            this.showAvsModelInstance = new bootstrap.Modal(document.getElementById('avsResultModal'));
+            this.showAvsModelInstance.show();
+        },
         validateRegistrationNumber() {
             const value = this.accountData.registration_number;
             const pattern = /^\d{4}\/\d{6}\/\d{2}$/;
@@ -1135,7 +1217,8 @@ export default {
             this.editingAccountType = accountType;
             axios.get(`/api/${accountType}-accounts/${id}`).then(response => {
                 this.accountData = response.data;
-                //console.log(this.accountData);
+                console.log("edit data");
+                console.log(this.accountData);
                 this.editAccountModalInstance = new bootstrap.Modal(document.getElementById("editAccountModal"));
                 this.editAccountModalInstance.show();
             });

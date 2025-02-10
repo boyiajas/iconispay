@@ -339,7 +339,7 @@
                                                         <div class="bg-light p-1 rounded txt-xs" style="background-color: #f2f2f2 !important;border: solid 1px #f2f2f2;"> Not funded</div>
                                                     </div>
                                                     <div class="col-md-3 pl-4"> 
-                                                        R{{ parseFloat(deposit.amount).toFixed(2) }}
+                                                        R{{ parseFloat(deposit.amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}
                                                         
                                                         <span v-if="requisition && !requisition.locked" class="pull-right"><i class="fa fa-edit text-primary" @click="openEditDepositModal(deposit)"></i></span>
                                                     </div>
@@ -637,14 +637,6 @@
                                     <th>Date</th>
                                 </tr>
                             </thead>
-                            <!-- {{-- <tbody>
-                                <tr v-for="log in historyLogs" :key="log.id">
-                                    <td>{{ log.user_name }}</td>
-                                    <td>{{ log.action }}</td>
-                                    <td>{{ log.details }}</td>
-                                    <td>{{ new Date(log.created_at).toLocaleString() }}</td>
-                                </tr>
-                            </tbody> --}} -->
                         </table>
                     </div>
                 </div>
@@ -724,38 +716,6 @@
             </div>
         </div>
     </div>
-
-    <!-- Upload Document Modal -->
-    <!-- <div class="modal fade" id="uploadDocumentModal" tabindex="-1" aria-labelledby="uploadDocumentModalLabel" aria-hidden="true">
-        <div class="modal-dialog">
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title" id="uploadDocumentModalLabel">Upload Document</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" @click="closeModal"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="alert alert-info">
-                        The maximum file size is 10 MB. Only PDFs and images may be uploaded.
-                    </div>
-                    <form @submit.prevent="uploadDocument">
-                        <div class="mb-3">
-                            <label for="description" class="form-label">Description: *</label>
-                            <input type="text" v-model="documentForm.description" class="form-control" id="description" required>
-                        </div>
-                        <div class="mb-3">
-                            <label for="file" class="form-label">Select Document: *</label>
-                            <input type="file" @change="handleFileUpload" class="form-control" id="file" required>
-                        </div>
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" @click="closeModal">Cancel</button>
-                            <button type="submit" class="btn btn-primary">Upload</button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-        </div>
-    </div>
- -->
 
     <!-- New Deposit Modal -->
     <div class="modal fade" id="newDepositModal" tabindex="-1" aria-labelledby="newDepositModalLabel" aria-hidden="true">
@@ -1014,7 +974,7 @@
                                             <ul class="list-unstyled mt-2">
                                                 <li v-for="payment in paymentForm.payments.slice(0, 3)" :key="payment.id" class="row">
                                                     <div class="col-md-4"><i class="far fa-check-square bg-green mr-2" aria-hidden="true"></i> {{ formatDate(payment.created_at) }}</div>
-                                                    <div class="col-md-4">R{{ payment.amount }}</div>
+                                                    <div class="col-md-4">R{{ parseFloat( payment.amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</div>
                                                     <div class="col-md-4"><a :href="`/matters/requisitions/${payment.requisition_id}/details`">{{ payment.description }}</a></div>                                                    
                                                 </li>
                                             </ul>
@@ -1179,8 +1139,33 @@
                         
                         <!-- Hidden section for New Account details (visible when a new account is selected) -->
                         <div v-if="showEditAccountDetails">
-                            <h6 class="mb-1">Account Details (Ad-hoc)</h6>
-                            <hr class="mt-0"/>
+                            <div class="mb-1 mt-4">Account Details (Ad-hoc) 
+                                <span class="pull-right text-danger" v-if="editPaymentForm.verification_status == 'failed'">
+                                    <i class="fas fa-times-circle mr-0 mt-1 text-danger" ref="popoverIcon" 
+                                                    data-bs-toggle="popover" 
+                                                    data-bs-placement="top" 
+                                                    title="AVS verification failed, Invalid account / details" 
+                                                    data-bs-content="AVS verification failed, Invalid account / details"></i>
+                                                    AVS {{ 'Warning - Invalid Account details' }} <span class="btn btn-default-default btn-sm text-primary" @click="viewAVSResult(editPaymentForm)">View</span>
+                                </span>
+                                <span class="pull-right text-success" v-if="editPaymentForm.verification_status == 'successful'">
+                                    <i class="far fa-check-circle mr-0 mt-1 text-success" ref="popoverIcon" 
+                                                    data-bs-toggle="popover" 
+                                                    data-bs-placement="top" 
+                                                    title="Account details complete, AVS verified account" 
+                                                    data-bs-content="Account details complete, AVS verified account"></i>
+                                                    AVS - {{ 'Successfully Matched' }} <span class="btn btn-default-default btn-sm text-primary" @click="viewAVSResult(editPaymentForm)">View</span>
+                                </span>
+                                <span class="pull-right text-primary" v-if="editPaymentForm.verification_status == 'pending'">
+                                    <i class="fas fa-info-circle mr-0 mt-1 text-primary" ref="popoverIcon" 
+                                                    data-bs-toggle="popover" 
+                                                    data-bs-placement="top" 
+                                                    title="AVS Account verificaiton pending" 
+                                                    data-bs-content="AVS Account verificaiton pending"></i>
+                                                    AVS - {{ 'Account verificaiton pending' }} <span class="btn btn-default-default btn-sm text-primary" @click="viewAVSResult(editPaymentForm)">View</span>
+                                </span>
+                            </div>
+                            <hr class="mt-3"/>
                             <div class="mb-3 row">
                                 <label for="account_number" class="form-label col-sm-3">Account No.: *</label>
                                 <div class="col-sm-9">
@@ -1244,18 +1229,12 @@
                                 </div>
                             </div>
 
-                            <div class="mb-3 row">
+                            <div class="mb-3 row" v-if="editPaymentForm.verified !== 1">
                                 <label for="branch_code" class="form-label col-sm-3">verification:</label>
                                 <div class="col-sm-9">
                                     <div class="pl-2" style="background-color:#eee;border-radius: 5px;">
                                         <div class="form-check pt-2 pb-2">
-                                            <span v-if="editPaymentForm.verified === 1">
-                                                <input  class="form-check-input" type="checkbox" id="gridCheck"  :checked="editPaymentForm.verified === 1" :disabled="editPaymentForm.verified === 1">
-                                                <label class="form-check-label" for="gridCheck">
-                                                    Completed for account holder and account details
-                                                </label>
-                                            </span>
-                                            <span v-else>
+                                            <span>
                                                 <input class="form-check-input" type="checkbox" id="gridCheck" v-model="editPaymentForm.verified">
                                                 <label class="form-check-label" for="gridCheck">
                                                     Verify account holder and account details
@@ -1325,7 +1304,7 @@
                     <form>
                                                
                         <!-- Category -->
-                        <div class="mb-2 row">
+                        <div class="mb-1 row">
                             <label for="category" class="form-label col-sm-3">Category: </label>
                             <div class="col-sm-9 text-secondary">
                                 {{ viewPaymentForm.category_name }}
@@ -1334,7 +1313,7 @@
                         </div>
                         
                         <!-- Account -->
-                        <div class="mb-2 row">
+                        <div class="mb-1 row">
                             <label for="account" class="form-label col-sm-3">Account:</label>
                             <div class="col-sm-9 text-secondary">
                                 -- {{ viewPaymentForm.account_holder_type }} Person --
@@ -1343,11 +1322,34 @@
                         
                         <!-- Hidden section for New Account details (visible when a new account is selected) -->
                         <div v-if="showEditAccountDetails">
-                            <h6 class="mb-2 mt-4">Account Details (Ad-hoc) 
-                                <span class="pull-right">AVS <span class="btn btn-default-default btn-sm">View</span></span>
-                            </h6>
+                            <div class="mb-1 mt-4">Account Details (Ad-hoc) 
+                                <span class="pull-right text-danger" v-if="viewPaymentForm.verification_status == 'failed'">
+                                    <i class="fas fa-times-circle mr-0 mt-1 text-danger" ref="popoverIcon" 
+                                                    data-bs-toggle="popover" 
+                                                    data-bs-placement="top" 
+                                                    title="AVS verification failed, Invalid account / details" 
+                                                    data-bs-content="AVS verification failed, Invalid account / details"></i>
+                                                    AVS {{ 'Warning - Invalid Account details' }} <span class="btn btn-default-default btn-sm text-primary" @click="viewAVSResult(viewPaymentForm)">View</span>
+                                </span>
+                                <span class="pull-right text-success" v-if="viewPaymentForm.verification_status == 'successful'">
+                                    <i class="far fa-check-circle mr-0 mt-1 text-success" ref="popoverIcon" 
+                                                    data-bs-toggle="popover" 
+                                                    data-bs-placement="top" 
+                                                    title="Account details complete, AVS verified account" 
+                                                    data-bs-content="Account details complete, AVS verified account"></i>
+                                                    AVS - {{ 'Successfully Matched' }} <span class="btn btn-default-default btn-sm text-primary" @click="viewAVSResult(viewPaymentForm)">View</span>
+                                </span>
+                                <span class="pull-right text-primary" v-if="viewPaymentForm.verification_status == 'pending'">
+                                    <i class="fas fa-info-circle mr-0 mt-1 text-primary" ref="popoverIcon" 
+                                                    data-bs-toggle="popover" 
+                                                    data-bs-placement="top" 
+                                                    title="AVS Account verificaiton pending" 
+                                                    data-bs-content="AVS Account verificaiton pending"></i>
+                                                    AVS - {{ 'Account verificaiton pending' }} <span class="btn btn-default-default btn-sm text-primary" @click="viewAVSResult(viewPaymentForm)">View</span>
+                                </span>
+                            </div>
                             <hr class="mt-3"/>
-                            <div class="mb-2 row">
+                            <div class="mb-1 row">
                                 <label for="account_number" class="form-label col-sm-3">Account No.: </label>
                                 <div class="col-sm-9 text-secondary">
                                     {{ viewPaymentForm.account_number }}
@@ -1372,7 +1374,7 @@
                                     </div>
                                 </div>
                             </div>
-                            <div class="mb-2 row">
+                            <div class="mb-1 row">
                                 <label for="account_holder" v-if="this.viewPaymentForm.account_holder_type" class="form-label col-sm-3">Account Holder: </label>
                                 <div class="col-sm-9 text-secondary pr-0" v-if="this.viewPaymentForm.account_holder_type == 'natural'">
                                     {{ viewPaymentForm.initials }} {{ viewPaymentForm.surname }}
@@ -1385,26 +1387,26 @@
                                 
                             </div>
                             
-                            <div class="mb-2 row" v-if="this.viewPaymentForm.account_holder_type == 'natural'">
+                            <div class="mb-1 row" v-if="this.viewPaymentForm.account_holder_type == 'natural'">
                                 <label for="id_number" class="form-label col-sm-3">ID No. / Passport No.:</label>
                                 <div class="col-sm-9 text-secondary">
                                     {{ viewPaymentForm.id_number }}
                                 </div>
                             </div>
-                            <div class="mb-2 row" v-if="this.viewPaymentForm.account_holder_type == 'juristic'">
+                            <div class="mb-1 row" v-if="this.viewPaymentForm.account_holder_type == 'juristic'">
                                 <label for="id_number" class="form-label col-sm-3">Registration No.:</label>
                                 <div class="col-sm-9 text-secondary">
                                     {{ viewPaymentForm.registration_number }}
                                     
                                 </div>
                             </div>
-                            <div class="mb-2 row">
+                            <div class="mb-1 row">
                                 <label for="account_type" class="form-label col-sm-3">Account Type: </label>
                                 <div class="col-sm-9 text-secondary">
                                     {{ viewPaymentForm.account_type.name }}
                                 </div>
                             </div>
-                            <div class="mb-2 row">
+                            <div class="mb-1 row">
                                 <label for="institution" class="form-label col-sm-3">Institution: </label>
                                 <div class="col-sm-9 text-secondary">
 
@@ -1412,7 +1414,7 @@
                                     
                                 </div>
                             </div>
-                            <div class="mb-2 row">
+                            <div class="mb-1 row">
                                 <label for="branch_code" class="form-label col-sm-3">Branch Code: </label>
                                 <div class="col-sm-9 text-secondary">
                                     {{ viewPaymentForm.branch_code }}
@@ -1422,7 +1424,7 @@
                         </div>
                         
                         <!-- Transaction Information -->
-                        <h6 class="mb-1 mt-4">Transaction Information</h6>
+                        <div class="mb-1 mt-4">Transaction Information</div>
                         <hr class="mt-0"/>
                         <div class="mb-2 row">
                             <label for="description" class="form-label col-sm-3">Description: </label>
@@ -1431,21 +1433,21 @@
                                 
                             </div>
                         </div>
-                        <div class="mb-2 row">
+                        <div class="mb-1 row">
                             <label for="amount" class="form-label col-sm-3">Amount: </label>
                             <div class="col-sm-9 text-secondary">
                                 R{{ parseFloat(viewPaymentForm.amount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}
                                 
                             </div>
                         </div>
-                        <div class="mb-2 row">
+                        <div class="mb-1 row">
                             <label for="my_reference" class="form-label col-sm-3">My Reference: </label>
                             <div class="col-sm-9 text-secondary">
                                 {{ viewPaymentForm.my_reference }}
                                 
                             </div>
                         </div>
-                        <div class="mb-2 row">
+                        <div class="mb-1 row">
                             <label for="recipient_reference" class="form-label col-sm-3">Recipient Reference:</label>
                             <div class="col-sm-9 text-secondary">
                                 {{ viewPaymentForm.recipient_reference }}
@@ -1453,16 +1455,16 @@
                             </div>
                         </div>
                         <!-- Payment Status -->
-                        <h6 class="mb-1 mt-4">Payment Status</h6>
+                        <div class="mb-1 mt-4">Payment Status</div>
                         <hr class="mt-0"/>
-                        <div class="mb-2 row">
+                        <div class="mb-1 row">
                             <label for="description" class="form-label col-sm-3">Status Date: </label>
                             <div class="col-sm-9 text-secondary">
                                 -- {{ 'Not Available' }} --
                                 
                             </div>
                         </div>
-                        <div class="mb-2 row">
+                        <div class="mb-1 row">
                             <label for="amount" class="form-label col-sm-3">File Status Description: </label>
                             <div class="col-sm-9 text-secondary">
                                 {{  }}
@@ -1496,65 +1498,98 @@
                 </div>
                 <div class="modal-body">
                     <div v-if="avsResult && avsResult.avs_verified_at" class="account-verification-result">
-                        <p class="form-label mt-3 mb-4">The entry was successfully saved</p>
-                        <div class="alert alert-success p-2 mb-4" role="alert" v-if="avsResult && avsResult.account_found">
+                        <!-- <p class="form-label mt-3 mb-4">The entry was successfully saved</p> -->
+                        <div class="alert alert-success p-2 mb-4" role="alert" v-if="getAvsStatus(
+                            avsResult.account_found, 
+                            avsResult.account_open, 
+                            avsResult.branch_code_match
+                            )">
                             <h6>The account holder matched the account details</h6>
                         </div>
-                        <div class="alert alert-success p-2 mb-4" role="alert" v-else>
-                            <h6>The account holder fields did not match</h6>
+                        <div class="alert alert-danger p-2 mb-4" role="alert" v-else>
+                            <h6>The account information fields did not match</h6>
                         </div>
-                        <h5>Account Results 
+                        <div>Account Results 
                             <span class="pull-right">
-                                <span  class="text-success mr-4"><i class="far fa-check-square bg-green mr-1" aria-hidden="true"></i>Found</span>
-                                <span  class="text-success"><i class="far fa-check-square bg-green mr-1" aria-hidden="true"></i>Open (for 3+ months)</span>
+
+                                <span  class="text-success mr-4" v-if="getAvsStatus(avsResult.account_found)"><i class="far fa-check-square bg-green mr-1" aria-hidden="true"></i>Found</span>
+                                <span  class="text-danger mr-4" v-else><i class="fas fa-times-circle mr-1" aria-hidden="true"></i>Found</span>
+
+                                <span  class="text-success" v-if="getAvsStatus(avsResult.account_open)"><i class="far fa-check-square bg-green mr-1" aria-hidden="true"></i>Open (for 3+ months)</span>
+                                <span  class="text-danger" v-else><i class="fas fa-times-circle mr-1" aria-hidden="true"></i>Open (for 3+ months)</span>
+                                
                             </span>
-                        </h5>
+                        </div>
                         <hr class="mt-0 mb-2">
                         <div class="row mb-0">
-                                <div class="col-sm-3"><p class="pull-right"><strong>Number:</strong></p></div>
-                                <div class="col-sm-5">{{ avsResult && avsResult.account_number }}</div>
-                                <div class="col-sm-4"></div>
+                                <div class="col-sm-3"><span class="pull-right"><strong>Number:</strong></span></div>
+                                <div class="col-sm-5 text-secondary">{{ avsResult.account_number }}</div>
+                                <div class="col-sm-4">
+                                    <span class="text-success" v-if="getAvsStatus(avsResult.account_found)"><i class="far fa-check-square bg-green mr-1" aria-hidden="true"></i> Matched</span>
+                                    <span class="text-danger" v-else><i class="fas fa-times-circle mr-1" aria-hidden="true"></i> Matched</span>
+                                </div>
                         </div>
                         <div class="row mb-0">
-                                <div class="col-sm-3"><p class="pull-right"><strong>Branch Code:</strong></p></div>
-                                <div class="col-sm-5">{{ avsResult && avsResult.branch_code }}</div>
-                                <div class="col-sm-4"></div>
+                                <div class="col-sm-3"><span class="pull-right"><strong>Branch Code:</strong></span></div>
+                                <div class="col-sm-5 text-secondary">{{ avsResult?.branch_code }}</div>
+                                <div class="col-sm-4">
+                                    <span class="text-success" v-if="getAvsStatus(avsResult.branch_code_match)"><i class="far fa-check-square bg-green mr-1" aria-hidden="true"></i> Matched</span>
+                                    <span class="text-danger" v-else><i class="fas fa-times-circle mr-1" aria-hidden="true"></i> Matched</span>
+                                </div>
                         </div>
                         <div class="row mb-0">
-                                <div class="col-sm-3"><p class="pull-right"><strong>Account Type:</strong></p></div>
-                                <div class="col-sm-5">{{ avsResult && avsResult.branch_code }}</div>
-                                <div class="col-sm-4"> <span class="text-success" v-if="avsResult && avsResult.account_found"><i class="far fa-check-square bg-green mr-1" aria-hidden="true"></i> Matched</span></div>
+                                <div class="col-sm-3"><span class="pull-right"><strong>Account Type:</strong></span></div>
+                                <div class="col-sm-5 text-secondary">{{ avsResult?.account_type?.name }}</div>
+                                <div class="col-sm-4">
+                                    <span class="text-success" v-if="getAvsStatus(avsResult.account_found)"><i class="far fa-check-square bg-green mr-1" aria-hidden="true"></i> Matched</span>
+                                    <span class="text-danger" v-else><i class="fas fa-times-circle mr-1" aria-hidden="true"></i> Matched</span>
+                                </div>
                         </div>
                         <br/><br/>
-                        <h5>Account Holder Results</h5>
+                        <div>Account Holder Results</div>
                         <hr class="mt-0 mb-2">
                         <div v-if="avsResult && avsResult.account_holder_type == 'natural'">
                             <div class="row mb-0">
-                                <div class="col-sm-3"><p class="pull-right"><strong>Initials:</strong></p></div>
-                                <div class="col-sm-5">{{ avsResult.initials }}</div>
-                                <div class="col-sm-4"> <span class="text-success" v-if="avsResult && avsResult.holder_matched"><i class="far fa-check-square bg-green mr-1" aria-hidden="true"></i> Matched</span></div>
+                                <div class="col-sm-3"><span class="pull-right"><strong>Initials:</strong></span></div>
+                                <div class="col-sm-5 text-secondary">{{ avsResult.initials }}</div>
+                                <div class="col-sm-4"> 
+                                    <span class="text-success" v-if="getAvsStatus(avsResult.holder_initials_match)"><i class="far fa-check-square bg-green mr-1" aria-hidden="true"></i> Matched</span>
+                                    <span class="text-danger" v-else><i class="fas fa-times-circle mr-1" aria-hidden="true"></i> Matched</span>
+                                </div>
                             </div>
                             <div class="row mb-0">
-                                <div class="col-sm-3"><p class="pull-right"><strong>Name:</strong></p></div>
-                                <div class="col-sm-5">{{ avsResult.surname }}</div>
-                                <div class="col-sm-4"> <span class="text-success" v-if="avsResult && avsResult.holder_matched"><i class="far fa-check-square bg-green mr-1" aria-hidden="true"></i> Matched</span></div>
+                                <div class="col-sm-3"><span class="pull-right"><strong>Name:</strong></span></div>
+                                <div class="col-sm-5 text-secondary">{{ avsResult.surname }}</div>
+                                <div class="col-sm-4">
+                                    <span class="text-success" v-if="getAvsStatus(avsResult.holder_name_match)"><i class="far fa-check-square bg-green mr-1" aria-hidden="true"></i> Matched</span>
+                                    <span class="text-danger" v-else><i class="fas fa-times-circle mr-1" aria-hidden="true"></i> Matched</span>
+                                </div>
                             </div>
                             <div class="row mb-0">
-                                <div class="col-sm-3"><p class="pull-right"><strong>Id Number:</strong></p></div>
-                                <div class="col-sm-5">{{ avsResult.id_number }}</div>
-                                <div class="col-sm-4"> <span class="text-fade"><i class="far fa-square mr-1 disabled" aria-hidden="true"></i> Not Supplied</span></div>
+                                <div class="col-sm-3"><span class="pull-right"><strong>Id Number:</strong></span></div>
+                                <div class="col-sm-5 text-secondary">{{ avsResult.id_number }}</div>
+                                <div class="col-sm-4">
+                                    <span class="text-fade"><i class="far fa-square mr-1 disabled" aria-hidden="true"></i> Not Supplied</span>
+                                    
+                                </div>
                             </div>
                         </div>
                         <div v-else>
                             <div class="row mb-0">
-                                <div class="col-sm-3"><p class="pull-right"><strong>Name:</strong></p></div>
-                                <div class="col-sm-5">{{ avsResult && avsResult.holder_name }}</div>
-                                <div class="col-sm-4"> <span class="text-success" v-if="avsResult && avsResult.holder_matched"><i class="far fa-check-square bg-green mr-1" aria-hidden="true"></i> Matched</span></div>
+                                <div class="col-sm-3"><span class="pull-right"><strong>Name:</strong></span></div>
+                                <div class="col-sm-5 text-secondary">{{ avsResult.company_name }}</div>
+                                <div class="col-sm-4"> 
+                                    <span class="text-success" v-if="getAvsStatus(avsResult.holder_matched)"><i class="far fa-check-square bg-green mr-1" aria-hidden="true"></i> Matched</span>
+                                    <span class="text-danger" v-else><i class="fas fa-times-circle mr-1" aria-hidden="true"></i> Matched</span>
+                                </div>
                             </div>
                             <div class="row mb-0">
-                                <div class="col-sm-3"><p class="pull-right"><strong>Registration No.:</strong></p></div>
-                                <div class="col-sm-5"></div>
-                                <div class="col-sm-4"> <span class="text-fade"><i class="far fa-square mr-1 disabled" aria-hidden="true"></i> Not Supplied</span></div>
+                                <div class="col-sm-3"><span class="pull-right"><strong>Registration No.:</strong></span></div>
+                                <div class="col-sm-5 text-secondary">{{ avsResult.registration_number }}</div>
+                                <div class="col-sm-4"> 
+                                    <span class="text-fade" v-if="!avsResult.registration_number"><i class="far fa-square mr-1 disabled" aria-hidden="true"></i> Not Supplied</span>
+
+                                </div>
                             </div>
                         </div>
                        
@@ -1776,8 +1811,9 @@ export default {
                 account_type: { id: null, name: null},
                 institution: { id: null},
                 branch_code: '',
-                verified: '',
-                verification_status: '',
+                verified: null,
+                verification_status: null,
+                avs_verified_at: null,
                 description: '',
                 amount: '',
                 my_reference: '',  // Example reference
@@ -1850,6 +1886,25 @@ export default {
         }
     },
     methods: {
+        getAvsStatus(...codes) {
+            return codes.every(code => code === "00");
+        },
+        /**
+         * Returns AVS result based on AVS code.
+         * @param {string} code - The AVS code (00, 01, 99).
+         * @returns {string} - "Matched", "Did Not Match", or "Unable to Verify".
+         */
+        getAvsStatusDetail(code) {
+            if (code === "00") {
+                return "Matched";
+            } else if (code === "01") {
+                return "Did Not Match";
+            } else if (code === "99") {
+                return "Unable to Verify";
+            } else {
+                return "Unknown Status";
+            }
+        },
         validateRegistrationNumber() {
             const value = this.paymentForm.registration_number;
             const pattern = /^\d{4}\/\d{6}\/\d{2}$/;
@@ -2091,6 +2146,15 @@ export default {
             this.viewPaymentForm.description = payment.description;
             this.viewPaymentForm.amount = payment.amount;
             this.viewPaymentForm.verified = payment.beneficiary_account?.verified;
+            this.viewPaymentForm.verification_status = payment.beneficiary_account?.verification_status;
+            this.viewPaymentForm.avs_verified_at = payment.beneficiary_account?.avs_verified_at;
+            this.viewPaymentForm.account_type_verified = payment.beneficiary_account?.account_type_verified;
+            this.viewPaymentForm.account_type_match = payment.beneficiary_account?.account_type_match;
+            this.viewPaymentForm.holder_name_match = payment.beneficiary_account?.holder_name_match;
+            this.viewPaymentForm.holder_initials_match = payment.beneficiary_account?.holder_initials_match;
+            this.viewPaymentForm.branch_code_match = payment.beneficiary_account?.branch_code_match;
+            this.viewPaymentForm.account_found = payment.beneficiary_account?.account_found;
+            this.viewPaymentForm.account_open = payment.beneficiary_account?.account_open;
             this.viewPaymentForm.my_reference = payment.my_reference;
             this.viewPaymentForm.recipient_reference = payment.recipient_reference;
             this.viewPaymentForm.account_number = payment.beneficiary_account?.account_number;
@@ -2102,15 +2166,13 @@ export default {
             this.viewPaymentForm.registration_number = payment.beneficiary_account?.registration_number;
             this.viewPaymentForm.institution = payment.beneficiary_account?.institution;
             this.viewPaymentForm.branch_code = payment.beneficiary_account?.branch_code;
+           
             // Set category_id before checking category name
             this.viewPaymentForm.category_id = payment.category_id;
             this.viewPaymentForm.account_type = payment.beneficiary_account?.account_type;
 
             this.loadBeneficiaryDetails(payment?.beneficiary_account_id, payment.beneficiary_account?.account_number);
-
-            console.log(payment);
-        
-
+    
             // Ensure categories exist before finding the name
             if (this.categories.length > 0) {
                 let selectedCategory = this.categories.find(cat => cat.id === payment.category_id);
@@ -2138,6 +2200,14 @@ export default {
             this.editPaymentForm.amount = payment.amount;
             this.editPaymentForm.verified = payment.beneficiary_account?.verified;
             this.editPaymentForm.verification_status = payment.beneficiary_account?.verification_status;
+            this.editPaymentForm.avs_verified_at = payment.beneficiary_account?.avs_verified_at;
+            this.editPaymentForm.account_type_verified = payment.beneficiary_account?.account_type_verified;
+            this.editPaymentForm.account_type_match = payment.beneficiary_account?.account_type_match;
+            this.editPaymentForm.holder_name_match = payment.beneficiary_account?.holder_name_match;
+            this.editPaymentForm.holder_initials_match = payment.beneficiary_account?.holder_initials_match;
+            this.editPaymentForm.branch_code_match = payment.beneficiary_account?.branch_code_match;
+            this.editPaymentForm.account_found = payment.beneficiary_account?.account_found;
+            this.editPaymentForm.account_open = payment.beneficiary_account?.account_open;
             this.editPaymentForm.my_reference = payment.my_reference;
             this.editPaymentForm.recipient_reference = payment.recipient_reference;
             this.editPaymentForm.account_number = payment.beneficiary_account?.account_number;
@@ -2151,6 +2221,7 @@ export default {
             this.editPaymentForm.institution = payment.beneficiary_account?.institution;
             this.editPaymentForm.branch_code = payment.beneficiary_account?.branch_code;
             this.editPaymentForm.category = payment.category_id;
+            this.editPaymentForm.account_type = payment.beneficiary_account?.account_type;
             console.log(this.editPaymentForm);
             // Convert funded from 1 or 0 to boolean true/false
             //this.editDepositForm.funded = deposit.funded === 1;
@@ -2814,6 +2885,34 @@ export default {
             this.loadAllSourceAccounts();  // Fetch source accounts
             this.modalInstance = new bootstrap.Modal(document.getElementById('sourceAccountModal'));
             this.modalInstance.show();
+        },
+
+         // Open modal to choose source account
+         viewAVSResult(accountData) {
+            
+            this.closeModal();
+            this.avsResult.verified = accountData.verified;
+            this.avsResult.avs_verified_at = accountData.avs_verified_at;
+            this.avsResult.verification_status = accountData.verification_status;
+            this.avsResult.account_type_verified = accountData?.account_type_verified;
+            this.avsResult.account_type_match = accountData?.account_type_match;
+            this.avsResult.holder_name_match = accountData?.holder_name_match;
+            this.avsResult.holder_initials_match = accountData?.holder_initials_match;
+            this.avsResult.branch_code_match = accountData?.branch_code_match;
+            this.avsResult.branch_code = accountData?.branch_code;
+            this.avsResult.account_found = accountData?.account_found;
+            this.avsResult.account_open = accountData?.account_open;
+            this.avsResult.account_number = accountData?.account_number;
+            this.avsResult.registration_number = accountData?.registration_number;
+            this.avsResult.surname = accountData?.surname;
+            this.avsResult.initials = accountData?.initials;
+            this.avsResult.id_number = null;
+            this.avsResult.account_holder_type = accountData?.account_holder_type;
+            this.avsResult.account_type = accountData?.account_type;
+            this.avsResult.company_name = accountData?.company_name;
+
+            this.showAvsModelInstance = new bootstrap.Modal(document.getElementById('avsResultModal'));
+            this.showAvsModelInstance.show();
         },
         
         closeModal() {

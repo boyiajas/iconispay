@@ -104,6 +104,6 @@ class BeneficiaryAccount extends Model
      */
     public function payments()
     {
-        return $this->hasMany(Payment::class, 'beneficiary_account_id');
+        return $this->hasMany(Payment::class, 'beneficiary_account_id')->whereStatus('processed');
     }
 }

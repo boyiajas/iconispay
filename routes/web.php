@@ -67,7 +67,9 @@ Route::get('/preferences/{encoded}', function ($encoded) {
     return 'Preferences Link with encoded data: ' . $encoded;
 })->name('preferences');
 
-Route::post('/api/avs-callback', function (Request $request) { 
+Route::post('/api/avs-callback', [AvsController::class, 'handleAvsCallback']);
+
+/* Route::post('/api/avs-callback', function (Request $request) { 
     // Basic authentication
     $username = $request->header('PHP_AUTH_USER');
     $password = $request->header('PHP_AUTH_PW');
@@ -135,7 +137,7 @@ Route::post('/api/avs-callback', function (Request $request) {
     Log::info('Callback response', ['response' => $response]);
 
     return response()->json($response, 200);
-});
+}); */
 
 Route::group(['middleware' => 'no_cache'], function (){
 
