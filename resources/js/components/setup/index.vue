@@ -1427,7 +1427,14 @@ export default {
                     type: 'GET',
                     dataSrc: 'data', // Assumes the API response has a `data` field
                     error: (xhr, error, thrown) => {
-                        console.error('Error fetching data:', error, thrown);
+                        // Check if the error status is 401 (Unauthorized)
+                        if (error.response && error.response.status === 401) {
+                            // Emit the 'show-login-modal' event to show the login modal
+                            //this.$eventBus.emit('show-login-modal');
+                            //alert('handle the connection error successful');
+                        } else{
+                            console.error('Error fetching data:', error, thrown);
+                        }
                         //alert('An error occurred while fetching the data. Please try again later.');
                     }
                 },
@@ -1674,7 +1681,18 @@ export default {
                 ajax: {
                     url: '/api/deactivated-users',
                     type: 'GET',
-                    dataSrc: 'data' // Assumes the API response has a `data` field
+                    dataSrc: 'data', // Assumes the API response has a `data` field
+                    error: (xhr, error, thrown) => {
+                        // Check if the error status is 401 (Unauthorized)
+                        if (error.response && error.response.status === 401) {
+                            // Emit the 'show-login-modal' event to show the login modal
+                            //this.$eventBus.emit('show-login-modal');
+                            //alert('handle the connection error successful');
+                        } else{
+                            console.error('Error fetching data:', error, thrown);
+                        }
+                        //alert('An error occurred while fetching the data. Please try again later.');
+                    }
                 },
                 
                 columns: [
@@ -1990,7 +2008,14 @@ export default {
                     type: 'GET',
                     dataSrc: 'data', // Assumes the API response has a `data` field
                     error: (xhr, error, thrown) => {
-                        console.error('Error fetching data:', error, thrown);
+                        // Check if the error status is 401 (Unauthorized)
+                        if (error.response && error.response.status === 401) {
+                            // Emit the 'show-login-modal' event to show the login modal
+                            //this.$eventBus.emit('show-login-modal');
+                            //alert('handle the connection error successful');
+                        } else{
+                            console.error('Error fetching data:', error, thrown);
+                        }
                         //alert('An error occurred while fetching the data. Please try again later.');
                     }
                 },
@@ -2114,7 +2139,14 @@ export default {
                     type: 'GET',
                     dataSrc: 'data', // Assumes the API response has a `data` field
                     error: (xhr, error, thrown) => {
-                        console.error('Error fetching data:', error, thrown);
+                        // Check if the error status is 401 (Unauthorized)
+                        if (error.response && error.response.status === 401) {
+                            // Emit the 'show-login-modal' event to show the login modal
+                            //this.$eventBus.emit('show-login-modal');
+                            //alert('handle the connection error successful');
+                        } else{
+                            console.error('Error fetching data:', error, thrown);
+                        }
                         //alert('An error occurred while fetching the data. Please try again later.');
                     }
                 },
@@ -2238,7 +2270,14 @@ export default {
                     type: 'GET',
                     dataSrc: 'data', // Assumes the API response has a `data` field
                     error: (xhr, error, thrown) => {
-                        console.error('Error fetching data:', error, thrown);
+                        // Check if the error status is 401 (Unauthorized)
+                        if (error.response && error.response.status === 401) {
+                            // Emit the 'show-login-modal' event to show the login modal
+                            //this.$eventBus.emit('show-login-modal');
+                            //alert('handle the connection error successful');
+                        } else{
+                            console.error('Error fetching data:', error, thrown);
+                        }
                         //alert('An error occurred while fetching the data. Please try again later.');
                     }
                 },

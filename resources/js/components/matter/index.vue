@@ -126,7 +126,15 @@ export default {
                         d.filter_text = this.filterText;
                     },
                     error: (xhr, error, thrown) => {
-                        console.error('Error fetching data:', error, thrown);
+                        // Check if the error status is 401 (Unauthorized)
+                        if (error.response && error.response.status === 401) {
+                            // Emit the 'show-login-modal' event to show the login modal
+                            //this.$eventBus.emit('show-login-modal');
+                            //alert('handle the connection error successful');
+                        } else{
+                            console.error('Error fetching data:', error, thrown);
+                            alert('An error occurred while fetching the history data. Please try again later.');
+                        }
                         //alert('An error occurred while fetching the data. Please try again later.');
                     }
                 },
