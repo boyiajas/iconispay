@@ -25,7 +25,7 @@ class FirmAccountController extends Controller
     public function index()
     {
         // Get the FirmAccount data with related 'institution', 'category', and 'accountType'
-        $firmaccounts = FirmAccount::with('institution', 'category', 'accountType')
+        $firmaccounts = FirmAccount::with('institution', 'category', 'accountType','authorizers.user')
             ->get()
             ->map(function ($firmAccount) {
                 // Check if the firm account has not been authorized

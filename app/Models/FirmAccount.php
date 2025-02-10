@@ -33,6 +33,7 @@ class FirmAccount extends Model
         'verification_status',
         'account_found',
         'account_open',
+        'account_open_gt_three_months',
         'account_type_verified',
         'account_type_match',
         'branch_code_match',

@@ -122,3 +122,8 @@ a{
     background-color: #40b1c5 !important;
     border-color: #40b1c5 !important;
   }
+
+.box-success{
+    border: solid 1px #95c195 !important;
+  background-color: #e8f9f1 !important;
+}

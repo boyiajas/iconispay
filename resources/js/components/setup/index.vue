@@ -657,23 +657,23 @@
                     <div class="modal-body">
                         <!-- Account Holder Section -->
                         <div class="account-holder-section">
-                            <h4>{{ firmAccount?.name }} - {{ firmAccount?.accountNumber }}</h4>
-                            <p class="mb-2 mt-4">Account Holder <span class="text-secondary">({{ firmAccount?.holderType }})</span></p>
-                            <div class="pl-2 p-2 mb-3" style="background-color:#eee; border-radius: 5px;">
-                                <div class="row mb-2">
+                            <h4>{{ firmAccount?.display_text }} - {{ firmAccount?.account_number }}</h4>
+                            <p class="mb-2 mt-4">Account Holder <span class="text-secondary">({{ firmAccount?.account_holder_type }})</span></p>
+                            <div class="pl-2 p-2 mb-3" style="background-color:rgb(249, 249, 249); border-radius: 5px;">
+                                <div class="row mb-0">
                                     <div class="col-md-5">
                                         <span class="bold">Name: </span>
                                     </div>
                                     <div class="col-md-7">
-                                        <span class="text-secondary">{{ firmAccount?.name }}</span>
+                                        <span class="text-secondary">{{ firmAccount?.company_name }}</span>
                                     </div>
                                 </div>
-                                <div class="row mb-2">
+                                <div class="row mb-0">
                                     <div class="col-md-5">
                                         <span class="bold">Registration # </span>
                                     </div>
                                     <div class="col-md-7">
-                                        <span class="text-secondary">{{ firmAccount?.registrationNumber }}</span>
+                                        <span class="text-secondary">{{ firmAccount?.registration_number }}</span>
                                     </div>
                                 </div>                            
                             </div>
@@ -682,40 +682,40 @@
                         <!-- Account Details Section -->
                         <div class="account-details-section">
                             <p class="mb-2 mt-4">Account Details</p>
-                            <div class="pl-2 p-2 mb-3" style="background-color:#eee; border-radius: 5px;">
-                                <div class="row mb-2">
+                            <div class="pl-2 p-2 mb-3" style="background-color:rgb(249, 249, 249); border-radius: 5px;">
+                                <div class="row mb-0">
                                     <div class="col-md-5">
                                         <span class="bold">Account #: </span>
                                     </div>
                                     <div class="col-md-7">
-                                        <span class="text-secondary">{{ firmAccount?.accountNumber }}</span>
+                                        <span class="text-secondary">{{ firmAccount?.account_number }}</span>
                                     </div>
                                 </div>
-                                <div class="row mb-2">
+                                <div class="row mb-0">
                                     <div class="col-md-5">
                                         <span class="bold">Institution: </span>
                                     </div>
                                     <div class="col-md-7">
-                                        <span class="text-secondary">{{ firmAccount?.institution }}</span>
+                                        <span class="text-secondary">{{ firmAccount?.institution?.name }}</span>
                                     </div>
                                 </div>
-                                <div class="row mb-2">
+                                <div class="row mb-0">
                                     <div class="col-md-5">
                                         <span class="bold">Branch: </span>
                                     </div>
                                     <div class="col-md-7">
-                                        <span class="text-secondary">{{ firmAccount?.branch }}</span>
+                                        <span class="text-secondary">{{ firmAccount?.branch_code }}</span>
                                     </div>
                                 </div>
-                                <div class="row mb-2">
+                                <div class="row mb-0">
                                     <div class="col-md-5">
                                         <span class="bold">Account Description: </span>
                                     </div>
                                     <div class="col-md-7">
-                                        <span class="text-secondary">{{ firmAccount?.accountDescription }}</span>
+                                        <span class="text-secondary">{{ firmAccount?.category?.name }}</span>
                                     </div>
                                 </div> 
-                                <div class="row mb-2">
+                                <div class="row mb-0">
                                     <div class="col-md-5">
                                         <span class="bold">File Type: </span>
                                     </div>
@@ -723,7 +723,7 @@
                                         <span class="text-secondary">{{ firmAccount?.fileType }}</span>
                                     </div>
                                 </div> 
-                                <div class="row mb-2">
+                                <div class="row mb-0">
                                     <div class="col-md-5">
                                         <span class="bold">Method: </span>
                                     </div>
@@ -734,23 +734,25 @@
                             </div>
                         </div>
 
-                        <!-- AVS Section -->
-                        <div class="avs-section alert alert-success pb-3 pt-2">
+                        
+
+                         <!-- AVS Section -->
+                         <div class="avs-section alert alert-success box-success pb-3 pt-2">
                             AVS Successfully Matched on {{ firmAccount?.avsMatchedAt }}
-                            <button class="btn btn-sm btn-light btn-default-default pull-right" @click="showAvsDetails">Show Details</button>
+                            <button class="btn btn-sm btn-light btn-default-default pull-right" @click="viewAVSResult(firmAccount)">Show Details</button>
                         </div>
 
                         <!-- Authorizations Section -->
                         <div class="authorization-section">
-                            <h6>Authorisations</h6>
-                            <div class="authorization-box alert alert-success pb-3 pt-2">
-                                <strong>{{ firmAccount?.authorizer?.name }}</strong> on {{ firmAccount?.authorizedAt }}
-                                <p>Logged in as <em>{{ firmAccount?.authorizer?.email }}</em></p>
-                            </div>
+                        <h6>Authorisations</h6>
+                        <div class="authorization-box alert alert-success  box-success pb-3 pt-2" v-for="authorizer in firmAccount?.authorizers" :key="authorizer.id">
+                            <strong>{{ authorizer?.user?.name }}</strong> on {{ formatDateAndTime(authorizer?.created_at) }}
+                            <p class="txt-xs">logged in as <em>{{ authorizer?.user?.email }}</em></p>
                         </div>
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal" @click="closeModal">Close</button>
+                    </div>
                     </div>
                 </div>
             </div>
@@ -771,23 +773,23 @@
                 <div class="modal-body">
                     <!-- Account Holder Section -->
                     <div class="account-holder-section">
-                        <h4>{{ beneficiaryAccount?.name }} - {{ beneficiaryAccount?.accountNumber }}</h4>
-                        <p class="mb-2 mt-4">Account Holder <span class="text-secondary">({{ beneficiaryAccount?.holderType }})</span></p>
-                        <div class="pl-2 p-2 mb-3" style="background-color:#eee;border-radius: 5px;">
-                            <div class="row mb-2">
+                        <h4>{{ beneficiaryAccount?.surname }} - {{ beneficiaryAccount?.account_number }}</h4>
+                        <p class="mb-2 mt-4">Account Holder <span class="text-secondary">({{ beneficiaryAccount?.account_holder_type }})</span></p>
+                        <div class="pl-2 p-2 mb-3" style="background-color:rgb(249, 249, 249);border-radius: 5px;">
+                            <div class="row mb-0">
                                 <div class="col-md-5">
                                     <span class="bold">Name: </span>
                                 </div>
                                 <div class="col-md-7">
-                                    <span class="text-secondary">{{ beneficiaryAccount?.holderName }}</span>
+                                    <span class="text-secondary">{{ beneficiaryAccount?.initials }} {{ beneficiaryAccount?.surname }}</span>
                                 </div>
                             </div>
-                            <div class="row mb-2">
+                            <div class="row mb-0">
                                 <div class="col-md-5">
-                                    <span class="bold">Registration # </span>
+                                    <span class="bold">ID Number # </span>
                                 </div>
                                 <div class="col-md-7">
-                                    <span class="text-secondary">{{ beneficiaryAccount?.registrationNumber }}</span>
+                                    <span class="text-secondary">{{ beneficiaryAccount?.id_number }}</span>
                                 </div>
                             </div>                            
                         </div>
@@ -796,40 +798,40 @@
                     <!-- Account Details Section -->
                     <div class="account-details-section">
                         <p class="mb-2 mt-4">Account Details </p>
-                        <div class="pl-2 p-2 mb-3" style="background-color:#eee;border-radius: 5px;">
-                            <div class="row mb-2">
+                        <div class="pl-2 p-2 mb-3" style="background-color:rgb(249, 249, 249);border-radius: 5px;">
+                            <div class="row mb-0">
                                 <div class="col-md-5">
                                     <span class="bold">Account #: </span>
                                 </div>
                                 <div class="col-md-7">
-                                    <span class="text-secondary">{{ beneficiaryAccount?.accountNumber }}</span>
+                                    <span class="text-secondary">{{ beneficiaryAccount?.account_number }}</span>
                                 </div>
                             </div>
-                            <div class="row mb-2">
+                            <div class="row mb-0">
                                 <div class="col-md-5">
                                     <span class="bold">Institution: </span>
                                 </div>
                                 <div class="col-md-7">
-                                    <span class="text-secondary">{{ beneficiaryAccount?.institution }}</span>
+                                    <span class="text-secondary">{{ beneficiaryAccount?.institution?.name }}</span>
                                 </div>
                             </div>
-                            <div class="row mb-2">
+                            <div class="row mb-0">
                                 <div class="col-md-5">
                                     <span class="bold">Branch: </span>
                                 </div>
                                 <div class="col-md-7">
-                                    <span class="text-secondary">{{ beneficiaryAccount?.branch }}</span>
+                                    <span class="text-secondary">{{ beneficiaryAccount?.branch_code }}</span>
                                 </div>
                             </div>
-                            <div class="row mb-2">
+                            <div class="row mb-0">
                                 <div class="col-md-5">
                                     <span class="bold">Account Description: </span>
                                 </div>
                                 <div class="col-md-7">
-                                    <span class="text-secondary">{{ beneficiaryAccount?.accountDescription }}</span>
+                                    <span class="text-secondary">{{ beneficiaryAccount?.category?.name }}</span>
                                 </div>
                             </div> 
-                            <div class="row mb-2">
+                            <div class="row mb-0">
                                 <div class="col-md-5">
                                     <span class="bold">File Type: </span>
                                 </div>
@@ -837,7 +839,7 @@
                                     <span class="text-secondary">{{ beneficiaryAccount?.fileType }}</span>
                                 </div>
                             </div> 
-                            <div class="row mb-2">
+                            <div class="row mb-0">
                                 <div class="col-md-5">
                                     <span class="bold">Method: </span>
                                 </div>
@@ -850,17 +852,17 @@
                     </div>
 
                     <!-- AVS Section -->
-                    <div class="avs-section alert alert-success pb-3 pt-2">
+                    <div class="avs-section alert alert-success box-success pb-3 pt-2">
                         AVS Successfully Matched on {{ beneficiaryAccount?.avsMatchedAt }}
-                        <button class="btn btn-sm btn-light btn-default-default pull-right" @click="showAvsDetails">Show Details</button>
+                        <button class="btn btn-sm btn-light btn-default-default pull-right" @click="viewAVSResult(beneficiaryAccount)">Show Details</button>
                     </div>
 
                     <!-- Authorizations Section -->
                     <div class="authorization-section">
                     <h6>Authorisations</h6>
-                    <div class="authorization-box alert alert-success pb-3 pt-2">
-                        <strong>{{ beneficiaryAccount?.authorizer?.name }}</strong> on {{ beneficiaryAccount?.authorizedAt }}
-                        <p>logged in as <em>{{ beneficiaryAccount?.authorizer?.email }}</em></p>
+                    <div class="authorization-box alert alert-success box-success pb-3 pt-2" v-for="authorizer in beneficiaryAccount?.authorizers" :key="authorizer.id">
+                        <strong>{{ authorizer?.user?.name }}</strong> on {{ formatDateAndTime(authorizer?.created_at) }}
+                        <p>logged in as <em>{{ authorizer?.user?.email }}</em></p>
                     </div>
                     </div>
                 </div>
@@ -889,6 +891,7 @@
                             <div class="alert alert-success p-2 mb-4" role="alert" v-if="getAvsStatus(
                                 avsResult.account_found, 
                                 avsResult.account_open, 
+                                avsResult.account_open_gt_three_months,
                                 avsResult.branch_code_match
                                 )">
                                 <h6>The account holder matched the account details</h6>
@@ -902,7 +905,7 @@
                                     <span  class="text-success mr-4" v-if="getAvsStatus(avsResult.account_found)"><i class="far fa-check-square bg-green mr-1" aria-hidden="true"></i>Found</span>
                                     <span  class="text-danger mr-4" v-else><i class="fas fa-times-circle mr-1" aria-hidden="true"></i>Found</span>
 
-                                    <span  class="text-success" v-if="getAvsStatus(avsResult.account_open)"><i class="far fa-check-square bg-green mr-1" aria-hidden="true"></i>Open (for 3+ months)</span>
+                                    <span  class="text-success" v-if="getAvsStatus(avsResult.account_open_gt_three_months)"><i class="far fa-check-square bg-green mr-1" aria-hidden="true"></i>Open (for 3+ months)</span>
                                     <span  class="text-danger" v-else><i class="fas fa-times-circle mr-1" aria-hidden="true"></i>Open (for 3+ months)</span>
                                     
                                 </span>
@@ -979,20 +982,6 @@
                                     </div>
                                 </div>
                             </div>
-                        
-                        
-                        <!--  <div class="alert alert-success" v-if="avsResult.match">
-                                The account holder matched the account details
-                            </div> -->
-
-                            
-                        <!--  <p><strong>Number:</strong> {{ avsResult.account_number }} <span v-if="avsResult.found" class="text-success">✔ Found</span> <span v-if="avsResult.open" class="text-success">✔ Open (for 3+ months)</span></p>
-                            <p><strong>Branch Code:</strong> {{ avsResult.branch_code }}</p>
-                            <p><strong>Account Type:</strong> {{ avsResult.account_type }} <span v-if="avsResult.matched" class="text-success">✔ Matched</span></p>
-
-                            <h6>Account Holder Results</h6>
-                            <p><strong>Name:</strong> {{ avsResult.holder_name }} <span v-if="avsResult.holder_matched" class="text-success">✔ Matched</span></p>
-                            <p><strong>Registration No.:</strong> {{ avsResult.registration_no || 'Not Supplied' }}</p> -->
                         </div>
                         <div v-else class="account-verification-inprocess">
                             <p class="mt-3 mb-4 text-secondary">The entry was successfully saved</p>
@@ -1017,6 +1006,7 @@
 import axios from 'axios';
 import $ from 'jquery';
 import PermissionControl from '../permission/PermissionControl.vue';
+import moment from 'moment';
 /* import 'datatables.net';
 import 'datatables.net-bs5'; */
 import { useToast } from 'vue-toastification';
@@ -1091,6 +1081,10 @@ export default {
             firmAccount: {}, // Store the selected firm account data for editing
             beneficiaryAccount: {},
             beneficiaryAccountsTable: [],
+
+            formatDateAndTime(dateString) {
+                return moment(dateString).format('Y-MM-D h:m:s');
+            },
         };
     },
     mounted() {
@@ -1111,7 +1105,7 @@ export default {
          // Open modal to choose source account
          viewAVSResult(accountData) {
             
-            this.closeModal();
+            this.closeModal();console.log(accountData);
             this.avsResult.verified = accountData.verified;
             this.avsResult.avs_verified_at = accountData.avs_verified_at;
             this.avsResult.verification_status = accountData.verification_status;
@@ -1123,6 +1117,7 @@ export default {
             this.avsResult.branch_code = accountData?.branch_code;
             this.avsResult.account_found = accountData?.account_found;
             this.avsResult.account_open = accountData?.account_open;
+            this.avsResult.account_open_gt_three_months = accountData?.account_open_gt_three_months;
             this.avsResult.account_number = accountData?.account_number;
             this.avsResult.registration_number = accountData?.registration_number;
             this.avsResult.surname = accountData?.surname;
@@ -2092,7 +2087,7 @@ export default {
                     .find((f) => f.id === firmaccountId);  console.log(firmaccount);
 
                     if (firmaccount) {
-                        this.firmAccount = {
+                        /* this.firmAccount = {
                             name: firmaccount.display_text || "N/A",
                             accountNumber: firmaccount.account_number || "N/A",
                             holderType: firmaccount.account_holder_type || "N/A",
@@ -2109,7 +2104,10 @@ export default {
                                 email: firmaccount.authorized_user?.email || "N/A",
                             },
                             authorizedAt: firmaccount.authorized_at || "N/A",
-                        };
+                        }; */
+
+                        this.firmAccount = firmaccount;
+                        console.log(firmaccount);
 
                         this.viewBeneficiaryAccountModalInstance = new bootstrap.Modal(document.getElementById("firmAccountModal"));
                         this.viewBeneficiaryAccountModalInstance.show();
@@ -2177,7 +2175,7 @@ export default {
                             return `
                                  ${showCheckIcon ? `<button class='btn btn-outline-info btn-sm authorize-beneficiary-btn' data-toggle='tooltip' title='Authorise this beneficiary Account' data-id='${data.id}'><i class='fas fa-check text-success'></i></button>` : ''}
                                  ${isAdmin ? `<button class="btn btn-outline-secondary btn-sm edit-beneficiary-btn" data-toggle="tooltip" title="Edit this beneficiary Account" data-id="${data.id}"><i class="fas fa-edit"></i></button>` : ''}
-                                  ${!showCheckIcon ? `<button class="btn btn-outline-info btn-sm view-beneficiary-btn" data-toggle="tooltip" title="View this beneficiary Account" data-id="${data.id}"><i class="fas fa-search"></i></button>` : ''}
+                                    <button class="btn btn-outline-info btn-sm view-beneficiary-btn" data-toggle="tooltip" title="View this beneficiary Account" data-id="${data.id}"><i class="fas fa-search"></i></button>
                                 
                                 <button class="btn btn-outline-danger btn-sm delete-beneficiary-btn" data-toggle="tooltip" title="Delete this beneficiary Account" data-id="${data.id}"><i class="fas fa-trash"></i></button>
                             `;
@@ -2199,7 +2197,7 @@ export default {
                             .find((b) => b.id === beneficiaryId); console.log(beneficiaryId);
 
                             if (beneficiary) {
-                                this.beneficiaryAccount = {
+                                /* this.beneficiaryAccount = {
                                     name: beneficiary.display_text || "N/A",
                                     accountNumber: beneficiary.account_number || "N/A",
                                     holderType: beneficiary.account_holder_type || "N/A",
@@ -2216,7 +2214,10 @@ export default {
                                         email: beneficiary.authorized_user?.email || "N/A",
                                     },
                                     authorizedAt: beneficiary.authorized_at || "N/A",
-                                };
+                                }; */
+
+                                this.beneficiaryAccount = beneficiary;
+                                console.log(beneficiary);
 
                                 this.viewBeneficiaryAccountModalInstance = new bootstrap.Modal(document.getElementById("beneficiaryAccountModal"));
                                 this.viewBeneficiaryAccountModalInstance.show();

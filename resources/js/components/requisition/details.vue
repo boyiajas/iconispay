@@ -1502,6 +1502,7 @@
                         <div class="alert alert-success p-2 mb-4" role="alert" v-if="getAvsStatus(
                             avsResult.account_found, 
                             avsResult.account_open, 
+                            avsResult.account_open_gt_three_months,
                             avsResult.branch_code_match
                             )">
                             <h6>The account holder matched the account details</h6>
@@ -1515,7 +1516,7 @@
                                 <span  class="text-success mr-4" v-if="getAvsStatus(avsResult.account_found)"><i class="far fa-check-square bg-green mr-1" aria-hidden="true"></i>Found</span>
                                 <span  class="text-danger mr-4" v-else><i class="fas fa-times-circle mr-1" aria-hidden="true"></i>Found</span>
 
-                                <span  class="text-success" v-if="getAvsStatus(avsResult.account_open)"><i class="far fa-check-square bg-green mr-1" aria-hidden="true"></i>Open (for 3+ months)</span>
+                                <span  class="text-success" v-if="getAvsStatus(avsResult.account_open_gt_three_months)"><i class="far fa-check-square bg-green mr-1" aria-hidden="true"></i>Open (for 3+ months)</span>
                                 <span  class="text-danger" v-else><i class="fas fa-times-circle mr-1" aria-hidden="true"></i>Open (for 3+ months)</span>
                                 
                             </span>
@@ -2155,6 +2156,7 @@ export default {
             this.viewPaymentForm.branch_code_match = payment.beneficiary_account?.branch_code_match;
             this.viewPaymentForm.account_found = payment.beneficiary_account?.account_found;
             this.viewPaymentForm.account_open = payment.beneficiary_account?.account_open;
+            this.viewPaymentForm.account_open_gt_three_months = payment.beneficiary_account?.account_open_gt_three_months;
             this.viewPaymentForm.my_reference = payment.my_reference;
             this.viewPaymentForm.recipient_reference = payment.recipient_reference;
             this.viewPaymentForm.account_number = payment.beneficiary_account?.account_number;
@@ -2208,6 +2210,7 @@ export default {
             this.editPaymentForm.branch_code_match = payment.beneficiary_account?.branch_code_match;
             this.editPaymentForm.account_found = payment.beneficiary_account?.account_found;
             this.editPaymentForm.account_open = payment.beneficiary_account?.account_open;
+            this.editPaymentForm.account_open_gt_three_months = payment.beneficiary_account?.account_open_gt_three_months;
             this.editPaymentForm.my_reference = payment.my_reference;
             this.editPaymentForm.recipient_reference = payment.recipient_reference;
             this.editPaymentForm.account_number = payment.beneficiary_account?.account_number;
@@ -2936,6 +2939,7 @@ export default {
             this.avsResult.branch_code = accountData?.branch_code;
             this.avsResult.account_found = accountData?.account_found;
             this.avsResult.account_open = accountData?.account_open;
+            this.avsResult.account_open_gt_three_months = accountData?.account_open_gt_three_months;
             this.avsResult.account_number = accountData?.account_number;
             this.avsResult.registration_number = accountData?.registration_number;
             this.avsResult.surname = accountData?.surname;

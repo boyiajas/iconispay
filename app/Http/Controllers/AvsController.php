@@ -332,6 +332,7 @@ class AvsController extends Controller
             $avsResponses = [
                 $data['Response']['accountExists'],
                 $data['Response']['accountOpen'],
+                $data['Response']['accountOpenGtThreeMonths'],
                 $data['Response']['accountTypeValid'],
                 $data['Response']['accountTypeValid'],
                 '00', // Branch Code
@@ -351,6 +352,7 @@ class AvsController extends Controller
                 'verification_status' => $verificationStatus,
                 'account_found' => $data['Response']['accountExists'],
                 'account_open' => $data['Response']['accountOpen'],
+                'account_open_gt_three_months' => $data['Response']['accountOpenGtThreeMonths'],
                 'account_type_verified' => $data['Response']['accountTypeValid'],
                 'account_type_match' => $data['Response']['accountTypeValid'],
                 'branch_code_match' => '00',

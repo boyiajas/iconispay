@@ -58,7 +58,7 @@ class BeneficiaryAccountController extends Controller
     public function index()
     {
         // Retrieve only beneficiary accounts that have at least one authorizer OR are verified
-        $beneficiaryAccounts = BeneficiaryAccount::with('institution', 'category', 'accountType')
+        $beneficiaryAccounts = BeneficiaryAccount::with('institution', 'category', 'accountType','authorizers.user')
             ->where(function ($query) {
                 $query->where('number_of_authorizer', '<>', null) // Ensure at least one authorizer exists
                     ->orWhere('verified', '>', 0); // OR ensure verified is greater than zero
