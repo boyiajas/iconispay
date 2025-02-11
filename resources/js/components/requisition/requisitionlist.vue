@@ -37,7 +37,6 @@
                                 <th>Reason</th>
                                 <th>Properties</th>
                                 <th>Parties</th>
-                                <!-- <th>Status</th> -->
                                 <th>Progress</th>
                                 <th v-if="canAction">Action</th>
                             </tr>
@@ -57,17 +56,28 @@ import 'datatables.net-bs5';
 import { userCan } from '../permission/userCan.js';
 
 export default {
-    props: ['status'],
+    props: {
+        user: {
+            type: Object,
+            required: true
+        },
+        status: {
+            type: String,
+            required: true
+        }
+    },
     data() {
         return {
             filterStatus: '',
             filterText: '',
             statuses: [],
-            mattersTable: null,
-            statusTitle: this.status, // Dynamically set title based on status
+            mattersTable: null
         };
     },
     computed: {
+        statusTitle() {
+            return this.status;
+        },
         canAction() {
             return userCan(['admin']);
         }
@@ -76,24 +86,24 @@ export default {
         loadStatuses() {
             axios.get('/api/statuses').then(response => {
                 this.statuses = response.data;
-                this.reloadStatusColumn();// Refresh status column in DataTable once statuses are loaded
+                this.reloadStatusColumn();
             });
         },
         initializeDataTable() {
-            //console.log(this.status);
+            const self = this; // Store reference to Vue instance
+
             this.mattersTable = $('#matters-status-table').DataTable({
                 processing: true,
                 serverSide: true,
                 ajax: {
-                    url: `/api/requisitions/bystatus`, // Use dynamic URL based on the status prop
+                    url: `/api/requisitions/bystatus`,
                     type: 'GET',
                     data: (d) => {
                         d.status = this.status;
-                        d.filter_text = this.filterText; // Send any filter text for server-side filtering
+                        d.filter_text = this.filterText;
                     },
                     error: (xhr, error, thrown) => {
                         console.error('Error fetching data:', error, thrown);
-                        //alert('An error occurred while fetching the data. Please try again later.');
                     }
                 },
                 columns: [
@@ -102,19 +112,24 @@ export default {
                     { data: 'reason', name: 'reason' },
                     { data: 'properties', name: 'properties' },
                     { data: 'parties', name: 'parties' },
-                   /*  { data: 'status_id', name: 'status_id', render: (data) => this.getStatusName(data) }, */
                     { data: 'progress', name: 'progress' },
-                     // Conditionally add the Action column if the user has the admin role
-                     ...(this.canAction ? [{ data: 'id', name: 'id', orderable: false, searchable: false, render: (data) => this.actionButtons(data) }] : [])
-                    //{ data: 'id', name: 'id', orderable: false, searchable: false, render: (data) => this.actionButtons(data) }
+                    {
+                        data: null,
+                        render: (data) => {
+                            const isAdmin = self.user.roles.some(role => role.name.toLowerCase().includes('admin'));
+
+                            return `
+                                ${isAdmin ? `<button class="btn btn-sm btn-outline-secondary edit-matter-btn" title="Edit" data-id="${data.id}"><i class="fas fa-edit"></i></button>` : ''}
+                                ${isAdmin ? `<button class="btn btn-sm btn-outline-danger delete-matter-btn" title="Delete" data-id="${data.id}"><i class="fas fa-trash-alt"></i></button>` : ''}
+                            `;
+                        }
+                    }
                 ],
                 responsive: true,
-                destroy: true, // Reinitialize the table if needed
+                destroy: true,
                 rowCallback: (row, data) => {
-                    // Attach click event to each row that navigates to the details page
                     $(row).on('click', () => {
-                        this.$router.push({ name: 'detailsrequisition', params: { requisitionId: data.id } });
-                        //this.$router.push({ name: 'detailsrequisition', params: { requisitionId } });
+                        self.$router.push({ name: 'detailsrequisition', params: { requisitionId: data.id } });
                     });
                 }
             });
@@ -126,7 +141,6 @@ export default {
         },
         reloadStatusColumn() {
             if (this.mattersTable) {
-                // Redraw only the Status column after statuses have been loaded
                 this.mattersTable.columns().every((index) => {
                     if (this.mattersTable.column(index).dataSrc() === 'status_id') {
                         this.mattersTable.column(index).data((row, type, set) => {
@@ -142,16 +156,6 @@ export default {
         getStatusName(statusId) {
             const status = this.statuses.find(s => s.id === statusId);
             return status ? status.name : '';
-        },
-        actionButtons(matterId) {
-            return `
-                <button class="btn btn-sm btn-outline-primary" onclick="event.stopPropagation(); editMatter(${matterId})">
-                    <i class="fas fa-edit"></i> Edit
-                </button>
-                <button class="btn btn-sm btn-outline-danger" onclick="event.stopPropagation(); deleteMatter(${matterId})">
-                    <i class="fas fa-trash-alt"></i> Delete
-                </button>
-            `;
         }
     },
     mounted() {
@@ -160,7 +164,6 @@ export default {
     }
 };
 </script>
-
 
 <style scoped>
 /* Add your styles here */

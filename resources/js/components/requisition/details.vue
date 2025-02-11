@@ -650,7 +650,7 @@
                 <div class="modal-content">
                     <div class="modal-header card-header">
                         <h5 class="modal-title" id="sourceAccountModalLabel">Change a Source Account</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" @click="closeModal"></button>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" data-dismiss="modal"></button>
                     </div>
                     <div class="modal-body">
                         <!-- List of Source Accounts -->
@@ -680,7 +680,7 @@
                         </div>
                     </div>
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" @click="closeModal">Close</button>
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" data-dismiss="modal">Close</button>
                     </div>
                 </div>
             </div>
@@ -692,7 +692,7 @@
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title" id="uploadDocumentModalLabel">Upload Document</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" @click="closeModal"></button>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" data-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
                     <div class="alert alert-info">
@@ -708,7 +708,7 @@
                             <input type="file" @change="handleFileUpload" class="form-control" id="file" required>
                         </div>
                         <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" @click="closeModal">Cancel</button>
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" data-dismiss="modal">Cancel</button>
                             <button type="submit" class="btn btn-primary"><span id="uploadbuttonSpinner" class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span> Upload</button>
                         </div>
                     </form>
@@ -723,7 +723,7 @@
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title" id="newDepositModalLabel">Create Deposit Entry</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" @click="closeModal"></button>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" data-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
                     <form @submit.prevent="createDeposit">
@@ -755,7 +755,7 @@
                             </div>
                         </div>
                         <div class="modal-footer mb-0">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" @click="closeModal">Cancel</button>
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" data-dismiss="modal">Cancel</button>
                             <button type="submit" class="btn btn-primary">Save</button>
                             <button type="button" class="btn btn-primary" @click="createAndNewDeposit">Save & New</button>
                         </div>
@@ -771,7 +771,7 @@
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title" id="editDepositModalLabel">Edit Deposit</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" @click="closeModal"></button>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" data-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
                     <form>
@@ -806,7 +806,7 @@
                             </div>
                             <div class="form-check col-sm-9">
                                 <button type="button" class="btn btn-primary pull-right ml-1 btn-sm" @click="updateDeposit">Update</button>
-                                <button type="button" class="btn btn-secondary pull-right btn-sm" data-bs-dismiss="modal" @click="closeModal">Cancel</button>
+                                <button type="button" class="btn btn-secondary pull-right btn-sm" data-bs-dismiss="modal" data-dismiss="modal">Cancel</button>
                                 
                             </div>
                         </div>
@@ -823,7 +823,7 @@
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title" id="createPaymentModalLabel">Create Payment</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" @click="closeModal"></button>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" data-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
                     <form @submit.prevent="createPayment">
@@ -1090,7 +1090,7 @@
                         </div>
                         
                         <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" @click="closeModal">Cancel</button>
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" data-dismiss="modal">Cancel</button>
                             <button type="button" class="btn btn-primary" @click="createAndNewPayment">Save</button>
                             <button type="button" class="btn btn-primary" @click="createAndNewPayment">Save & New</button>
                         </div>
@@ -1106,7 +1106,7 @@
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title" id="editPaymentModalLabel">Edit Payment</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" @click="closeModal"></button>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" data-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
                     <form @submit.prevent="editPayment">
@@ -1282,7 +1282,7 @@
                             </div>
                             <div class="form-check col-sm-9">
                                 <button type="button" class="btn btn-primary pull-right ml-1 btn-sm" @click="updatePayment">Update</button>
-                                <button type="button" class="btn btn-secondary pull-right btn-sm" data-bs-dismiss="modal" @click="closeModal">Cancel</button>
+                                <button type="button" class="btn btn-secondary pull-right btn-sm" data-bs-dismiss="modal" data-dismiss="modal">Cancel</button>
                                 
                             </div>
                         </div>
@@ -1298,7 +1298,7 @@
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title" id="viewPaymentModalLabel">View Payment <span class="txt-xs text-white">for payment number # {{ viewPaymentForm.id }}</span></h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" @click="closeModal"></button>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" data-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
                     <form>
@@ -1478,7 +1478,7 @@
                             </div>
                             <div class="form-check col-sm-9">
                                
-                                <button type="button" class="btn btn-secondary pull-right btn-sm" data-bs-dismiss="modal" @click="closeModal">Cancel</button>
+                                <button type="button" class="btn btn-secondary pull-right btn-sm" data-bs-dismiss="modal" data-dismiss="modal">Cancel</button>
                                 
                             </div>
                         </div>
@@ -1494,7 +1494,7 @@
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title" id="avsResultModalLabel">Account Holder Verification {{ avsResult ? avsResult.avs_verified_at : null }}</h5>
-                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" @click="closeModal"></button>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" data-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
                     <div v-if="avsResult && avsResult.avs_verified_at" class="account-verification-result">
@@ -1617,7 +1617,7 @@
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal" @click="closeModal">Close</button>
+                    <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal" data-dismiss="modal">Close</button>
                 </div>
             </div>
         </div>

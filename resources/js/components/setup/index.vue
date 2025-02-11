@@ -230,7 +230,7 @@
                 <div class="modal-content">
                     <div class="modal-header">
                         <h5 class="modal-title" id="newUserModalLabel">Create a new user account</h5>
-                        <button type="button" class="btn-close" @click="closeModal" aria-label="Close"></button>
+                        <button type="button" class="btn-close" data-dismiss="modal" aria-label="Close"></button>
                     </div>
                     <div class="modal-body">
                         <form @submit.prevent="saveUser">
@@ -268,7 +268,7 @@
                             </div>
                             <div class="form-check mb-1 pull-right">
                                 <button type="submit" class="btn btn-primary mt-2 mr-1 btn-sm">Save</button>
-                                <button type="button" class="btn btn-secondary mt-2 btn-sm" @click="closeModal">Cancel</button>
+                                <button type="button" class="btn btn-secondary mt-2 btn-sm" data-dismiss="modal">Cancel</button>
                             </div>
                         </form>
                     </div>
@@ -282,7 +282,7 @@
                 <div class="modal-content">
                     <div class="modal-header">
                         <h5 class="modal-title" id="editUserModalLabel">Update User</h5>
-                        <button type="button" class="btn-close" @click="closeModal" aria-label="Close"></button>
+                        <button type="button" class="btn-close" data-dismiss="modal" aria-label="Close"></button>
                     </div>
                     <div class="modal-body">
                         <form @submit.prevent="updateUser">
@@ -352,7 +352,7 @@
 
                                 <button type="button" class="btn btn-danger me-2 btn-sm" v-if="editUser.active == 'active'" @click="lockUserAccount"><span class="fa fa-lock"></span> Lock</button>
                                 <button type="button" class="btn btn-danger me-2 btn-sm" v-else @click="unlockUserAccount"><span class="fa fa-unlock"></span> Un-Lock</button>
-                                <button type="button" class="btn btn-secondary btn-sm" @click="closeModal">Cancel</button>
+                                <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Cancel</button>
                             </div>
                         </form>
                     </div>
@@ -366,7 +366,7 @@
                 <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title" id="importModalLabel">Import {{ importType }} Accounts</h5>
-                    <button type="button" class="btn-close" @click="closeModal" aria-label="Close"></button>
+                    <button type="button" class="btn-close" data-dismiss="modal" aria-label="Close"></button>
                 </div>
                 <div class="modal-body">
                     <form @submit.prevent="importAccounts">
@@ -386,7 +386,7 @@
                    
                     <div class="d-flex justify-content-end">
                         <button type="submit" class="btn btn-primary me-2 btn-sm"><span id="importAccountButtonSpinner" class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span> Import</button>
-                        <button type="button" class="btn btn-secondary btn-sm" @click="closeModal">Cancel</button>
+                        <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Cancel</button>
                     </div>
                     </form>
                 </div>
@@ -400,7 +400,7 @@
                 <div class="modal-content">
                     <div class="modal-header">
                         <h5 class="modal-title" id="editAccountLabel">Edit {{ editingAccountType }} Account</h5>
-                        <button type="button" class="btn-close" @click="closeModal"></button>
+                        <button type="button" class="btn-close" data-dismiss="modal"></button>
                     </div>
                     <div class="modal-body">
                         <form @submit.prevent="updateAccount">
@@ -438,7 +438,7 @@
                                                     data-bs-placement="top" 
                                                     title="AVS verification failed, Invalid account / details" 
                                                     data-bs-content="AVS verification failed, Invalid account / details"></i>
-                                                    AVS {{ 'Warning - Invalid Account details' }} <span class="btn btn-default-default btn-sm text-primary" @click="viewAVSResult(accountData)">View</span>
+                                                    AVS {{ 'Warning - Invalid Account details' }} <span class="btn btn-default-default btn-sm text-primary" data-toggle="modal" data-target="#avsResultModal" data-dismiss="modal" @click="viewAVSResult(accountData)">View</span>
                                 </span>
                                 <span class="pull-right text-success" v-if="accountData.verification_status == 'successful'">
                                     <i class="far fa-check-circle mr-0 mt-1 text-success" ref="popoverIcon" 
@@ -446,7 +446,7 @@
                                                     data-bs-placement="top" 
                                                     title="Account details complete, AVS verified account" 
                                                     data-bs-content="Account details complete, AVS verified account"></i>
-                                                    AVS - {{ 'Successfully Matched' }} <span class="btn btn-default-default btn-sm text-primary" @click="viewAVSResult(accountData)">View</span>
+                                                    AVS - {{ 'Successfully Matched' }} <span class="btn btn-default-default btn-sm text-primary" data-toggle="modal" data-target="#avsResultModal" data-dismiss="modal" @click="viewAVSResult(accountData)">View</span>
                                 </span>
                                 <span class="pull-right text-primary" v-if="accountData.verification_status == 'pending'">
                                     <i class="fas fa-info-circle mr-0 mt-1 text-primary" ref="popoverIcon" 
@@ -454,7 +454,7 @@
                                                     data-bs-placement="top" 
                                                     title="AVS Account verificaiton pending" 
                                                     data-bs-content="AVS Account verificaiton pending"></i>
-                                                    AVS - {{ 'Account verificaiton pending' }} <span class="btn btn-default-default btn-sm text-primary" @click="viewAVSResult(accountData)">View</span>
+                                                    AVS - {{ 'Account verificaiton pending' }} <span class="btn btn-default-default btn-sm text-primary" data-toggle="modal" data-target="#avsResultModal" data-dismiss="modal" @click="viewAVSResult(accountData)">View</span>
                                 </span>
                             </div>
                             <hr class="mt-2"/>
@@ -579,7 +579,7 @@
                                 <div class="col-sm-10 offset-sm-2" style="text-align: end;">
                                     <button type="submit" class="btn btn-primary btn-sm">Save Changes</button>
                                     <button type="button" class="btn btn-danger ml-1 btn-sm" @click="confirmDelete">Delete</button>
-                                    <button type="button" class="btn btn-secondary ml-1 btn-sm" @click="closeModal">Cancel</button>
+                                    <button type="button" class="btn btn-secondary ml-1 btn-sm" data-dismiss="modal">Cancel</button>
                                 </div>
                             </div>
                         </form>
@@ -594,7 +594,7 @@
                 <div class="modal-content">
                     <div class="modal-header">
                         <h5 class="modal-title" id="registerCertificateModalLabel">Register Certificate</h5>
-                        <button type="button" class="btn-close" @click="closeModal" aria-label="Close"></button>
+                        <button type="button" class="btn-close" data-dismiss="modal" aria-label="Close"></button>
                     </div>
                     <div class="modal-body">
                         <form @submit.prevent="registerCertificate">
@@ -604,7 +604,7 @@
                             </div>
                             <div class="form-group d-flex justify-content-end">
                                 <button type="submit" class="btn btn-primary btn-sm">Submit</button>
-                                <button type="button" class="btn btn-secondary ms-2 btn-sm" @click="closeModal">Cancel</button>
+                                <button type="button" class="btn btn-secondary ms-2 btn-sm" data-dismiss="modal">Cancel</button>
                             </div>
                         </form>
                     </div>
@@ -618,7 +618,7 @@
                 <div class="modal-content">
                     <div class="modal-header">
                         <h5 class="modal-title" id="importUsersModalLabel">Import Users</h5>
-                        <button type="button" class="btn-close" @click="closeModal" aria-label="Close"></button>
+                        <button type="button" class="btn-close" data-dismiss="modal" aria-label="Close"></button>
                     </div>
                     <div class="modal-body">
                         <form @submit.prevent="importUsers">
@@ -636,7 +636,7 @@
                             </div>
                             <div class="d-flex justify-content-end">
                                 <button type="submit" class="btn btn-primary me-2 btn-sm"><span id="importButtonSpinner" class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span> Import</button>
-                                <button type="button" class="btn btn-secondary btn-sm" @click="closeModal">Cancel</button>
+                                <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Cancel</button>
                             </div>
                         </form>
                     </div>
@@ -650,7 +650,7 @@
                 <div class="modal-content">
                     <div class="modal-header">
                         <h5 class="modal-title" id="firmAccountModalLabel">Firm Account Details</h5>
-                        <button type="button" class="close" data-dismiss="modal" aria-label="Close" @click="closeModal">
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                             <span aria-hidden="true">&times;</span>
                         </button>
                     </div>
@@ -739,7 +739,7 @@
                          <!-- AVS Section -->
                          <div class="avs-section alert alert-success box-success pb-3 pt-2">
                             AVS Successfully Matched on {{ firmAccount?.avsMatchedAt }}
-                            <button class="btn btn-sm btn-light btn-default-default pull-right" @click="viewAVSResult(firmAccount)">Show Details</button>
+                            <button class="btn btn-sm btn-light btn-default-default pull-right" data-toggle="modal" data-target="#avsResultModal" data-dismiss="modal" @click="viewAVSResult(firmAccount)">Show Details</button>
                         </div>
 
                         <!-- Authorizations Section -->
@@ -751,7 +751,7 @@
                         </div>
                     </div>
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal" @click="closeModal">Close</button>
+                        <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal" >Close</button>
                     </div>
                     </div>
                 </div>
@@ -766,7 +766,7 @@
                 <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title" id="beneficiaryAccountModalLabel">Beneficiary Account Details</h5>
-                    <button type="button" class="close" data-dismiss="modal" aria-label="Close" @click="closeModal">
+                    <button type="button" class="close" data-dismiss="modal" aria-label="Close">
                     <span aria-hidden="true">&times;</span>
                     </button>
                 </div>
@@ -854,7 +854,7 @@
                     <!-- AVS Section -->
                     <div class="avs-section alert alert-success box-success pb-3 pt-2">
                         AVS Successfully Matched on {{ beneficiaryAccount?.avsMatchedAt }}
-                        <button class="btn btn-sm btn-light btn-default-default pull-right" @click="viewAVSResult(beneficiaryAccount)">Show Details</button>
+                        <button class="btn btn-sm btn-light btn-default-default pull-right" data-toggle="modal" data-target="#avsResultModal" data-dismiss="modal" @click="viewAVSResult(beneficiaryAccount)">Show Details</button>
                     </div>
 
                     <!-- Authorizations Section -->
@@ -867,7 +867,7 @@
                     </div>
                 </div>
                 <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal" @click="closeModal">Close</button>
+                    <button type="button" class="btn btn-secondary btn-sm" data-dismiss="modal">Close</button>
                 </div>
                 </div>
             </div>
@@ -883,7 +883,7 @@
                 <div class="modal-content">
                     <div class="modal-header">
                         <h5 class="modal-title" id="avsResultModalLabel">Account Holder Verification {{ avsResult ? avsResult.avs_verified_at : null }}</h5>
-                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" @click="closeModal"></button>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" data-dismiss="modal" aria-label="Close" ></button>
                     </div>
                     <div class="modal-body">
                         <div v-if="avsResult && avsResult.avs_verified_at" class="account-verification-result">
@@ -992,7 +992,7 @@
                         </div>
                     </div>
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal" @click="closeModal">Close</button>
+                        <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal" data-dismiss="modal">Close</button>
                     </div>
                 </div>
             </div>
@@ -1105,7 +1105,7 @@ export default {
          // Open modal to choose source account
          viewAVSResult(accountData) {
             
-            this.closeModal();console.log(accountData);
+            //this.closeModal();console.log(accountData);
             this.avsResult.verified = accountData.verified;
             this.avsResult.avs_verified_at = accountData.avs_verified_at;
             this.avsResult.verification_status = accountData.verification_status;
@@ -1127,8 +1127,8 @@ export default {
             this.avsResult.account_type = accountData?.account_type;
             this.avsResult.company_name = accountData?.company_name;
 
-            this.showAvsModelInstance = new bootstrap.Modal(document.getElementById('avsResultModal'));
-            this.showAvsModelInstance.show();
+            //this.showAvsModelInstance = new bootstrap.Modal(document.getElementById('avsResultModal'));
+            //this.showAvsModelInstance.show();
         },
         validateRegistrationNumber() {
             const value = this.accountData.registration_number;
@@ -1212,8 +1212,8 @@ export default {
             this.editingAccountType = accountType;
             axios.get(`/api/${accountType}-accounts/${id}`).then(response => {
                 this.accountData = response.data;
-                console.log("edit data");
-                console.log(this.accountData);
+                //console.log("edit data");
+                //console.log(this.accountData);
                 this.editAccountModalInstance = new bootstrap.Modal(document.getElementById("editAccountModal"));
                 this.editAccountModalInstance.show();
             });
