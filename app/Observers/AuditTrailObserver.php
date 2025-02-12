@@ -3,12 +3,10 @@
 namespace App\Observers;
 
 use App\Jobs\AuditTrailJob;
-use App\Traits\CaptureIpTrait;
 use Illuminate\Support\Facades\Auth;
 
 class AuditTrailObserver
 {
-    use CaptureIpTrait;
 
     public function created($model)
     {
@@ -34,8 +32,6 @@ class AuditTrailObserver
     private function logAction($action, $model, $oldValues = null, $newValues = null)
     {
         $user = Auth::user();
-        $geoLocation = $this->getGeoLocation();
-
         $data = [
             'user_id' => $user?->id,
             'user_email' => $user?->email,
@@ -45,17 +41,10 @@ class AuditTrailObserver
             'model_id' => $model->id ?? null,
             'old_values' => $oldValues,
             'new_values' => $newValues,
-            'ip_address' => $this->getClientIp(),
-            'user_agent' => $this->getUserAgent(),
-            'country' => $geoLocation['country'] ?? null,
-            'city' => $geoLocation['city'] ?? null,
-            'region' => $geoLocation['region'] ?? null,
-            'latitude' => $geoLocation['latitude'] ?? null,
-            'longitude' => $geoLocation['longitude'] ?? null,
-            'timezone' => $geoLocation['timezone'] ?? null,
+            'user_agent' => request()->header('User-Agent'), // ✅ Only get user agent here
         ];
 
-        // ✅ Dispatch Job Asynchronously
+        // ✅ Dispatch Job Asynchronously (IP & Geo-location will be handled in the job)
         AuditTrailJob::dispatch($data);
     }
 }

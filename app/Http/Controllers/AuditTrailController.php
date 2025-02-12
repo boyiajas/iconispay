@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\AuditTrail;
 use Illuminate\Http\Request;
+use Yajra\DataTables\Facades\DataTables;
 
 class AuditTrailController extends Controller
 {
@@ -19,7 +20,8 @@ class AuditTrailController extends Controller
             $query->whereBetween('created_at', [$request->fromDate, $request->toDate]);
         }
 
-        return response()->json($query->paginate(20));
+        //return response()->json($query->paginate(20));
+        return DataTables::of($query)->toJson(); // ✅ Returns DataTables JSON format
     }
 
     /**

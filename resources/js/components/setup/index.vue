@@ -32,7 +32,7 @@
         </ul>
 
         <!-- Tab Content -->
-        <div class="tab-content" id="setupTabContent">
+        <div class="tab-content mb-5" id="setupTabContent">
 
             <!-- Firm Accounts Tab -->
             <div class="tab-pane fade wrap" id="firm-accounts" role="tabpanel" aria-labelledby="firm-accounts-tab" width="100%">
@@ -148,213 +148,76 @@
                 </div>
             </div>
 
-            <!-- Audit Trail Tab -->
-
-            <!-- Audit Trail DataTable -->
-<!-- <div>
-    <table id="audit-trail-table" class="table table-bordered table-striped">
-        <thead>
-            <tr>
-                <th>User</th>
-                <th>Email</th>
-                <th>Role</th>
-                <th>Action</th>
-                <th>Model</th>
-                <th>Model ID</th>
-                <th>Old Values</th>
-                <th>New Values</th>
-                <th>IP</th>
-                <th>Location</th>
-                <th>Device</th>
-                <th>Date</th>
-            </tr>
-        </thead>
-        <tbody>
-            <tr v-for="audit in auditTrails" :key="audit.id">
-                <td>{{ truncateText(audit.user ? audit.user.name : 'System') }}</td>
-                <td>{{ truncateText(audit.user_email) }}</td>
-                <td>{{ truncateText(audit.user_role) }}</td>
-                <td>{{ truncateText(audit.action) }}</td>
-                <td>{{ truncateText(audit.model_type) }}</td>
-                <td>{{ audit.model_id }}</td>
-                <td>
-                    <span v-if="audit.old_values">
-                        {{ truncateText(JSON.stringify(audit.old_values)) }}
-                        <a href="#" v-if="JSON.stringify(audit.old_values).length > 15" @click.prevent="showFullData(audit.old_values)">...more</a>
-                    </span>
-                </td>
-                <td>
-                    <span v-if="audit.new_values">
-                        {{ truncateText(JSON.stringify(audit.new_values)) }}
-                        <a href="#" v-if="JSON.stringify(audit.new_values).length > 15" @click.prevent="showFullData(audit.new_values)">...more</a>
-                    </span>
-                </td>
-                <td>{{ truncateText(audit.ip_address) }}</td>
-                <td>{{ truncateText(audit.city) }}, {{ truncateText(audit.country) }}</td>
-                <td>{{ truncateText(audit.user_agent) }}</td>
-                <td>{{ new Date(audit.created_at).toLocaleString() }}</td>
-            </tr>
-        </tbody>
-    </table>
-
-    <!-- Pagination Controls - PLACE THIS RIGHT BELOW THE TABLE --
-    <nav v-if="pagination.total > 0" class="mt-3">
-        <ul class="pagination justify-content-center">
-            <li class="page-item" :class="{ disabled: pagination.current_page === 1 }">
-                <a class="page-link" href="#" @click.prevent="loadAuditTrails(pagination.current_page - 1)">Previous</a>
-            </li>
-            <li class="page-item" v-for="page in pagination.last_page" :key="page" :class="{ active: page === pagination.current_page }">
-                <a class="page-link" href="#" @click.prevent="loadAuditTrails(page)">{{ page }}</a>
-            </li>
-            <li class="page-item" :class="{ disabled: pagination.current_page === pagination.last_page }">
-                <a class="page-link" href="#" @click.prevent="loadAuditTrails(pagination.current_page + 1)">Next</a>
-            </li>
-        </ul>
-    </nav>
-
-    <!-- Modal for Full Data Display --
-    <div v-if="modalData" class="modal fade show" style="display: block; background: rgba(0,0,0,0.5);" @click="modalData = null">
-        <div class="modal-dialog modal-lg" @click.stop>
-            <div class="modal-content">
-                <div class="modal-header">
-                    <h5 class="modal-title">Full Data</h5>
-                    <button type="button" class="close" @click="modalData = null">&times;</button>
-                </div>
-                <div class="modal-body">
-                    <pre>{{ modalData }}</pre>
-                </div>
-            </div>
-        </div>
-    </div>
-</div> -->
 
             <!-- Audit Trail Tab -->
-               <div class="tab-pane fade show" id="audit-trail" role="tabpanel" aria-labelledby="audit-trail-tab">
-                    <div class="card">
-                        <div class="card-header d-flex justify-content-between">
-                            <h5>Audit Trail</h5>
-                            <button class="btn btn-secondary btn-sm" @click="loadAuditTrails">
+            <div class="tab-pane fade show" id="audit-trail" role="tabpanel" aria-labelledby="audit-trail-tab">
+                <div class="card">
+                    <div class="card-header d-flex justify-content-between align-items-center">
+                        <h5 class="mb-0">Audit Trail</h5>
+                        <!-- Date Range Filter -->
+                        <div class="d-flex">
+                            <div class="me-2 d-flex">
+                                <label for="fromDate" class="">From:</label>
+                                <input type="date" v-model="filter.fromDate" class="form-control d-inline-block" id="fromDate">
+                            </div>
+                            <div class="me-2 d-flex">
+                                <label for="toDate" class="">To:</label>
+                                <input type="date" v-model="filter.toDate" class="form-control d-inline-block" id="toDate">
+                            </div>
+                            <button type="button" class="btn btn-primary" @click="filterAuditTrail">Filter</button>
+
+                        <!--  <button class="btn btn-secondary btn-sm" @click="loadAuditTrails">
                                 Refresh <i class="fas fa-sync-alt"></i>
-                            </button>
+                            </button> -->
                         </div>
-                        <div class="card-body">
-                            <!-- Date Range Filter -->
-                            <div class="row mb-3">
-                                <div class="col-md-3">
-                                    <label for="fromDate">From:</label>
-                                    <input type="date" v-model="filter.fromDate" class="form-control" id="fromDate">
-                                </div>
-                                <div class="col-md-3">
-                                    <label for="toDate">To:</label>
-                                    <input type="date" v-model="filter.toDate" class="form-control" id="toDate">
-                                </div>
-                                <div class="col-md-3 d-flex align-items-end">
-                                    <button type="button" class="btn btn-primary" @click="filterAuditTrail">Filter</button>
+                        
+                    </div>
+                    <div class="card-body">
+
+                            
+
+                        <!-- Audit Trail DataTable -->
+
+                            <!-- DataTable -->
+                            <table id="audit-trail-table" class="table table-bordered table-striped" style="width:100%">
+                                <thead>
+                                    <tr>
+                                        <th width="5%">User</th>
+                                        <th width="15%">Email</th>
+                                        <th>Role</th>
+                                        <th>Action</th>
+                                        <th>Model</th>
+                                        <th width="5%">Model ID</th>
+                                        <th>Old Values</th>
+                                        <th>New Values</th>
+                                        <th>IP</th>
+                                        <th>Location</th>
+                                        <th>Device</th>
+                                        <th>Date</th>
+                                    </tr>
+                                </thead>
+                            </table>
+                                
+
+                            <!-- Modal for Full Data Display -->
+                            <div v-if="modalData" class="modal fade show" style="display: block; background: rgba(0,0,0,0.5);" @click="modalData = null">
+                                <div class="modal-dialog modal-lg" @click.stop>
+                                    <div class="modal-content">
+                                        <div class="modal-header">
+                                            <h5 class="modal-title">Full Data</h5>
+                                            <button type="button" class="close" @click="modalData = null">&times;</button>
+                                        </div>
+                                        <div class="modal-body">
+                                            <pre>{{ modalData }}</pre>
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
 
-                            <!-- Audit Trail DataTable -->
-                            <div>
-                                <table id="audit-trail-table" class="table table-bordered table-striped">
-                                    <thead>
-                                        <tr>
-                                            <th>User</th>
-                                            <th>Email</th>
-                                            <th>Role</th>
-                                            <th>Action</th>
-                                            <th>Model</th>
-                                            <th>Model ID</th>
-                                            <th>Old Values</th>
-                                            <th>New Values</th>
-                                            <th>IP</th>
-                                            <th>Location</th>
-                                            <th>Device</th>
-                                            <th>Date</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                        <tr v-for="audit in auditTrails" :key="audit.id">
-                <td v-html="truncateText(audit.user ? audit.user.name : 'System')"></td>
-                <td v-html="audit.user_email"></td>
-                <td v-html="truncateText(audit.user_role)"></td>
-                <td v-html="truncateText(audit.action)"></td>
-                <td v-html="audit.model_type"></td>
-                <td>{{ audit.model_id }}</td>
-                <td v-html="truncateText(JSON.stringify(audit.old_values))"></td>
-                <td v-html="truncateText(JSON.stringify(audit.new_values))"></td>
-                <td v-html="truncateText(audit.ip_address)"></td>
-                <td v-html="truncateText(audit.city) + ', ' + truncateText(audit.country)"></td>
-                <td v-html="truncateText(audit.user_agent)"></td>
-                <td>{{ new Date(audit.created_at).toLocaleString() }}</td>
-            </tr>
-                                    </tbody>
-                                </table>
-                                <!-- Pagination -->
-                                <nav v-if="pagination && pagination.total > 0">
-                                    <ul class="pagination">
-                                        <li class="page-item" :class="{ disabled: !pagination.prev_page_url }">
-                                            <a class="page-link" href="#" @click.prevent="loadAuditTrails(pagination.current_page - 1)">Previous</a>
-                                        </li>
-                                        <li class="page-item" v-for="page in pagination.last_page" :key="page" :class="{ active: page === pagination.current_page }">
-                                            <a class="page-link" href="#" @click.prevent="loadAuditTrails(page)">{{ page }}</a>
-                                        </li>
-                                        <li class="page-item" :class="{ disabled: !pagination.next_page_url }">
-                                            <a class="page-link" href="#" @click.prevent="loadAuditTrails(pagination.current_page + 1)">Next</a>
-                                        </li>
-                                    </ul>
-                                </nav>
-                            </div>
                         </div>
                     </div>
                 </div> 
 
-           <!--  <div class="tab-pane fade show" id="audit-trail" role="tabpanel" aria-labelledby="audit-trail-tab">
-                <!-- Audit Trail Content --
-                <div class="card">
-                    <div class="card-header">
-                        <h5>Audit Trail</h5>
-                    </div>
-                    <div class="card-body">
-                        <!-- Date Range Filter --
-                        <div class="row mb-3">
-                            <div class="col-md-3">
-                                <label for="fromDate">From:</label>
-                                <input type="date" v-model="filter.fromDate" class="form-control" id="fromDate" required>
-                            </div>
-                            <div class="col-md-3">
-                                <label for="toDate">To:</label>
-                                <input type="date" v-model="filter.toDate" class="form-control" id="toDate" required>
-                            </div>
-                            <div class="col-md-3 d-flex align-items-end">
-                                <button type="button" class="btn btn-primary" @click="filterAuditTrail">Go</button>
-                            </div>
-                        </div>
-
-                        <!-- Audit Trail Table --
-                        <div>
-                            <table class="table table-bordered table-striped">
-                                <thead>
-                                    <tr>
-                                        <th>User Name</th>
-                                        <th>Action</th>
-                                        <th>Details</th>
-                                        <th>Date</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    <tr v-for="audit in auditTrails" :key="audit.id">
-                                        <td>{{ audit.user_name }}</td>
-                                        <td>{{ audit.action }}</td>
-                                        <td>{{ audit.details }}</td>
-                                        <td>{{ new Date(audit.created_at).toLocaleString() }}</td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-                    </div>
-                </div>
-            </div>
- -->
             <!-- Deactivated Users Tab -->
             <div class="tab-pane fade" id="deactivated-users" role="tabpanel" aria-labelledby="deactivated-users-tab">
                 <div class="card mb-4">
@@ -1185,6 +1048,8 @@ export default {
     },
     data() {
         return {
+            modalData: null, // Stores full data when clicking "...more"
+            auditTrailTable: null,
             editingAccountType: '',
             accountData: {},
             avsResult: {},  // Store the AVS result data
@@ -1258,24 +1123,6 @@ export default {
         return { toast };
     },
     methods: {
-        // Truncate text if it's longer than 15 characters
-        /* truncateText(text) {
-            if (!text) return '-';
-            return text.length > 15 ? text.substring(0, 15) + '...more' : text;
-        },
-
-        // Show full data in a modal
-        showFullData(data) {
-            this.modalData = JSON.stringify(data, null, 2);
-        }, */
-        truncateText(text) {
-            if (!text) return '-';
-            if (text.length > 15) {
-                return text.substring(0, 15) + ` <a href="#" @click.prevent="showFullData('${text.replace(/'/g, "\\'")}')">...more</a>`;
-            }
-            return text;
-        },
-
         // Show full data in a modal
         showFullData(data) {
             this.modalData = typeof data === 'string' ? data : JSON.stringify(data, null, 2);
@@ -1880,39 +1727,86 @@ export default {
                 });
         },
         
-        // Load all audit trails or filtered audit trails based on date range
-       /*  loadAuditTrails() {
-            const params = {
-                fromDate: this.filter.fromDate,
-                toDate: this.filter.toDate
-            };
+        loadAuditTrails(fromDate = null, toDate = null) {
+            if ($.fn.dataTable.isDataTable('#audit-trail-table')) {
+                $('#audit-trail-table').DataTable().destroy(); // Destroy existing instance
+            }
 
-            axios.get('/api/audit-trails', { params }).then(response => {
-                this.auditTrails = response.data;
-            }).catch(error => {
-                console.error('Error loading audit trails:', error);
+            this.auditTrailTable = $('#audit-trail-table').DataTable({
+                processing: true,
+                serverSide: true,
+                ajax: {
+                    url: '/api/audit-trails',
+                    type: 'GET',
+                    dataSrc: 'data', // Assumes the API response has a `data` field
+                    error: (xhr, error, thrown) => {
+                        if (error.response && error.response.status === 401) {
+                            // Handle session expired (401 Unauthorized)
+                            console.error('Unauthorized, please log in again.');
+                        } else {
+                            console.error('Error fetching audit trail:', error, thrown);
+                        }
+                    }
+                },
+                columns: [
+                    { data: 'user_id', render: data => this.truncateText(data) },
+                    { data: 'user_email', render: data => data },
+                    { data: 'user_role', render: data => this.truncateText(data) },
+                    { data: 'action', render: data => this.truncateText(data) },
+                    { data: 'model_type', render: data => data },
+                    { data: 'model_id' },
+                    {
+                        data: 'old_values',
+                        render: (data) => this.renderTruncatedJSON(data)
+                    },
+                    {
+                        data: 'new_values',
+                        render: (data) => this.renderTruncatedJSON(data)
+                    },
+                    { data: 'ip_address', render: data => this.truncateText(data) },
+                    { data: 'city', render: data => this.truncateText(data) },
+                    { data: 'user_agent', render: data => this.renderTruncatedJSON(data) },
+                    { data: 'created_at', render: data => new Date(data).toLocaleString() },
+                ],
+                rowCallback: (row, data) => {
+                    $(row).find('.more-btn').on('click', (event) => {
+                        const fullData = $(event.currentTarget).data('full');
+                        this.showFullData(fullData);
+                    });
+                },
+                responsive: true,
+                paging: true,
+                pageLength: 10,
+                lengthMenu: [[10, 25, 50, 100], [10, 25, 50, 100]],
+                searching: true,
+                autoWidth: true
             });
-        }, */
-        loadAuditTrails(page = 1) {
-            const params = {
-                fromDate: this.filter.fromDate,
-                toDate: this.filter.toDate,
-                page: page
-            };
-
-            axios.get('/api/audit-trails', { params })
-                .then(response => {
-                    this.auditTrails = response.data.data; // Paginated response
-                    this.pagination = response.data.meta; // Store pagination details
-                })
-                .catch(error => {
-                    console.error('Error loading audit trails:', error);
-                });
+        },
+        // Triggered when the "Filter" button is clicked
+        filterAuditTrail() {
+            this.loadAuditTrails(this.filter.fromDate, this.filter.toDate);
+        },
+        // Truncate long text with "more..." button
+        truncateText(text) {
+            if (!text) return '-';
+            if (text.length > 35) {
+                return `${text.substring(0, 35)} <a href="#" class="more-btn" data-full="${text.replace(/"/g, '&quot;')}">...more</a>`;
+            }
+            return text;
         },
 
-        // Filter audit trails based on date range
-        filterAuditTrail() {
-            this.loadAuditTrails(); // Call the load method with updated filters
+        // Truncate JSON objects with "more..." button
+        renderTruncatedJSON(data) {
+            if (!data) return '-';
+            const jsonData = JSON.stringify(data);
+            return jsonData.length > 55
+                ? `${jsonData.substring(0, 55)} <a href="#" class="more-btn" data-full="${jsonData.replace(/"/g, '&quot;')}">...more</a>`
+                : jsonData;
+        },
+
+        // Show full data in modal
+        showFullData(data) {
+            this.modalData = JSON.stringify(data, null, 2);
         },
         loadDeactivatedUsers() {
 
@@ -2661,5 +2555,24 @@ tbody tr td {
 
 div.dt-processing>div:last-child {
     color: #0097b2bf !important;
+}
+
+/* Reduce font size of DataTable content */
+#audit-trail-table {
+    font-size: 14px; /* Adjust size as needed */
+}
+
+#audit-trail-table th {
+    font-size: 15px; /* Adjust header size separately */
+}
+
+#audit-trail-table td {
+    font-size: 14px; /* Adjust cell size separately */
+}
+
+/* Optional: Reduce padding for compact view */
+#audit-trail-table td,
+#audit-trail-table th {
+    padding: 5px 8px; /* Adjust for spacing */
 }
 </style>
