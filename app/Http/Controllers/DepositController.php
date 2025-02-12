@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Deposit;
 use App\Models\Payment;
 use App\Models\Requisition;
+use App\Observers\AuditTrailObserver;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
@@ -62,6 +63,8 @@ class DepositController extends Controller
             'requisition_id' => $request->input('requisition_id'),
             'user_id' => auth()->id(),  // Save the authenticated user's ID
         ]);
+
+        AuditTrailObserver::logCustomAction('Balance Payment Fund', $deposit, null, $deposit->toArray());
 
         // Eager load the relationships
         $requisition->load(

@@ -654,10 +654,10 @@
                     </div>
                     <div class="modal-body">
                         <!-- List of Source Accounts -->
-                        <div class="card mb-4">
-                            <div class="card-body">
+                        <div class="card mb-0">
+                            <div class="card-body p-1">
                                 <!-- Source Accounts DataTable -->
-                                <div class="table-responsive">
+                                <div class="">
                                     <table id="source-accounts-table2" class="table table-bordered table-striped display nowrap" style="width:100%">
                                         <thead>
                                             <tr class="table-secondary">
@@ -666,7 +666,7 @@
                                                 <th width="15%">Account Number</th>
                                                 <th width="10%">Branch Code</th>
                                                 <th width="20%">Account Holder</th>
-                                                <th width="10%">Authorisations</th>
+                                                <th width="15%">Authorisations</th>
                                             </tr>
                                         </thead>
                                     </table>
@@ -680,7 +680,7 @@
                         </div>
                     </div>
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" data-dismiss="modal">Close</button>
+                        <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal" data-dismiss="modal">Close</button>
                     </div>
                 </div>
             </div>
@@ -2905,8 +2905,14 @@ export default {
                     // Apply style to all <td> elements
                     $('td', row).css('word-wrap', 'break-word').css('white-space', 'normal');
                 },
-                responsive: false,
+                /* responsive: false, */
                 destroy: true, // Reinitializes the table if needed
+                responsive: true,
+                paging: true,
+                pageLength: 10,
+                lengthMenu: [ [10, 25, 50, 100], [10, 25, 50, 100] ],
+                searching: true,
+                autoWidth: true,
               
                 rowCallback: (row, data) => {
                     // Add click event listener to each row

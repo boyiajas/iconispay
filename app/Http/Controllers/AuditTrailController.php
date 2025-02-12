@@ -12,15 +12,14 @@ class AuditTrailController extends Controller
      */
     public function index(Request $request)
     {
-        $query = AuditTrail::query();
+        $query = AuditTrail::with('user')->latest();
 
+        // Apply date range filter if provided
         if ($request->has('fromDate') && $request->has('toDate')) {
-            $fromDate = $request->get('fromDate');
-            $toDate = $request->get('toDate');
-            $query->whereBetween('created_at', [$fromDate, $toDate]);
+            $query->whereBetween('created_at', [$request->fromDate, $request->toDate]);
         }
 
-        return $query->get();
+        return response()->json($query->paginate(20));
     }
 
     /**

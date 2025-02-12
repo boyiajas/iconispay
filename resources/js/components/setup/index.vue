@@ -149,14 +149,173 @@
             </div>
 
             <!-- Audit Trail Tab -->
-            <div class="tab-pane fade show" id="audit-trail" role="tabpanel" aria-labelledby="audit-trail-tab">
-                <!-- Audit Trail Content -->
+
+            <!-- Audit Trail DataTable -->
+<!-- <div>
+    <table id="audit-trail-table" class="table table-bordered table-striped">
+        <thead>
+            <tr>
+                <th>User</th>
+                <th>Email</th>
+                <th>Role</th>
+                <th>Action</th>
+                <th>Model</th>
+                <th>Model ID</th>
+                <th>Old Values</th>
+                <th>New Values</th>
+                <th>IP</th>
+                <th>Location</th>
+                <th>Device</th>
+                <th>Date</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr v-for="audit in auditTrails" :key="audit.id">
+                <td>{{ truncateText(audit.user ? audit.user.name : 'System') }}</td>
+                <td>{{ truncateText(audit.user_email) }}</td>
+                <td>{{ truncateText(audit.user_role) }}</td>
+                <td>{{ truncateText(audit.action) }}</td>
+                <td>{{ truncateText(audit.model_type) }}</td>
+                <td>{{ audit.model_id }}</td>
+                <td>
+                    <span v-if="audit.old_values">
+                        {{ truncateText(JSON.stringify(audit.old_values)) }}
+                        <a href="#" v-if="JSON.stringify(audit.old_values).length > 15" @click.prevent="showFullData(audit.old_values)">...more</a>
+                    </span>
+                </td>
+                <td>
+                    <span v-if="audit.new_values">
+                        {{ truncateText(JSON.stringify(audit.new_values)) }}
+                        <a href="#" v-if="JSON.stringify(audit.new_values).length > 15" @click.prevent="showFullData(audit.new_values)">...more</a>
+                    </span>
+                </td>
+                <td>{{ truncateText(audit.ip_address) }}</td>
+                <td>{{ truncateText(audit.city) }}, {{ truncateText(audit.country) }}</td>
+                <td>{{ truncateText(audit.user_agent) }}</td>
+                <td>{{ new Date(audit.created_at).toLocaleString() }}</td>
+            </tr>
+        </tbody>
+    </table>
+
+    <!-- Pagination Controls - PLACE THIS RIGHT BELOW THE TABLE --
+    <nav v-if="pagination.total > 0" class="mt-3">
+        <ul class="pagination justify-content-center">
+            <li class="page-item" :class="{ disabled: pagination.current_page === 1 }">
+                <a class="page-link" href="#" @click.prevent="loadAuditTrails(pagination.current_page - 1)">Previous</a>
+            </li>
+            <li class="page-item" v-for="page in pagination.last_page" :key="page" :class="{ active: page === pagination.current_page }">
+                <a class="page-link" href="#" @click.prevent="loadAuditTrails(page)">{{ page }}</a>
+            </li>
+            <li class="page-item" :class="{ disabled: pagination.current_page === pagination.last_page }">
+                <a class="page-link" href="#" @click.prevent="loadAuditTrails(pagination.current_page + 1)">Next</a>
+            </li>
+        </ul>
+    </nav>
+
+    <!-- Modal for Full Data Display --
+    <div v-if="modalData" class="modal fade show" style="display: block; background: rgba(0,0,0,0.5);" @click="modalData = null">
+        <div class="modal-dialog modal-lg" @click.stop>
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Full Data</h5>
+                    <button type="button" class="close" @click="modalData = null">&times;</button>
+                </div>
+                <div class="modal-body">
+                    <pre>{{ modalData }}</pre>
+                </div>
+            </div>
+        </div>
+    </div>
+</div> -->
+
+            <!-- Audit Trail Tab -->
+               <div class="tab-pane fade show" id="audit-trail" role="tabpanel" aria-labelledby="audit-trail-tab">
+                    <div class="card">
+                        <div class="card-header d-flex justify-content-between">
+                            <h5>Audit Trail</h5>
+                            <button class="btn btn-secondary btn-sm" @click="loadAuditTrails">
+                                Refresh <i class="fas fa-sync-alt"></i>
+                            </button>
+                        </div>
+                        <div class="card-body">
+                            <!-- Date Range Filter -->
+                            <div class="row mb-3">
+                                <div class="col-md-3">
+                                    <label for="fromDate">From:</label>
+                                    <input type="date" v-model="filter.fromDate" class="form-control" id="fromDate">
+                                </div>
+                                <div class="col-md-3">
+                                    <label for="toDate">To:</label>
+                                    <input type="date" v-model="filter.toDate" class="form-control" id="toDate">
+                                </div>
+                                <div class="col-md-3 d-flex align-items-end">
+                                    <button type="button" class="btn btn-primary" @click="filterAuditTrail">Filter</button>
+                                </div>
+                            </div>
+
+                            <!-- Audit Trail DataTable -->
+                            <div>
+                                <table id="audit-trail-table" class="table table-bordered table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th>User</th>
+                                            <th>Email</th>
+                                            <th>Role</th>
+                                            <th>Action</th>
+                                            <th>Model</th>
+                                            <th>Model ID</th>
+                                            <th>Old Values</th>
+                                            <th>New Values</th>
+                                            <th>IP</th>
+                                            <th>Location</th>
+                                            <th>Device</th>
+                                            <th>Date</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <tr v-for="audit in auditTrails" :key="audit.id">
+                <td v-html="truncateText(audit.user ? audit.user.name : 'System')"></td>
+                <td v-html="audit.user_email"></td>
+                <td v-html="truncateText(audit.user_role)"></td>
+                <td v-html="truncateText(audit.action)"></td>
+                <td v-html="audit.model_type"></td>
+                <td>{{ audit.model_id }}</td>
+                <td v-html="truncateText(JSON.stringify(audit.old_values))"></td>
+                <td v-html="truncateText(JSON.stringify(audit.new_values))"></td>
+                <td v-html="truncateText(audit.ip_address)"></td>
+                <td v-html="truncateText(audit.city) + ', ' + truncateText(audit.country)"></td>
+                <td v-html="truncateText(audit.user_agent)"></td>
+                <td>{{ new Date(audit.created_at).toLocaleString() }}</td>
+            </tr>
+                                    </tbody>
+                                </table>
+                                <!-- Pagination -->
+                                <nav v-if="pagination && pagination.total > 0">
+                                    <ul class="pagination">
+                                        <li class="page-item" :class="{ disabled: !pagination.prev_page_url }">
+                                            <a class="page-link" href="#" @click.prevent="loadAuditTrails(pagination.current_page - 1)">Previous</a>
+                                        </li>
+                                        <li class="page-item" v-for="page in pagination.last_page" :key="page" :class="{ active: page === pagination.current_page }">
+                                            <a class="page-link" href="#" @click.prevent="loadAuditTrails(page)">{{ page }}</a>
+                                        </li>
+                                        <li class="page-item" :class="{ disabled: !pagination.next_page_url }">
+                                            <a class="page-link" href="#" @click.prevent="loadAuditTrails(pagination.current_page + 1)">Next</a>
+                                        </li>
+                                    </ul>
+                                </nav>
+                            </div>
+                        </div>
+                    </div>
+                </div> 
+
+           <!--  <div class="tab-pane fade show" id="audit-trail" role="tabpanel" aria-labelledby="audit-trail-tab">
+                <!-- Audit Trail Content --
                 <div class="card">
                     <div class="card-header">
                         <h5>Audit Trail</h5>
                     </div>
                     <div class="card-body">
-                        <!-- Date Range Filter -->
+                        <!-- Date Range Filter --
                         <div class="row mb-3">
                             <div class="col-md-3">
                                 <label for="fromDate">From:</label>
@@ -171,7 +330,7 @@
                             </div>
                         </div>
 
-                        <!-- Audit Trail Table -->
+                        <!-- Audit Trail Table --
                         <div>
                             <table class="table table-bordered table-striped">
                                 <thead>
@@ -195,7 +354,7 @@
                     </div>
                 </div>
             </div>
-
+ -->
             <!-- Deactivated Users Tab -->
             <div class="tab-pane fade" id="deactivated-users" role="tabpanel" aria-labelledby="deactivated-users-tab">
                 <div class="card mb-4">
@@ -1099,6 +1258,28 @@ export default {
         return { toast };
     },
     methods: {
+        // Truncate text if it's longer than 15 characters
+        /* truncateText(text) {
+            if (!text) return '-';
+            return text.length > 15 ? text.substring(0, 15) + '...more' : text;
+        },
+
+        // Show full data in a modal
+        showFullData(data) {
+            this.modalData = JSON.stringify(data, null, 2);
+        }, */
+        truncateText(text) {
+            if (!text) return '-';
+            if (text.length > 15) {
+                return text.substring(0, 15) + ` <a href="#" @click.prevent="showFullData('${text.replace(/'/g, "\\'")}')">...more</a>`;
+            }
+            return text;
+        },
+
+        // Show full data in a modal
+        showFullData(data) {
+            this.modalData = typeof data === 'string' ? data : JSON.stringify(data, null, 2);
+        },
         getAvsStatus(...codes) {
             return codes.every(code => code === "00");
         },
@@ -1214,6 +1395,7 @@ export default {
                 this.accountData = response.data;
                 //console.log("edit data");
                 //console.log(this.accountData);
+                this.closeModal();
                 this.editAccountModalInstance = new bootstrap.Modal(document.getElementById("editAccountModal"));
                 this.editAccountModalInstance.show();
             });
@@ -1330,9 +1512,42 @@ export default {
                     this.closeModal();
                 });
         },
-        openEditUserModal() {
-                          
-            this.editModalInstance = new bootstrap.Modal(document.getElementById("editUserModal"));
+        openEditDeactivateUserModal(userId, certificateId) {
+
+            const user = this.deactivatedUsersTable
+                    .data()
+                    .toArray()
+                    .find((u) => u.id === userId); 
+
+                if (user) {
+
+                    // Normalize roles
+                    const roles = Array.isArray(user.roles)
+                        ? user.roles.map((role) => (typeof role === "object" ? role.name : role))
+                        : [];
+
+                        // Populate `editUser`
+                    this.editUser = {
+                        id: user.id || null, // Ensure the user ID is included for updates
+                        name: user.name || "",
+                        email: user.email || "",
+                        email_verify: user.email_verified_at || "",
+                        password: "", // Reset password fields
+                        password_confirmation: "",
+                        is_admin: roles.includes("admin"),
+                        authoriser_role: roles.includes("authoriser"),
+                        bookkeeper_role: roles.includes("bookkeeper"),
+                        latest_certificate: certificateId,
+                        active: user.status,
+                    };
+
+                    
+                }
+            
+            // Ensure the modal is properly initialized
+            if (!this.editModalInstance) {
+                this.editModalInstance = new bootstrap.Modal(document.getElementById("editUserModal"));
+            }
             this.editModalInstance.show();
             
         },
@@ -1468,6 +1683,15 @@ export default {
                         }
                     }
                 ],
+                rowCallback: (row, data) => {
+                    const certificateId = data.latest_certificate?.id ?? null;
+                    $(row).on('click', (event) => {
+                        if ($(event.target).closest('button').length === 0) {
+                            this.openEditActivateUserModal(data.id, certificateId);
+                        }
+                    });
+                    
+                },
                 createdRow: (row, data, dataIndex) => {
 
                     $('td', row).css('word-wrap', 'break-word').css('white-space', 'normal');
@@ -1504,37 +1728,8 @@ export default {
                         
                         const userId = $(event.currentTarget).data('user-id');
                         const certificateId = $(event.currentTarget).data('certificate-id') || null; // Ensure it's null if not found
-                       
-                        const user = this.usersTable
-                            .data()
-                            .toArray()
-                            .find((u) => u.id === userId); 
 
-                        if (user) {
-
-                            // Normalize roles
-                            const roles = Array.isArray(user.roles)
-                                ? user.roles.map((role) => (typeof role === "object" ? role.name : role))
-                                : [];
-
-                             // Populate `editUser`
-                            this.editUser = {
-                                id: user.id || null, // Ensure the user ID is included for updates
-                                name: user.name || "",
-                                email: user.email || "",
-                                email_verify: user.email_verified_at || "",
-                                active: user.status,
-                                password: "", // Reset password fields
-                                password_confirmation: "",
-                                is_admin: roles.includes("admin"),
-                                authoriser_role: roles.includes("authoriser"),
-                                bookkeeper_role: roles.includes("bookkeeper"),
-                                latest_certificate: certificateId,
-                            };
-                            console.log(this.editUser);
-
-                            this.openEditUserModal();
-                        }
+                        this.openEditActivateUserModal(userId, certificateId);
                     });
 
                     
@@ -1546,6 +1741,45 @@ export default {
                 searching: true,
                 autoWidth: true
             });
+        },
+
+        openEditActivateUserModal(userId, certificateId) {
+
+            const user = this.usersTable
+                    .data()
+                    .toArray()
+                    .find((u) => u.id === userId); 
+
+            if (user) {
+
+                // Normalize roles
+                const roles = Array.isArray(user.roles)
+                    ? user.roles.map((role) => (typeof role === "object" ? role.name : role))
+                    : [];
+
+                    // Populate `editUser`
+                this.editUser = {
+                    id: user.id || null, // Ensure the user ID is included for updates
+                    name: user.name || "",
+                    email: user.email || "",
+                    email_verify: user.email_verified_at || "",
+                    password: "", // Reset password fields
+                    password_confirmation: "",
+                    is_admin: roles.includes("admin"),
+                    authoriser_role: roles.includes("authoriser"),
+                    bookkeeper_role: roles.includes("bookkeeper"),
+                    latest_certificate: certificateId,
+                    active: user.status,
+                };
+
+                // Ensure the modal is properly initialized
+                if (!this.editModalInstance) {
+                    this.editModalInstance = new bootstrap.Modal(document.getElementById("editUserModal"));
+                }
+
+                this.editModalInstance.show();
+            }
+
         },
 
         downloadCertificate(certificateId) {
@@ -1647,7 +1881,7 @@ export default {
         },
         
         // Load all audit trails or filtered audit trails based on date range
-        loadAuditTrails() {
+       /*  loadAuditTrails() {
             const params = {
                 fromDate: this.filter.fromDate,
                 toDate: this.filter.toDate
@@ -1658,6 +1892,22 @@ export default {
             }).catch(error => {
                 console.error('Error loading audit trails:', error);
             });
+        }, */
+        loadAuditTrails(page = 1) {
+            const params = {
+                fromDate: this.filter.fromDate,
+                toDate: this.filter.toDate,
+                page: page
+            };
+
+            axios.get('/api/audit-trails', { params })
+                .then(response => {
+                    this.auditTrails = response.data.data; // Paginated response
+                    this.pagination = response.data.meta; // Store pagination details
+                })
+                .catch(error => {
+                    console.error('Error loading audit trails:', error);
+                });
         },
 
         // Filter audit trails based on date range
@@ -1722,12 +1972,23 @@ export default {
                         }
                     }
                 ],
+                rowCallback: (row, data) => {
+                    const certificateId = data.latest_certificate?.id ?? null;
+                    $(row).on('click', (event) => {
+                        if ($(event.target).closest('button').length === 0) {
+                            this.openEditDeactivateUserModal(data.id, certificateId);
+                        }
+                        
+                    });
+                    
+                },
 
                 createdRow: (row, data, dataIndex) => {
                     
                     $('td', row).css('word-wrap', 'break-word').css('white-space', 'normal');
                     
-                }, 
+                },
+                 
                 responsive: true,
                 paging: true,
                 pageLength: 10,
@@ -1746,36 +2007,8 @@ export default {
                         
                 const userId = $(event.currentTarget).data('user-id');
                 const certificateId = $(event.currentTarget).data('certificate-id') || null; // Ensure it's null if not found
-                
-                const user = this.deactivatedUsersTable
-                    .data()
-                    .toArray()
-                    .find((u) => u.id === userId); 
 
-                if (user) {
-
-                    // Normalize roles
-                    const roles = Array.isArray(user.roles)
-                        ? user.roles.map((role) => (typeof role === "object" ? role.name : role))
-                        : [];
-
-                        // Populate `editUser`
-                    this.editUser = {
-                        id: user.id || null, // Ensure the user ID is included for updates
-                        name: user.name || "",
-                        email: user.email || "",
-                        email_verify: user.email_verified_at || "",
-                        password: "", // Reset password fields
-                        password_confirmation: "",
-                        is_admin: roles.includes("admin"),
-                        authoriser_role: roles.includes("authoriser"),
-                        bookkeeper_role: roles.includes("bookkeeper"),
-                        latest_certificate: certificateId,
-                        active: user.status,
-                    };
-
-                    this.openEditUserModal();
-                }
+                this.openEditDeactivateUserModal(userId, certificateId);
             });
         },
         addUser() {
@@ -2053,6 +2286,16 @@ export default {
                     // Apply style to all <td> elements
                     $('td', row).css('word-wrap', 'break-word').css('white-space', 'normal');
                 },
+                rowCallback: (row, data) => {
+                    
+                    $(row).on('click', (event) => {
+                        // Check if the click happened on a button
+                        if ($(event.target).closest('button').length === 0) {
+                            this.openFirmAccountModal(data);
+                        }
+                    });
+                    
+                },
                 responsive: true,
                 paging: true,
                 pageLength: 10,
@@ -2077,41 +2320,7 @@ export default {
             // Event listener for delete button
             $('#source-accounts-table tbody').on('click', '.view-firmaccount-btn', (event) => {
                 const id = $(event.currentTarget).data('id');
-
-                const firmaccountId = $(event.currentTarget).data('id');
-                //this.confirmDelete(id);
-                //alert('testing view beneficiary ');
-                const firmaccount = this.sourceAccountsTable
-                    .data()
-                    .toArray()
-                    .find((f) => f.id === firmaccountId);  console.log(firmaccount);
-
-                    if (firmaccount) {
-                        /* this.firmAccount = {
-                            name: firmaccount.display_text || "N/A",
-                            accountNumber: firmaccount.account_number || "N/A",
-                            holderType: firmaccount.account_holder_type || "N/A",
-                            holderName: firmaccount.company_name || firmaccount.surname || "N/A",
-                            registrationNumber: firmaccount.registration_number || "N/A",
-                            institution: firmaccount.institution?.name || "N/A",
-                            branch: firmaccount.branch_name || "N/A",
-                            accountDescription: firmaccount.category?.name || "N/A",
-                            fileType: firmaccount.account_type?.name || "N/A",
-                            method: firmaccount.my_reference || "N/A",
-                            avsMatchedAt: firmaccount.avs_verified_at || "N/A",
-                            authorizer: {
-                                name: firmaccount.authorized_user?.name || "N/A",
-                                email: firmaccount.authorized_user?.email || "N/A",
-                            },
-                            authorizedAt: firmaccount.authorized_at || "N/A",
-                        }; */
-
-                        this.firmAccount = firmaccount;
-                        console.log(firmaccount);
-
-                        this.viewBeneficiaryAccountModalInstance = new bootstrap.Modal(document.getElementById("firmAccountModal"));
-                        this.viewBeneficiaryAccountModalInstance.show();
-                    }
+                this.openFirmAccountModalById(id);
             });
 
             // Event listener for delete button
@@ -2120,6 +2329,28 @@ export default {
                 this.confirmFirmAccountAuhtorize(id);
             });
             
+        },
+        openFirmAccountModal(firmAccount) {
+            if (firmAccount) {
+                this.firmAccount = firmAccount;
+
+                // Ensure the modal is properly initialized
+                if (!this.viewFirmAccountModalInstance) {
+                    this.viewFirmAccountModalInstance = new bootstrap.Modal(document.getElementById("firmAccountModal"));
+                }
+
+                this.viewFirmAccountModalInstance.show();
+            }
+        },
+        openFirmAccountModalById(firmaccountId) {
+            const firmaccount = this.sourceAccountsTable
+                .data()
+                .toArray()
+                .find(f => f.id === firmaccountId);
+
+            if (firmaccount) {
+                this.openFirmAccountModal(firmaccount);
+            }
         },
        // Initialize the Beneficiary Accounts DataTable
        initializeBeneficiaryAccounts() {
@@ -2186,44 +2417,15 @@ export default {
                     // Apply style to all <td> elements
                     $('td', row).css('word-wrap', 'break-word').css('white-space', 'normal');
 
-                    $(row).find('.view-beneficiary-btn').on('click', (event) => { 
-                        
-                        const beneficiaryId = $(event.currentTarget).data('id');
-                        //this.confirmDelete(id);
-                        //alert('testing view beneficiary ');
-                        const beneficiary = this.beneficiaryAccountsTable
-                            .data()
-                            .toArray()
-                            .find((b) => b.id === beneficiaryId); console.log(beneficiaryId);
-
-                            if (beneficiary) {
-                                /* this.beneficiaryAccount = {
-                                    name: beneficiary.display_text || "N/A",
-                                    accountNumber: beneficiary.account_number || "N/A",
-                                    holderType: beneficiary.account_holder_type || "N/A",
-                                    holderName: beneficiary.company_name || beneficiary.surname || "N/A",
-                                    registrationNumber: beneficiary.registration_number || "N/A",
-                                    institution: beneficiary.institution?.name || "N/A",
-                                    branch: beneficiary.branch_name || "N/A",
-                                    accountDescription: beneficiary.category?.name || "N/A",
-                                    fileType: beneficiary.account_type?.name || "N/A",
-                                    method: beneficiary.my_reference || "N/A",
-                                    avsMatchedAt: beneficiary.avs_verified_at || "N/A",
-                                    authorizer: {
-                                        name: beneficiary.authorized_user?.name || "N/A",
-                                        email: beneficiary.authorized_user?.email || "N/A",
-                                    },
-                                    authorizedAt: beneficiary.authorized_at || "N/A",
-                                }; */
-
-                                this.beneficiaryAccount = beneficiary;
-                                console.log(beneficiary);
-
-                                this.viewBeneficiaryAccountModalInstance = new bootstrap.Modal(document.getElementById("beneficiaryAccountModal"));
-                                this.viewBeneficiaryAccountModalInstance.show();
-                            }
+                },
+                rowCallback: (row, data) => {
+                    
+                    $(row).on('click', (event) => {
+                        if ($(event.target).closest('button').length === 0) {
+                            this.openBeneficiaryAccountModal(data);
+                        }
                     });
-
+                    
                 },
                 responsive: true,
                 paging: true,
@@ -2242,6 +2444,14 @@ export default {
                 this.openEditModal('beneficiary', id);
             });
 
+            // Event listener for view button
+            $('#beneficiary-accounts-table tbody').on('click', '.view-beneficiary-btn', (event) => {
+                
+                const id = $(event.currentTarget).data('id');
+                //this.editBeneficiaryAccount(id);
+                this.openBeneficiaryAccountModalById(id);
+            });
+
             // Event listener for delete button
             $('#beneficiary-accounts-table tbody').on('click', '.delete-beneficiary-btn', (event) => {
                 const id = $(event.currentTarget).data('id');
@@ -2254,6 +2464,28 @@ export default {
                 const id = $(event.currentTarget).data('id');
                 this.confirmBeneficiaryAuhtorize(id);
             });
+        },
+        openBeneficiaryAccountModal(beneficiary) {
+            if (beneficiary) {
+                this.beneficiaryAccount = beneficiary;
+
+                // Ensure the modal is properly initialized
+                if (!this.viewBeneficiaryAccountModalInstance) {
+                    this.viewBeneficiaryAccountModalInstance = new bootstrap.Modal(document.getElementById("beneficiaryAccountModal"));
+                }
+
+                this.viewBeneficiaryAccountModalInstance.show();
+            }
+        },
+        openBeneficiaryAccountModalById(beneficiaryId) {
+            const beneficiary = this.beneficiaryAccountsTable
+                .data()
+                .toArray()
+                .find(b => b.id === beneficiaryId);
+
+            if (beneficiary) {
+                this.openBeneficiaryAccountModal(beneficiary);
+            }
         },
         // Initialize the Beneficiary Accounts DataTable
        initializeOnceOffAccounts() {
@@ -2309,13 +2541,22 @@ export default {
                             return `
                                  ${showCheckIcon ? `<button class='btn btn-outline-info btn-sm authorize-onceoff-btn' data-toggle='tooltip' title='Authorise this onceoff Account' data-id='${data.id}'><i class='fas fa-check text-success'></i></button>` : ''}
                                  ${isAdmin ? `<button class="btn btn-outline-secondary btn-sm edit-onceoff-btn" data-toggle="tooltip" title="Edit this onceoff Account" data-id="${data.id}"><i class="fas fa-edit"></i></button>` : ''}
-                                  ${!showCheckIcon ? '<button class="btn btn-outline-info btn-sm view-onceoff-btn" data-toggle="tooltip" title="View this onceoff Account"><i class="fas fa-search"></i></button>' : ''}
+                                  ${!showCheckIcon ? `<button class="btn btn-outline-info btn-sm view-onceoff-btn" data-toggle="tooltip" title="View this onceoff Account" data-id="${data.id}"><i class="fas fa-search"></i></button>` : ''}
                                 
                                 <button class="btn btn-outline-danger btn-sm delete-onceoff-btn" data-toggle="tooltip" title="Delete this onceoff Account" data-id="${data.id}"><i class="fas fa-trash"></i></button>
                             `;
                         }
                     }
                 ],
+                rowCallback: (row, data) => {
+                    
+                    $(row).on('click', (event) => {
+                        if ($(event.target).closest('button').length === 0) {
+                            this.openOnceOffAccountModal(data);
+                        }
+                    });
+                    
+                },
                 createdRow: function(row, data, dataIndex) {
                     // Apply style to all <td> elements
                     $('td', row).css('word-wrap', 'break-word').css('white-space', 'normal');
@@ -2335,6 +2576,7 @@ export default {
                 const id = $(event.currentTarget).data('id');
                 //this.editBeneficiaryAccount(id);
                 this.openEditModal('onceoff', id);
+                
             });
 
             // Event listener for delete button
@@ -2345,11 +2587,9 @@ export default {
 
             // Event listener for delete button
             $('#onceoff-accounts-table tbody').on('click', '.view-onceoff-btn', (event) => {
-                //const id = $(event.currentTarget).data('id');
+                const id = $(event.currentTarget).data('id');
                 //this.confirmDelete(id);
-                //alert('testing view onceoff ');
-                this.viewBeneficiaryAccountModalInstance = new bootstrap.Modal(document.getElementById('onceoffAccountModal'));
-                this.viewBeneficiaryAccountModalInstance.show();
+                this.openOnceOffAccountModalById(id);
             });
 
              // Event listener for delete button
@@ -2358,6 +2598,28 @@ export default {
                 const id = $(event.currentTarget).data('id');
                 this.confirmOnceOffAuhtorize(id);
             });
+        },
+        openOnceOffAccountModal(onceoff) {
+            if (onceoff) {
+                this.beneficiaryAccount = onceoff;
+
+                // Ensure the modal is properly initialized
+                if (!this.viewBeneficiaryAccountModalInstance) {
+                    this.viewBeneficiaryAccountModalInstance = new bootstrap.Modal(document.getElementById("beneficiaryAccountModal"));
+                }
+
+                this.viewBeneficiaryAccountModalInstance.show();
+            }
+        },
+        openOnceOffAccountModalById(onceoffId) {
+            const onceoff = this.onceoffAccountsTable
+                .data()
+                .toArray()
+                .find(o => o.id === onceoffId);
+
+            if (onceoff) {
+                this.openOnceOffAccountModal(onceoff);
+            }
         },
         // Method to load both accounts when Firm Accounts tab is clicked
         loadAccounts() {

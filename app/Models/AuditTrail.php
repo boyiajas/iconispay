@@ -9,14 +9,32 @@ class AuditTrail extends Model
 {
     use HasFactory;
 
-    protected $fillable = ['user_name', 'action', 'details'];
+    protected $fillable = [
+        'user_id',
+        'user_email',
+        'user_role',
+        'action',
+        'model_type',
+        'model_id',
+        'old_values',
+        'new_values',
+        'ip_address',
+        'user_agent',
+        'country',
+        'city',
+        'region',
+        'latitude',
+        'longitude',
+        'timezone',
+    ];
 
-    /**
-     * Relationship with the User model.
-     * This can be updated if you want to link audit trails to user IDs instead of user names.
-     */
+    protected $casts = [
+        'old_values' => 'array',
+        'new_values' => 'array',
+    ];
+
     public function user()
     {
-        return $this->belongsTo(User::class, 'user_name', 'name'); // Assuming `name` is unique in the User model
+        return $this->belongsTo(User::class);
     }
 }
