@@ -182,8 +182,8 @@
                             <table id="audit-trail-table" class="table table-bordered table-striped" style="width:100%">
                                 <thead>
                                     <tr>
-                                        <th width="5%">User</th>
-                                        <th width="15%">Email</th>
+                                        <th width="7%">User</th>
+                                        <th width="13%">Email</th>
                                         <th>Role</th>
                                         <th>Action</th>
                                         <th>Model</th>
