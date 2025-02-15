@@ -26,7 +26,13 @@ class Payment extends Model
         'verified',
         'verification_status',
         'account_type',
+        'organisation_id',
     ];
+
+    public function organisation()
+    {
+        return $this->belongsTo(Organisation::class);
+    }
 
     /**
      * A payment belongs to an institution

@@ -7,6 +7,7 @@ use App\Exports\PaymentReportExport;
 use App\Models\BeneficiaryAccount;
 use App\Models\FirmAccount;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 use Maatwebsite\Excel\Facades\Excel;
 use Symfony\Component\HttpFoundation\StreamedResponse;
@@ -20,20 +21,34 @@ class ReportController extends Controller
             'firmAccountId' => 'nullable|integer|exists:firm_accounts,id',
         ]);
 
-        // Retrieve the firm account
+        $user = Auth::user();
+        $isSuperAdmin = $user->hasRole('superadmin');
         $firmAccountId = $request->firmAccountId;
-        $firmAccount = $firmAccountId ? FirmAccount::find($firmAccountId) : null;
+
+        // Ensure firm account retrieval respects user role
+        $firmAccountQuery = $isSuperAdmin
+            ? FirmAccount::query()
+            : FirmAccount::where('organisation_id', $user->organisation->id);
+
+        $firmAccount = $firmAccountId ? $firmAccountQuery->find($firmAccountId) : null;
+
+        // Ensure no invalid firm account is accessed
+        if ($firmAccountId && !$firmAccount) {
+            return response()->json(['message' => 'Unauthorized access or firm account not found'], 403);
+        }
 
         // Clean output buffer
         if (ob_get_contents()) {
             ob_end_clean();
         }
+
         // Define the file name for the Excel report
         $fileName = 'Paid_Entries_Report_' . now()->format('Ymd_His') . '.xlsx';
-       
-        // Use the PaymentReportExport to generate the Excel file and return it for download
+
+        // Generate and return the Excel report
         return Excel::download(new PaymentReportExport($firmAccount), $fileName);
     }
+
 
     public function generatePaidByDateReport(Request $request)
     {
@@ -61,34 +76,40 @@ class ReportController extends Controller
 
     public function previewPaymentReport()
     { 
-        // Fetch firm accounts and their related data
-        $firmAccounts = FirmAccount::with([
+        $user = Auth::user();
+        $isSuperAdmin = $user->hasRole('superadmin');
+    
+        // Query to fetch firm accounts based on role
+        $firmAccountQuery = $isSuperAdmin
+            ? FirmAccount::query()
+            : FirmAccount::where('organisation_id', $user->organisation->id);
+    
+        $firmAccounts = $firmAccountQuery->with([
             'requisitions.payments.sourceFirmAccount.institution',
             'requisitions.matter',
         ])->get();
-
+    
         // Enrich payments with payToAccount data
         foreach ($firmAccounts as $firmAccount) {
             foreach ($firmAccount->requisitions as $requisition) {
                 foreach ($requisition->payments as $payment) {
-                    if ($payment->account_type === 'B') {
-                        $payToAccount = BeneficiaryAccount::with(['institution', 'category'])->find($payment->beneficiary_account_id);
-                    } elseif ($payment->account_type === 'F') {
-                        $payToAccount = FirmAccount::with(['institution', 'category'])->find($payment->beneficiary_account_id);
-                    } else {
-                        $payToAccount = null;
-                    }
-
+                    $payToAccount = match ($payment->account_type) {
+                        'B' => BeneficiaryAccount::with(['institution', 'category'])->find($payment->beneficiary_account_id),
+                        'F' => FirmAccount::with(['institution', 'category'])->find($payment->beneficiary_account_id),
+                        default => null,
+                    };
+    
                     // Attach payToAccount to the payment object
                     $payment->payToAccount = $payToAccount;
                 }
             }
         }
-
+    
         // Return the Blade view for preview
         return view('exports.payment_report', [
             'firmAccounts' => $firmAccounts,
         ]);
     }
+    
 
 }

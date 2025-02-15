@@ -29,7 +29,13 @@ class Requisition extends Model
         'created_by',
         'locked_at',
         'locked_by',
+        'organisation_id',
     ];
+
+    public function organisation()
+    {
+        return $this->belongsTo(Organisation::class);
+    }
 
     /**
      * The requisition belongs to a matter.

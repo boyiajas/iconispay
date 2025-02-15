@@ -3,6 +3,7 @@
 use App\Exports\SimpleExport;
 use App\Http\Controllers\AccountTypeController;
 use App\Http\Controllers\AuditTrailController;
+use App\Http\Controllers\Auth\ForgotPasswordController;
 use App\Http\Controllers\Auth\LoginController;
 use App\Http\Controllers\Auth\RegisterController;
 use App\Http\Controllers\Auth\TwoFactorAuthController;
@@ -20,24 +21,25 @@ use App\Http\Controllers\HomeController;
 use App\Http\Controllers\InstitutionController;
 use App\Http\Controllers\MatterController;
 use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\OrganisationController;
 use App\Http\Controllers\PaymentController;
+
+
+
 use App\Http\Controllers\ReportController;
-use App\Http\Controllers\Auth\ForgotPasswordController;
-
-
-
 use App\Http\Controllers\RequisitionController;
 use App\Http\Controllers\StatusController;
 use App\Http\Controllers\UserController;
 use App\Http\Middleware\RedirectIfAuthenticated;
+
+
 use App\Models\BeneficiaryAccount;
-
-
 use App\Models\FirmAccount;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Route;
 use Maatwebsite\Excel\Facades\Excel;
+
 
 
 
@@ -184,11 +186,14 @@ Route::group(['middleware' => 'no_cache'], function (){
         Route::get('/deactivated-users', [UserController::class, 'deactivatedUsers']);
         Route::resource('firm-accounts', FirmAccountController::class);
         Route::resource('audit-trails', AuditTrailController::class);
+        Route::resource('organisations', OrganisationController::class);
+
+        Route::get('organisation/all-organisations', [OrganisationController::class, 'getAllOrganisations']);
         
         Route::get('/beneficiary-accounts/search', [BeneficiaryAccountController::class, 'search']);
         Route::resource('/beneficiary-accounts', BeneficiaryAccountController::class);
 
-       
+        Route::get('/onceoff-accounts/{beneficiaryAccount}', [BeneficiaryAccountController::class, 'show']);
         Route::get('/onceoff-accounts', [BeneficiaryAccountController::class, 'getOnceOffAccounts']);
         Route::get('/beneficiary-accounts/{beneficiaryId?}/{accountNumber?}', [BeneficiaryAccountController::class, 'showBeneficiaryAndFirm']);
         
@@ -258,7 +263,7 @@ Route::group(['middleware' => 'no_cache'], function (){
         Route::resource('requisitions', RequisitionController::class);
 
         Route::resource('statuses', StatusController::class);
-        Route::resource('matters', MatterController::class);
+        //Route::resource('matters', MatterController::class);
         Route::resource('documents', DocumentController::class);
         Route::resource('payments', PaymentController::class);
         Route::resource('deposits', DepositController::class);

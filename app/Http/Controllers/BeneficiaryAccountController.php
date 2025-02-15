@@ -9,60 +9,29 @@ use App\Models\Category;
 use App\Models\FirmAccount;
 use App\Models\Institution;
 use App\Models\Payment;
-use DataTables;
 use Exception;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
 use Maatwebsite\Excel\Facades\Excel;
+use Yajra\DataTables\Facades\DataTables;
 
 class BeneficiaryAccountController extends Controller
 {
-    public function indexBackup()
-    {
-         // Get the FirmAccount data with related 'institution'
-         $beneficiaryAccounts = BeneficiaryAccount::with('institution','category','accountType')
-            ->where(function ($query) {
-                $query->whereHas('authorizers') // Ensure at least one authorizer exists
-                    ->orWhere('verified', '>', 0); // OR ensure verified is greater than zero
-            })
-         ->get()
-        ->map(function ($beneficiaryAccount) {
-            // Check if the firm account has not been authorized
-            if (!$beneficiaryAccount->authorised ) {
-                // Count the number of entries in the Authorizer model for this firm account
-                $authorizerCount = $beneficiaryAccount->authorizers()->count() ?? 0;
-                $numberOfAuthorizer = $beneficiaryAccount->number_of_authorizer ?? 0;
-
-                if ($authorizerCount > 0 && $authorizerCount == $numberOfAuthorizer) {
-                    // If the count matches, set 'authorised' to 1
-                    $beneficiaryAccount->authorised = 1;
-                    $beneficiaryAccount->save();
-                } else {
-                    // Otherwise, set a custom property to indicate the authorizer progress
-                    $beneficiaryAccount->authorizer_progress = "$authorizerCount of $numberOfAuthorizer";
-                }
-            } else {
-                // Count the number of entries in the Authorizer model for this firm account
-                $authorizerCount = $beneficiaryAccount->authorizers()->count() ?? 0;
-                // If already authorized, set authorizer progress as complete
-                $beneficiaryAccount->authorizer_progress = ($authorizerCount) ." of ".($beneficiaryAccount->number_of_authorizer ?? 0);
-            }
-
-            return $beneficiaryAccount;
-        });
-
-         // Use the DataTables facade to return data in the required format
-         return DataTables::of($beneficiaryAccounts)->make(true);
-    } 
-
     public function index()
     {
+        $user = Auth::user();
+        
         // Retrieve only beneficiary accounts that have at least one authorizer OR are verified
-        $beneficiaryAccounts = BeneficiaryAccount::with('institution', 'category', 'accountType','authorizers.user')
-            ->where(function ($query) {
-                $query->where('number_of_authorizer', '<>', null) // Ensure at least one authorizer exists
-                    ->orWhere('verified', '>', 0); // OR ensure verified is greater than zero
-            })
+        $query = $user->hasRole('superadmin') 
+                        ? BeneficiaryAccount::with('institution', 'category', 'accountType', 'organisation','authorizers.user')
+                        : BeneficiaryAccount::whereOrganisationId($user->organisation->id)->with('institution', 'category', 'accountType', 'organisation','authorizers.user');
+
+        // Apply filtering for accounts with at least one authorizer OR verified > 0
+            $beneficiaryAccounts = $query->where(function ($q) {
+                $q->whereNotNull('number_of_authorizer')
+                ->orWhere('verified', '>', 0);
+            })// Retrieve results
             /* ->where(function ($query) {
                 $query->whereHas('authorizers') // Ensure at least one authorizer exists
                     ->orWhere('verified', '>', 0); // OR ensure verified is greater than zero
@@ -96,11 +65,16 @@ class BeneficiaryAccountController extends Controller
 
     public function getOnceOffAccounts()
     {
+        $user = Auth::user();
         // Retrieve only beneficiary accounts that have at least one authorizer OR are verified
-        $onceoffAccounts = BeneficiaryAccount::with('institution', 'category', 'accountType')
-            ->where(function ($query) {
-                $query->where('number_of_authorizer', null) // Ensure at least one authorizer exists
-                    ->orWhere('verified', 0); // OR ensure verified is greater than zero
+         // Retrieve only beneficiary accounts that have at least one authorizer OR are verified
+         $query = $user->hasRole('superadmin') 
+                    ? BeneficiaryAccount::with('institution', 'category', 'organisation', 'accountType')
+                    : BeneficiaryAccount::whereOrganisationId($user->organisation->id)->with('institution', 'category', 'organisation', 'accountType');
+
+            $onceoffAccounts = $query->where(function ($q) {
+                $q->whereNull('number_of_authorizer') // Ensure at least one authorizer exists
+                    ->orWhereNull('number_of_authorizer')->Where('verified', 0); // OR ensure verified is greater than zero
             })
             ->get()
             ->map(function ($onceoffAccounts) {
@@ -111,8 +85,8 @@ class BeneficiaryAccountController extends Controller
                 if (!$onceoffAccounts->authorised) {
                     if ($authorizerCount > 0 && $authorizerCount == $numberOfAuthorizer) {
                         // If authorizer count matches required, mark as authorised
-                        $onceoffAccounts->authorised = 1;
-                        $onceoffAccounts->save();
+                        //$onceoffAccounts->authorised = 1;
+                        //$onceoffAccounts->save();
                     } else {
                         // Otherwise, set a progress indicator
                         $onceoffAccounts->authorizer_progress = "$authorizerCount of $numberOfAuthorizer";
@@ -134,23 +108,33 @@ class BeneficiaryAccountController extends Controller
     public function showBeneficiaryAndFirm($beneficiaryId, $accountNumber)
     {
         try {
-            // Search for the BeneficiaryAccount or FirmAccount using the ID and account number
-            $beneficiaryAccount = BeneficiaryAccount::whereId($beneficiaryId)
-                ->whereAccountNumber($accountNumber)
+            $user = Auth::user();
+            $isSuperAdmin = $user->hasRole('superadmin');
+
+            // Search for Beneficiary Account based on role
+            $query = $isSuperAdmin
+                ? BeneficiaryAccount::whereId($beneficiaryId)
+                : BeneficiaryAccount::whereOrganisationId($user->organisation->id)->whereId($beneficiaryId);
+
+            $beneficiaryAccount = $query->whereAccountNumber($accountNumber)
                 ->with('authorizers.user', 'institution', 'accountType', 'category')
                 ->first();
-    
+
+            // If BeneficiaryAccount not found, search for FirmAccount
             if (!$beneficiaryAccount) {
-                $beneficiaryAccount = FirmAccount::whereId($beneficiaryId)
-                    ->whereAccountNumber($accountNumber)
+                $query = $isSuperAdmin
+                    ? FirmAccount::whereId($beneficiaryId)
+                    : FirmAccount::whereOrganisationId($user->organisation->id)->whereId($beneficiaryId);
+
+                $beneficiaryAccount = $query->whereAccountNumber($accountNumber)
                     ->with('authorizers.user', 'institution', 'accountType', 'category')
                     ->first();
             }
-    
+
             if (!$beneficiaryAccount) {
                 return response()->json(['message' => 'Account not found'], 404);
             }
-    
+
             // Construct the response data
             $response = [
                 'id' => $beneficiaryAccount->id,
@@ -172,51 +156,26 @@ class BeneficiaryAccountController extends Controller
                 'display_text' => $beneficiaryAccount->display_text,
                 'authorizersDetails' => $beneficiaryAccount->getAuthorizerDetails(),
             ];
-    
+
             return response()->json($response);
-    
+
         } catch (\Exception $e) {
-            \Log::error('Error getting requisition: ' . $e->getMessage());
-    
+            \Log::error('Error fetching account details: ' . $e->getMessage());
+
             return response()->json([
-                'message' => 'An error occurred while getting requisition.',
-                'error' => $e->getMessage() // Optional: for debugging, remove in production
+                'message' => 'An error occurred while retrieving the account details.',
+                'error' => config('app.debug') ? $e->getMessage() : null // Hide error in production
             ], 500);
         }
     }
+
 
     public function show(BeneficiaryAccount $beneficiaryAccount)
     {
         
         try {
             // Load the necessary relationships and format the response data
-           /*  $beneficiaryAccount->load('authorizers.user', 'institution', 'accountType','category');
-            //return response()->json($beneficiaryAccount->load('institution','deposits.user','accountType','payments.user','payments.accountType', 'payments.institution'));
-
-            // Construct the response data to include all required fields for the frontend
-            $response = [
-                'id' => $beneficiaryAccount->id,
-                'account_number' => $beneficiaryAccount->account_number,
-                'company_name' => $beneficiaryAccount->company_name,
-                'initials' => $beneficiaryAccount->initials,
-                'surname' => $beneficiaryAccount->surname,
-                'id_number' => $beneficiaryAccount->id_number,
-                'registration_number' => $beneficiaryAccount->registration_number,
-                'verified' => $beneficiaryAccount->verified,
-                'payments' => $beneficiaryAccount->payments, // Assuming payments is a field or relationship
-                'category' => $beneficiaryAccount->category,
-                'account_type' => $beneficiaryAccount->accountType, // Include account type details
-                'institution' => $beneficiaryAccount->institution, // Include institution details
-                'branch_code' => $beneficiaryAccount->branch_code,
-                'authorizers' => $beneficiaryAccount->authorizers, // Include authorizer details if needed
-                'account_holder_type' => $beneficiaryAccount->account_holder_type,
-                'authorised' => $beneficiaryAccount->authorised,
-                'display_text' => $beneficiaryAccount->display_text,
-                'authorizersDetails' => $beneficiaryAccount->getAuthorizerDetails(),
-                
-            ];
-
-            return response()->json($response); */
+           
             return response()->json($beneficiaryAccount->load([
                 'authorizers.user',
                 'institution',
@@ -367,6 +326,7 @@ class BeneficiaryAccountController extends Controller
                 'verified' => $verified,
                 'number_of_authorizer' => $number_of_authorizer,
                 'user_id' => auth()->id(),
+                'organisation_id' => $request->organisation_id ? $request->organisation_id : Auth::user()->organisation->id,
             ]);
 
             $importedAccounts[] = $beneficiaryAccount;
@@ -432,6 +392,7 @@ class BeneficiaryAccountController extends Controller
             //'authorised' => $request->input('verified'),
             'number_of_authorizer' => $request->input('numberOfAuthorizer'),
             'user_id' => auth()->id(),
+            'organisation_id' => Auth::user()->organisation->id
         ]);
 
         //$beneficiaryAccount = BeneficiaryAccount::create($validated);
@@ -531,6 +492,7 @@ class BeneficiaryAccountController extends Controller
             'firm_account_id' => null,
             'beneficiary_account_id' => $beneficiaryAccount->id, // You can set this if applicable
             'user_id' => $userId,
+            'organisation_id' => Auth::user()->organisation->id
         ]);
 
         // Count the number of authorizer entries for this firm account
@@ -561,28 +523,38 @@ class BeneficiaryAccountController extends Controller
     public function search(Request $request)
     {
         $query = $request->input('query');
+        $user = Auth::user();
+        $isSuperAdmin = $user->hasRole('superadmin');
 
         try {
-            // Query beneficiaries based on the account number or account holder name
-            $beneficiaries = BeneficiaryAccount::where('account_number', 'LIKE', "%{$query}%")
-            ->orWhere('company_name', 'LIKE', "%{$query}%")
-            ->orWhere('display_text', 'LIKE', "%{$query}%")->with('institution','category','accountType','payments','authorizers.user')
-            ->take(10)  // Limit to 10 results
-            //->get(['account_number', 'company_name', 'display_text', 'id', 'institution_id']);  // Only return relevant fields
-            ->get();
+            // Beneficiary Account Query
+            $beneficiaryQuery = $isSuperAdmin
+                ? BeneficiaryAccount::with('institution', 'category', 'accountType', 'payments', 'authorizers.user')
+                : BeneficiaryAccount::whereOrganisationId($user->organisation->id)
+                    ->with('institution', 'category', 'accountType', 'payments', 'authorizers.user');
 
-            // Query FirmAccount based on account number or account holder name
-            $firmAccounts = FirmAccount::where('account_number', 'LIKE', "%{$query}%")
+            $beneficiaries = $beneficiaryQuery->where(function ($q) use ($query) {
+                $q->where('account_number', 'LIKE', "%{$query}%")
+                ->orWhere('company_name', 'LIKE', "%{$query}%")
+                ->orWhere('display_text', 'LIKE', "%{$query}%");
+            })->take(10)->get();
+
+            // Firm Account Query
+            $firmQuery = $isSuperAdmin
+                ? FirmAccount::with('institution', 'category', 'accountType', 'payments', 'authorizers.user')
+                : FirmAccount::whereOrganisationId($user->organisation->id)
+                    ->with('institution', 'category', 'accountType', 'payments', 'authorizers.user');
+
+            $firmAccounts = $firmQuery->where(function ($q) use ($query) {
+                $q->where('account_number', 'LIKE', "%{$query}%")
                 ->orWhere('account_holder', 'LIKE', "%{$query}%")
                 ->orWhere('company_name', 'LIKE', "%{$query}%")
-                ->orWhere('display_text', 'LIKE', "%{$query}%")
-                ->with('institution', 'category', 'accountType','payments','authorizers.user')
-                ->take(10) // Limit to 10 results
-                ->get();
+                ->orWhere('display_text', 'LIKE', "%{$query}%");
+            })->take(10)->get();
 
-                // Combine the results from both queries
+            // Merge the results
             $results = $beneficiaries->merge($firmAccounts);
-            
+
             // Check if results are empty
             if ($results->isEmpty()) {
                 return response()->json(['message' => 'No records found'], 202);
@@ -591,11 +563,16 @@ class BeneficiaryAccountController extends Controller
             // Return the results as JSON
             return response()->json($results);
 
-        } catch (Exception $e) {
-            // Return an error response if no results are found
-            return response()->json(['message' => $e->getMessage()], 202);
+        } catch (\Exception $e) {
+            \Log::error('Error searching accounts: ' . $e->getMessage());
+
+            return response()->json([
+                'message' => 'An error occurred while searching for accounts.',
+                'error' => config('app.debug') ? $e->getMessage() : null // Hide error in production
+            ], 500);
         }
     }
+
 
     public function destroy(BeneficiaryAccount $beneficiaryAccount)
     {

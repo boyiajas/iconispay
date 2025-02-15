@@ -51,5 +51,20 @@ class PermissionsTableSeeder extends Seeder
         Permission::create(['name' => 'edit requisition']);
         Permission::create(['name' => 'delete requisition']);
 
+        Permission::create(['name' => 'view organisation']);
+        Permission::create(['name' => 'create organisation']);
+        Permission::create(['name' => 'edit organisation']);
+        Permission::create(['name' => 'delete organisation']);
+
+        Permission::create(['name' => 'view certificate']);
+        Permission::create(['name' => 'create certificate']);
+        Permission::create(['name' => 'edit certificate']);
+        Permission::create(['name' => 'delete certificate']);
+
+        Permission::create(['name' => 'view audit']);
+        Permission::create(['name' => 'create audit']);
+        Permission::create(['name' => 'edit audit']);
+        Permission::create(['name' => 'delete audit']);
+
     }
 }

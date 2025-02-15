@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\AuditTrail;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Yajra\DataTables\Facades\DataTables;
 
 class AuditTrailController extends Controller
@@ -13,16 +14,27 @@ class AuditTrailController extends Controller
      */
     public function index(Request $request)
     {
+        $user = Auth::user();
+        $isSuperAdmin = $user->hasRole('superadmin');
+
+        // Initialize query with relationship and latest order
         $query = AuditTrail::with('user')->latest();
+
+        // Apply organization restriction for non-superadmin users
+        if (!$isSuperAdmin) {
+            $query->whereHas('user', function ($q) use ($user) {
+                $q->where('organisation_id', $user->organisation_id);
+            });
+        }
 
         // Apply date range filter if provided
         if ($request->has('fromDate') && $request->has('toDate')) {
             $query->whereBetween('created_at', [$request->fromDate, $request->toDate]);
         }
 
-        //return response()->json($query->paginate(20));
         return DataTables::of($query)->toJson(); // ✅ Returns DataTables JSON format
     }
+
 
     /**
      * Show the form for creating a new resource.
@@ -37,7 +49,7 @@ class AuditTrailController extends Controller
      */
     public function store(Request $request)
     {
-        $validated = $request->validate([
+        /* $validated = $request->validate([
             'user_name' => 'required|string|max:255',
             'action' => 'required|string|max:255',
             'details' => 'required|string',
@@ -45,7 +57,7 @@ class AuditTrailController extends Controller
 
         $auditTrail = AuditTrail::create($validated);
 
-        return response()->json($auditTrail, 201);
+        return response()->json($auditTrail, 201); */
     }
 
     /**

@@ -66,7 +66,7 @@
                         <label for="account_holder" class="form-label col-sm-2" v-if="this.beneficiaryAccount.accountHolderType == 'natural'">Account Holder: *</label>
                         <div class="col-sm-10 row pr-0 mb-1" v-if="this.beneficiaryAccount.accountHolderType == 'natural'">
                             <div class="col-sm-2 pr-0" id="initials">
-                                <input type="text" v-model="beneficiaryAccount.initials" class="form-control" placeholder="Initials" required>
+                                <input type="text" v-model="beneficiaryAccount.initials" class="form-control" maxlength="10" placeholder="Initials" required>
                             </div>
                             <div class="col-sm-10 pr-0 mb-1">
                                 <input type="text" v-model="beneficiaryAccount.surname" class="form-control" placeholder="Surname" required>
@@ -121,6 +121,21 @@
                             <input type="text" v-model="beneficiaryAccount.branchCode" class="form-control" id="branchCode" placeholder="Enter the branch code" required>
                         </div>
                     </div>
+
+                    <PermissionControl :roles="['superadmin']">
+                        <!-- Organisation Dropdown -->
+                        <div class="form-group mb-3 row">
+                            <label  class="form-label col-sm-2" for="organisation">Organisation: </label>
+                            <div class="col-sm-10">
+                                <select v-model="beneficiaryAccount.organisation_id" class="form-control" required>
+                                    <option value="" disabled>Select an organisation</option>
+                                    <option v-for="org in organisations" :key="org.id" :value="org.id">
+                                        {{ org.name }} -- {{ org.location }}
+                                    </option>
+                                </select>
+                            </div>
+                        </div>
+                    </PermissionControl>
 
                     <!-- Aggregate Payment References Section -->
                     <h5>Aggregate Payment References</h5>
@@ -292,10 +307,14 @@
 <script>
 import axios from 'axios';
 import { useToast } from 'vue-toastification';
+import PermissionControl from '../permission/PermissionControl.vue';
 
 export default {
     data() {
         return {
+            
+            organisation: { id: null, name: '', description: '' },
+            organisations: [],
             beneficiaryAccount: {
                 displayText: '',
                 accountCategory: '',
@@ -329,6 +348,7 @@ export default {
         this.loadInstitutions();
         this.loadCategories();
         this.loadAccountTypes();
+        this.getAllOrganisations();
     },
     setup() {
         // Initialize toast
@@ -336,6 +356,15 @@ export default {
         return { toast };
     },
     methods: {
+        getAllOrganisations() {
+            axios.get('/api/organisation/all-organisations')
+                .then(response => {
+                    this.organisations = response.data;
+                })
+                .catch(error => {
+                    this.toast.error('Error fetching organisations.');
+                });
+        },
         // Fetch the list of institutions from the backend API
         loadInstitutions() {
             axios.get('/api/institutions').then(response => {

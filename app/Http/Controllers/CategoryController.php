@@ -25,16 +25,26 @@ class CategoryController extends Controller
 
     public function getBeneficiariesByCategory($category_id)
     {
+        $user = Auth::user();
+        $isSuperAdmin = $user->hasRole('superadmin');
+
         $category = Category::findOrFail($category_id);
 
-         // Get all beneficiaries and firm accounts for this category
-        $beneficiaries = $category->beneficiaries;
-        $firmAccounts = $category->firmAccounts;
+        // Get beneficiaries based on the user role
+        $beneficiariesQuery = $isSuperAdmin
+            ? $category->beneficiaries()
+            : $category->beneficiaries()->where('organisation_id', $user->organisation_id);
+
+        $firmAccountsQuery = $isSuperAdmin
+            ? $category->firmAccounts()
+            : $category->firmAccounts()->where('organisation_id', $user->organisation_id);
+
+        // Fetch the filtered results
+        $beneficiaries = $beneficiariesQuery->get();
+        $firmAccounts = $firmAccountsQuery->get();
 
         // Merge both collections and return
-        $allAccounts = $beneficiaries->merge($firmAccounts);
-
-        return $allAccounts;
+        return $beneficiaries->merge($firmAccounts);
     }
     /**
      * Store a newly created resource in storage.

@@ -107,7 +107,7 @@ class LoginController extends Controller
                         //$user->syncRoles(['authoriser','bookkeeper']);
 
                         //dd("1", $user->hasRole('admin'), $certificate, $fingerprint);
-                    if ((!$certificate || ($certificate->expires_at < now())) && !$user->hasRole('admin')) {// dd("1", $user->hasRole('admin'), $certificate, $fingerprint);
+                    if ((!$certificate || ($certificate->expires_at < now())) && !$user->hasRole('superadmin')) {// dd("1", $user->hasRole('admin'), $certificate, $fingerprint);
                         // Save roles, downgrade to 'user', and redirect
                         if(empty($user->user_roles)){ //this is to avoid overwriting the roles already saved again
                             $roles = $user->roles->pluck('name')->toArray();
@@ -130,7 +130,7 @@ class LoginController extends Controller
                     return redirect('login')->withErrors(['certificate' => $e->getMessage()]);
                 }
 
-            }else if($user->hasRole('admin')){
+            }else if($user->hasRole('superadmin')){
                //dd('we are here admin');
             }else{ //dd("we are here no certificate ");
                 // No client certificate, save current roles to user_roles and assign 'user' role

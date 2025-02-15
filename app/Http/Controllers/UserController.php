@@ -5,13 +5,13 @@ namespace App\Http\Controllers;
 use App\Http\Controllers\Auth\ForgotPasswordController;
 use App\Jobs\SendNewUserNotificationJob;
 use App\Models\User;
-use DataTables;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Str;
 use Maatwebsite\Excel\Facades\Excel;
+use Yajra\DataTables\Facades\DataTables;
 
 class UserController extends Controller
 {
@@ -20,8 +20,12 @@ class UserController extends Controller
      */
     public function index()
     {
+        $user = Auth::user();
+        
         // Get only active users with their roles
-        $users = User::where('status', 'active')->with('roles', 'latestCertificate')->get();
+        $users = $user->hasRole('superadmin') 
+                ? User::where('status', 'active')->with('roles', 'organisation', 'latestCertificate')->get()
+                : User::whereOrganisationId(Auth::user()->organisation->id)->where('status', 'active')->with('roles', 'latestCertificate')->get();
 
         // Use the DataTables facade to format the data
         return DataTables::of($users)
@@ -37,7 +41,12 @@ class UserController extends Controller
 
     public function getRecipients()
     {
-        return User::where('id', '!=', Auth::user()->id)->with('roles')->get();
+        $user = Auth::user();
+        
+        // Get only active users with their roles
+        return $user->hasRole('superadmin') 
+               ? User::where('id', '!=', $user->id)->with('roles')->get()
+               : User::whereOrganisationId($user->organisation->id)->where('id', '!=', $user->id)->with('roles')->get();
     }
 
     public function deactivateAccount(Request $request, $id)
@@ -76,8 +85,12 @@ class UserController extends Controller
 
     public function deactivatedUsers(Request $request)
     {
+        $user = Auth::user();
+        
         // Get only active users with their roles
-        $users = User::where('status', 'inactive')->with('roles', 'latestCertificate')->get();
+        $users = $user->hasRole('superadmin') 
+                ? User::where('status', 'inactive')->with('roles', 'latestCertificate')->get()
+                : User::whereOrganisationId(Auth::user()->organisation->id)->where('status', 'inactive')->with('roles', 'latestCertificate')->get();
 
         // Use the DataTables facade to format the data
         return DataTables::of($users)
@@ -112,7 +125,8 @@ class UserController extends Controller
         $importedUsers = [];
         $errors = [];
 
-        
+        $loginUser = Auth::user();
+
         foreach ($data as $index => $row) {
             if ($index === 0) continue; // Skip the header row
 
@@ -147,6 +161,7 @@ class UserController extends Controller
             $user->email = $email;
             $user->status = 'active';
             $user->password = Hash::make($password);
+            $user->organisation_id = $loginUser->organisation->id;
             $user->syncRoles('user'); // Default role
 
             // Assign additional roles
@@ -202,8 +217,12 @@ class UserController extends Controller
         $user->email     = $request->email;
         $user->status    = 'active';
         $user->password  = Hash::make($password); 
+        $user->organisation_id = $request->organisation_id ? $request->organisation_id : Auth::user()->organisation->id;
         $user->syncRoles('user');
 
+        if($request->input('is_superadmin')){
+            $user->syncRoles('superadmin');
+        }
         if($request->input('is_admin')){
             $user->syncRoles('admin');
         }
@@ -261,6 +280,7 @@ class UserController extends Controller
 
         $user->name = $request->name;
         $user->email = $request->email;
+        $user->organisation_id = $request->organisation_id ? $request->organisation_id : Auth::user()->organisation->id;
 
         // Update password if provided
         if ($request->filled('password')) {

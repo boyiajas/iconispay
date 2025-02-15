@@ -42,6 +42,7 @@ class AuditTrailObserver
             'old_values' => $oldValues,
             'new_values' => $newValues,
             'user_agent' => request()->header('User-Agent'), // ✅ Only get user agent here
+            'organisation_id' => $user?->organisation?->id,
         ];
 
         // ✅ Dispatch Job Asynchronously (IP & Geo-location will be handled in the job)

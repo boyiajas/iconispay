@@ -26,7 +26,13 @@ class AuditTrail extends Model
         'latitude',
         'longitude',
         'timezone',
+        'organisation_id',
     ];
+
+    public function organisation()
+    {
+        return $this->belongsTo(Organisation::class);
+    }
 
     protected $casts = [
         'old_values' => 'array',

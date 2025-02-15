@@ -4,6 +4,7 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Support\Facades\Auth;
 
 class FileHistoryLog extends Model
 {
@@ -15,7 +16,13 @@ class FileHistoryLog extends Model
         'action',
         'details',
         'log_date',
+        'organisation_id',
     ];
+
+    public function organisation()
+    {
+        return $this->belongsTo(Organisation::class);
+    }
 
     public function user()
     {
@@ -43,6 +50,7 @@ class FileHistoryLog extends Model
             'action' => $action,
             'details' => $details,
             'log_date' => now(),
+            'organisation_id' => Auth::user()->organisation->id,
         ]);
     }
 }

@@ -20,8 +20,13 @@ class Certificate extends Model
         'certificate_hash',
         'expires_at',
         'file_path',
-    ]; 
+        'organisation_id',
+    ];
 
+    public function organisation()
+    {
+        return $this->belongsTo(Organisation::class);
+    }
     /**
      * The attributes that should be cast to native types.
      *

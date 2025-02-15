@@ -11,7 +11,7 @@
 
         window.Laravel = {
             csrfToken: '{{ csrf_token() }}',
-            user: {!! json_encode(Auth::check() ? Auth::user()->load('roles', 'permissions') : null) !!}
+            user: {!! json_encode(Auth::check() ? Auth::user()->load('roles', 'permissions', 'organisation') : null) !!}
         };
     </script>
 

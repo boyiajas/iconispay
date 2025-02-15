@@ -8,6 +8,7 @@ use App\Models\Requisition;
 use App\Observers\AuditTrailObserver;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
 
 class DepositController extends Controller
@@ -40,6 +41,8 @@ class DepositController extends Controller
             return response()->json(['errors' => $validator->errors()], 422);
         }
 
+        $user = Auth::user();
+
          //here we want to update the requisition funding status
          $requisition = Requisition::find($request->input('requisition_id'));
          if($requisition){
@@ -61,7 +64,8 @@ class DepositController extends Controller
             'deposit_date' => null,
             'firm_account_id' => $request->input('firm_account_id'),
             'requisition_id' => $request->input('requisition_id'),
-            'user_id' => auth()->id(),  // Save the authenticated user's ID
+            'user_id' => $user->id,  // Save the authenticated user's ID
+            'organisation_id' => $user->organisation->id
         ]);
 
         AuditTrailObserver::logCustomAction('Balance Payment Fund', $deposit, null, $deposit->toArray());
@@ -139,6 +143,7 @@ class DepositController extends Controller
              ]);
          }
 
+         $user = Auth::user();
          // Create the deposit record and associate it with the authenticated user
         $deposit = Deposit::create([
             'description' => $request->input('description'),
@@ -147,7 +152,8 @@ class DepositController extends Controller
             'deposit_date' => null,
             'firm_account_id' => $request->input('firm_account_id'),
             'requisition_id' => $request->input('requisition_id'),
-            'user_id' => auth()->id(),  // Save the authenticated user's ID
+            'user_id' => $user->id,  // Save the authenticated user's ID
+            'organisation_id' => $user->organisation->id
         ]);
 
         // Eager load the relationships
@@ -205,17 +211,25 @@ class DepositController extends Controller
             'requisition_id' => 'required|exists:requisitions,id'
         ]);
 
+       /*  $user = Auth::user();
+        $allowedRoles = ['authoriser', 'admin', 'superadmin', 'bookkeeper'];
+
+        // Check if the user has the required role
+        if (!$user->hasAnyRole($allowedRoles)) {
+            return response()->json(['message' => 'Unauthorized: You do not have permission to fund deposits.'], 403);
+        } */
+
         $requisitionId = $request->input('requisition_id');
 
         // Update all deposits for this requisition to funded: true
         Deposit::where('requisition_id', $requisitionId)->update(['funded' => true]);
 
         // Update the requisition's funding_status to true
-        $requisition = Requisition::find($requisitionId);
+        $requisition = Requisition::findOrFail($requisitionId);
         $requisition->update(['funding_status' => true]);
 
         // Eager load the relationships
-        $requisition->load(
+        $requisition->load([
             'user',
             'authorizedBy',
             'firmAccount.institution',
@@ -223,11 +237,10 @@ class DepositController extends Controller
             'payments.payToFirmAccount.institution',
             'payments.beneficiaryAccount.accountType',
             'payments.payToFirmAccount.accountType',
-            //'payments.payToFirmAccount',
             'payments.sourceFirmAccount',
             'deposits.firmAccount',
             'deposits.user'
-        );
+        ]);
 
         // Transform the requisition data to include payToAccount details
         $requisitionData = $requisition->toArray();
@@ -250,14 +263,13 @@ class DepositController extends Controller
 
             // Include the transformed payToAccount in the payment data
             $paymentData['beneficiary_account'] = $payToAccountData;
-           
+
             return $paymentData;
         });
 
         return response()->json($requisitionData);
-        //return response()->json($requisition->load('user', 'authorizedBy', 'firmAccount.institution', 'payments.beneficiaryAccount', 'payments.beneficiaryAccount.institution', 'deposits.firmAccount', 'deposits.user'), 201);
-        //return response()->json($requisition, 200);
     }
+
 
     /**
      * Store a newly created resource in storage.
@@ -302,6 +314,7 @@ class DepositController extends Controller
             $requisition->update(['status_id' => 3]);
         }
 
+        $user = Auth::user();
         // Create the deposit record and associate it with the authenticated user
         $deposit = Deposit::create([
             'description' => $request->input('description'),
@@ -310,7 +323,8 @@ class DepositController extends Controller
             'deposit_date' => $depositDate,
             'firm_account_id' => $request->input('firm_account_id'),
             'requisition_id' => $request->input('requisition_id'),
-            'user_id' => auth()->id(),  // Save the authenticated user's ID
+            'user_id' => $user->id,  // Save the authenticated user's ID
+            'organisation_id' => $user->organisation->id
         ]);
 
         // Eager load the relationships

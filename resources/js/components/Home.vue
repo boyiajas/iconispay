@@ -2,7 +2,7 @@
     <div class="mt-4 container">
         
         <h2 class="section-title">Home  
-            <PermissionControl :roles="['admin', 'authoriser', 'user']">
+            <PermissionControl :roles="['superadmin', 'admin', 'authoriser', 'user']">
                     <router-link to="/requisition/new" class="btn btn-primary btn-sm ml-4">+ New Requisition</router-link>
             </PermissionControl>
             
