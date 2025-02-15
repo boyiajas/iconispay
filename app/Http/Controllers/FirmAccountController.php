@@ -12,10 +12,11 @@ use App\Models\FirmAccount;
 use App\Models\Institution;
 use App\Models\Requisition;
 use Carbon\Carbon;
-use DataTables;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Validator;
 use Maatwebsite\Excel\Facades\Excel;
+use Yajra\DataTables\Facades\DataTables;
 
 class FirmAccountController extends Controller
 {
@@ -24,83 +25,76 @@ class FirmAccountController extends Controller
      */
     public function index()
     {
-        // Get the FirmAccount data with related 'institution', 'category', and 'accountType'
-        $firmaccounts = FirmAccount::with('institution', 'category', 'accountType','authorizers.user')
-            ->get()
-            ->map(function ($firmAccount) {
-                // Check if the firm account has not been authorized
-                if (!$firmAccount->authorised ) {
-                    // Count the number of entries in the Authorizer model for this firm account
-                    $authorizerCount = $firmAccount->authorizers()->count() ?? 0;
-                    $numberOfAuthorizer = $firmAccount->number_of_authorizer ?? 0;
+        $user = Auth::user();
+        $isSuperAdmin = $user->hasRole('superadmin');
 
-                    if ($authorizerCount > 0 && $authorizerCount == $numberOfAuthorizer) {
-                        // If the count matches, set 'authorised' to 1
-                        $firmAccount->authorised = 1;
-                        $firmAccount->save();
-                    } else {
-                        // Otherwise, set a custom property to indicate the authorizer progress
-                        $firmAccount->authorizer_progress = "$authorizerCount of $numberOfAuthorizer";
-                    }
+        // Firm Account Query: Unrestricted for Super Admin, restricted for others
+        $query = $isSuperAdmin
+            ? FirmAccount::with('institution', 'category', 'organisation', 'accountType', 'authorizers.user')
+            : FirmAccount::whereOrganisationId($user->organisation->id)
+                ->with('institution', 'category', 'accountType', 'organisation', 'authorizers.user');
+
+        // Fetch firm accounts and process authorizer status
+        $firmaccounts = $query->get()->map(function ($firmAccount) {
+            $authorizerCount = $firmAccount->authorizers->count();
+            $numberOfAuthorizer = $firmAccount->number_of_authorizer ?? 0;
+
+            if (!$firmAccount->authorised) {
+                if ($authorizerCount > 0 && $authorizerCount == $numberOfAuthorizer) {
+                    $firmAccount->authorised = 1;
+                    $firmAccount->save();
                 } else {
-                    // Count the number of entries in the Authorizer model for this firm account
-                    $authorizerCount = $firmAccount->authorizers()->count() ?? 0;
-                    // If already authorized, set authorizer progress as complete
-                    $firmAccount->authorizer_progress = ($authorizerCount) ." of ".($firmAccount->number_of_authorizer ?? 0);
+                    $firmAccount->authorizer_progress = "$authorizerCount of $numberOfAuthorizer";
                 }
+            } else {
+                $firmAccount->authorizer_progress = "$authorizerCount of $numberOfAuthorizer";
+            }
 
-                return $firmAccount;
-            });
+            return $firmAccount;
+        });
 
-        // Use the DataTables facade to return data in the required format
+        // Return formatted data
         return DataTables::of($firmaccounts)->make(true);
     }
 
     public function getAccounts()
     {
-        // Use eager loading to fetch related data in one query
-        $accounts = FirmAccount::with(['institution', 'requisitions' => function ($query) {
-            $query->whereIn('status_id', [5, 6]);
-        }])->orderBy('created_at', 'desc')->get();
+        $user = Auth::user();
+        $isSuperAdmin = $user->hasRole('superadmin');
 
-        // Collect all firm account IDs to perform a single query for FileUpload records
+        // Firm Account Query: Unrestricted for Super Admin, restricted for others
+        $query = $isSuperAdmin
+            ? FirmAccount::with(['institution', 'requisitions' => fn($q) => $q->whereIn('status_id', [5, 6])])
+            : FirmAccount::whereOrganisationId($user->organisation->id)
+                ->with(['institution', 'requisitions' => fn($q) => $q->whereIn('status_id', [5, 6])]);
+
+        // Fetch firm accounts
+        $accounts = $query->orderBy('created_at', 'desc')->get();
+
+        // Collect all firm account IDs for batch retrieval of FileUploads
         $firmAccountIds = $accounts->pluck('id');
 
-        // Fetch all FileUploads for the retrieved firm accounts in a single query
+        // Fetch all FileUploads for the retrieved firm accounts
         $fileUploads = FileUpload::whereIn('firm_account_id', $firmAccountIds)
-            ->with(['requisitions' => function ($query) {
-                $query->where('status_id', '!=', 7); // Exclude requisitions with status_id 7
-            }])
-            ->get();
+            ->with(['requisitions' => fn($q) => $q->where('status_id', '!=', 7)])
+            ->get()
+            ->groupBy('firm_account_id'); // Group by firm account for easy lookup
 
-        // Group FileUploads by firm_account_id for easy lookup
-        $fileUploadsGrouped = $fileUploads->groupBy('firm_account_id');
-
-        $data = $accounts->map(function ($account) use ($fileUploadsGrouped) {
-            // Get all requisitions for this account that are ready for payment
+        // Process data
+        $data = $accounts->map(function ($account) use ($fileUploads) {
             $requisitionsReadyForPayment = $account->requisitions;
-
             $totalRequisitions = $requisitionsReadyForPayment->count();
+            $accountFileUploads = $fileUploads->get($account->id, collect());
 
-            // Retrieve the FileUploads for this firm account
-            $accountFileUploads = $fileUploadsGrouped->get($account->id, collect());
+            $totalGeneratedFiles = $accountFileUploads->filter(fn($fileUpload) =>
+                $fileUpload->requisitions->where('status_id', '!=', 7)->isNotEmpty()
+            )->count();
 
-            // Count the number of files generated for this firm account, excluding those with requisitions having status_id 7
-            $totalGeneratedFiles = $accountFileUploads->filter(function ($fileUpload) {
-                return $fileUpload->requisitions->where('status_id', '!=', 7)->isNotEmpty();
-            })->count();
+            $requisitionIdsWithFiles = $accountFileUploads->flatMap(fn($fileUpload) =>
+                $fileUpload->requisitions->pluck('id')
+            )->unique()->toArray();
 
-            // Collect all requisition IDs that already have generated files
-            $requisitionIdsWithFiles = $accountFileUploads->flatMap(function ($fileUpload) {
-                return $fileUpload->requisitions->pluck('id');
-            })->unique()->toArray();
-
-            // Filter new requisitions that don't have generated files
-            $newRequisitions = $requisitionsReadyForPayment->whereNotIn('id', $requisitionIdsWithFiles);
-
-            $newRequisitionsCount = $newRequisitions->count();
-
-            // Assume we want to use the first requisition's ID as an example
+            $newRequisitionsCount = $requisitionsReadyForPayment->whereNotIn('id', $requisitionIdsWithFiles)->count();
             $requisitionId = $requisitionsReadyForPayment->first()->id ?? null;
 
             return [
@@ -125,6 +119,7 @@ class FirmAccountController extends Controller
 
         return response()->json(['data' => $data]);
     }
+
 
 
     public function filesDetails(Request $request, $sourceAccountId)
@@ -218,6 +213,7 @@ class FirmAccountController extends Controller
             'firm_account_id' => $firmAccount->id,
             'beneficiary_account_id' => null, // You can set this if applicable
             'user_id' => $userId,
+            'organisation_id' => Auth::user()->organisation->id
         ]);
 
         // Count the number of authorizer entries for this firm account
@@ -275,7 +271,7 @@ class FirmAccountController extends Controller
         $requisitionIds = []; // Collect requisition IDs to save in FileUpload
         $bank = $firmAccount->institution->short_name;
         $absacount = 1001;
-        $company_name = "STRAUSS DALY INCORPORATED";
+        $company_name = $firmAccount->organisation->name;
         $increment = 1;
         $standardBankLastRowFileContent = '';
         $standardBankFirstRowFileContent = '';
@@ -550,6 +546,7 @@ class FirmAccountController extends Controller
             'file_hash' => $fileHash,
             'user_id' => auth()->user()->id,
             'generated_at' => now(),
+            'organisation_id' => Auth::user()->organisation->id,
         ]);
 
         // Log actions
@@ -752,120 +749,114 @@ class FirmAccountController extends Controller
 
     public function getPendingConfirmationFiles()
     {
-        // Retrieve FirmAccounts that have requisitions with file uploads, grouped by generated file
-        $pendingFiles = FirmAccount::whereHas('requisitions.fileUploads', function ($query) {
-            $query->where('status_id', 6); // Ensure the requisitions have file uploads with status_id 5
-        })->with(['requisitions' => function ($query) {
-            $query->where('status_id', 6)
-                ->has('fileUploads')// Ensure requisitions have file uploads
-                ->with('fileUploads', 'payments'); // Load file uploads and payments
-        }, 'institution'])->get();
+        $user = Auth::user();
+        $isSuperAdmin = $user->hasRole('superadmin');
+
+        // Firm Account Query: Unrestricted for Super Admin, restricted for others
+        $query = $isSuperAdmin
+            ? FirmAccount::with(['institution', 'requisitions' => function ($q) {
+                $q->where('status_id', 6)
+                ->has('fileUploads')
+                ->with('fileUploads', 'payments');
+            }])
+            : FirmAccount::whereOrganisationId($user->organisation->id)
+                ->with(['institution', 'requisitions' => function ($q) {
+                    $q->where('status_id', 6)
+                    ->has('fileUploads')
+                    ->with('fileUploads', 'payments');
+                }]);
+
+        $pendingFiles = $query->whereHas('requisitions.fileUploads', function ($q) {
+            $q->where('status_id', 6);
+        })->get();
 
         // Group requisitions by generated file
         $data = $pendingFiles->flatMap(function ($account) {
-            // Create a map of generated files to requisitions
-            $groupedRequisitions = $account->requisitions->groupBy(function ($requisition) {
-                return $requisition->fileUploads->first()->generated_at; // Group by the generated_at date of the first file upload
-            });
-
-            return $groupedRequisitions->map(function ($requisitions, $generatedAt) use ($account) {
-                $totalPayments = $requisitions->sum(function ($requisition) {
-                    return $requisition->payments->count();
-                });
-
-                $totalAmount = $requisitions->sum(function ($requisition) {
-                    return $requisition->calculateTransactionValue();
-                });
-
+            return $account->requisitions->groupBy(fn($requisition) =>
+                $requisition->fileUploads->first()->generated_at
+            )->map(function ($requisitions, $generatedAt) use ($account) {
+                $totalPayments = $requisitions->sum(fn($requisition) => $requisition->payments->count());
+                $totalAmount = $requisitions->sum(fn($requisition) => $requisition->calculateTransactionValue());
                 $dateGenerated = Carbon::parse($generatedAt)->format('d M Y H:i');
-                $fileId = $requisitions->first()->fileUploads->first()->id; // Get the file ID from the first file upload
+                $fileId = $requisitions->first()->fileUploads->first()->id;
 
-
-                // HTML for the edit button
                 $editButton = "<span class='pull-right btn btn-sm btn-default-default py-0 px-1 file-management-btn' data-file-id='{$fileId}'><i class='fas fa-edit'></i></span>";
 
                 return [
                     'display' => $account->display_text,
-                    'default_file_name' => "Default - {$account->account_number} (".Carbon::parse($generatedAt)->format('Y-m-d Hi').")",
+                    'default_file_name' => "Default - {$account->account_number} (" . Carbon::parse($generatedAt)->format('Y-m-d Hi') . ")",
                     'payments' => $totalPayments,
                     'date_generated' => $dateGenerated,
                     'total_amount' => $totalAmount,
                     'status' => '<span class="badge bg-info" style="width: 95px;border-radius: 3px;height: 20px;">Generated</span> ' . $editButton,
                 ];
             });
-        })->values()->all(); // Convert entire result to array format for JSON response
+        })->values()->all();
 
         return response()->json(['data' => $data]);
     }
+
 
     /**
      * Get Recently Closed Files for the Recently Closed Files Table.
      */
 
-    public function getRecentlyClosedFiles(Request $request)
-    {
-        // Get the fromDate and toDate from the request, or default to today's date
-        $fromDate = $request->from_date ? Carbon::parse($request->from_date)->startOfDay() : Carbon::today()->startOfDay();
-        $toDate = $request->to_date ? Carbon::parse($request->to_date)->endOfDay() : Carbon::today()->endOfDay();
-
-        // Assuming 'status_id' 7 represents 'processed' in requisitions
-        $closedFiles = FirmAccount::whereHas('requisitions', function ($query) {
-            $query->where('status_id', 7);
-        })
-        ->with(['requisitions' => function ($query) use ($fromDate, $toDate) {
-            $query->where('status_id', 7)->whereBetween('updated_at', [$fromDate, $toDate])
-                ->with('fileUploads', 'payments'); // Load related file uploads and payments
-        }, 'institution'])
-        ->get();
-        /*
-        $data = $closedFiles->map(function ($account) {
-            $requisition = $account->requisitions()->where('status_id', 7)->first();
-            return [
-                'display_text' => $account->display_text,
-                'file_name' => "Default - {$account->account_number}",
-                'payments' => $requisition ? $requisition->payments()->count() : 0,
-                'date_completed' => $requisition ? Carbon::parse($requisition->completed_at)->format('d M Y H:i') : '',
-                'total_amount' => $requisition ? $requisition->calculateTransactionValue() : 0,
-                'status' => 'Closed',
-            ];
-        });
-
-        return response()->json(['data' => $data]); */
-        // Flatten and map each account's requisitions and file uploads
-        $data = $closedFiles->flatMap(function ($account) {
-            return $account->requisitions->map(function ($requisition) use ($account) {
-                // Check if any file uploads exist for this requisition
-                $hasFiles = $requisition->fileUploads->isNotEmpty();
-                $dateGenerated = $hasFiles ? $requisition->fileUploads->max('generated_at')->format('d M Y H:i') : '<span class="badge bg-default">None</span>';
-                // Ensure that `fileId` is properly handled
-                $fileId = $requisition->fileUploads->first()->id ?? null;
-                 // HTML for the edit button
+     public function getRecentlyClosedFiles(Request $request)
+     {
+         $user = Auth::user();
+         $isSuperAdmin = $user->hasRole('superadmin');
+     
+         $fromDate = $request->from_date ? Carbon::parse($request->from_date)->startOfDay() : Carbon::today()->startOfDay();
+         $toDate = $request->to_date ? Carbon::parse($request->to_date)->endOfDay() : Carbon::today()->endOfDay();
+     
+         // Firm Account Query: Unrestricted for Super Admin, restricted for others
+         $query = $isSuperAdmin
+             ? FirmAccount::with(['institution', 'requisitions' => function ($q) use ($fromDate, $toDate) {
+                 $q->where('status_id', 7)->whereBetween('updated_at', [$fromDate, $toDate])
+                   ->with('fileUploads', 'payments');
+             }])
+             : FirmAccount::whereOrganisationId($user->organisation->id)
+                 ->with(['institution', 'requisitions' => function ($q) use ($fromDate, $toDate) {
+                     $q->where('status_id', 7)->whereBetween('updated_at', [$fromDate, $toDate])
+                       ->with('fileUploads', 'payments');
+                 }]);
+     
+         $closedFiles = $query->whereHas('requisitions', function ($q) {
+             $q->where('status_id', 7);
+         })->get();
+     
+         // Process each account's requisitions
+         $data = $closedFiles->flatMap(function ($account) {
+             return $account->requisitions->map(function ($requisition) use ($account) {
+                 $hasFiles = $requisition->fileUploads->isNotEmpty();
+                 $dateGenerated = $hasFiles ? $requisition->fileUploads->max('generated_at')->format('d M Y H:i') : '<span class="badge bg-default">None</span>';
+                 $fileId = $requisition->fileUploads->first()->id ?? null;
+     
                  $editButton = "<span class='pull-right btn btn-sm btn-default-default py-0 px-1 file-management-btn' data-file-id='{$fileId}' ><i class='fas fa-edit'></i></span>";
-
-                return [
-                    'display_text' => $account->display_text,
-                    'default_file_name' => "Default - {$account->account_number}",
-                    'payments' => $requisition->payments->count(),
-                    'date_generated' => $dateGenerated,
-                    'date_completed' => ($requisition && $requisition->completed_at) ? Carbon::parse($requisition->completed_at)->format('d M Y H:i') : '',
-                    'total_amount' => $requisition->calculateTransactionValue(),
-                    'status' => ($hasFiles ? '<span class="badge bg-success" style="width: 95px;border-radius: 3px;height: 20px;">Processed</span>' : '<span class="badge bg-default">No open files</span>') . ' ' . $editButton,
-                
-                    'files' => $requisition->fileUploads->map(function ($fileUpload) {
-                        return [
-                            'file_name' => $fileUpload->file_name, // Name of the generated file
-                            'file_id' => $fileUpload->id,
-                            'download_url' => route('secure.download', ['fileId' => $fileUpload->id]), // Secure download route
-                            'date_generated' => $fileUpload->generated_at->format('d M Y H:i'), // File generation date
-                        ];
-                    })->all()
-                
-                ];
-            });
-        })->all(); // Convert entire result to array format for JSON response
-
-        return response()->json(['data' => $data]);
-    }
+     
+                 return [
+                     'display_text' => $account->display_text,
+                     'default_file_name' => "Default - {$account->account_number}",
+                     'payments' => $requisition->payments->count(),
+                     'date_generated' => $dateGenerated,
+                     'date_completed' => $requisition->completed_at ? Carbon::parse($requisition->completed_at)->format('d M Y H:i') : '',
+                     'total_amount' => $requisition->calculateTransactionValue(),
+                     'status' => ($hasFiles
+                         ? '<span class="badge bg-success" style="width: 95px;border-radius: 3px;height: 20px;">Processed</span>'
+                         : '<span class="badge bg-default">No open files</span>') . ' ' . $editButton,
+                     'files' => $requisition->fileUploads->map(fn($fileUpload) => [
+                         'file_name' => $fileUpload->file_name,
+                         'file_id' => $fileUpload->id,
+                         'download_url' => route('secure.download', ['fileId' => $fileUpload->id]),
+                         'date_generated' => $fileUpload->generated_at->format('d M Y H:i'),
+                     ])->all()
+                 ];
+             });
+         })->all();
+     
+         return response()->json(['data' => $data]);
+     }
+     
 
 
     /**
@@ -1010,6 +1001,7 @@ class FirmAccountController extends Controller
                 'verified' => $verified,
                 'number_of_authorizer' => $number_of_authorizer,
                 'user_id' => auth()->id(),
+                'organisation_id' => Auth::user()->organisation->id,
             ]);
 
             $importedAccounts[] = $firmAccount;
@@ -1079,6 +1071,7 @@ class FirmAccountController extends Controller
             //'authorised' => $request->input('verified'),
             'number_of_authorizer' => $request->input('numberOfAuthorizer'),
             'user_id' => auth()->id(),
+            'organisation_id' => $request->organisation_id ? $request->organisation_id : Auth::user()->organisation->id,
         ]);
 
 
@@ -1098,24 +1091,31 @@ class FirmAccountController extends Controller
     }
 
     public function getAllFirmAccounts()
-    { 
+    {
         try {
-            // Fetch all firm accounts with selected fields
-            $accounts = FirmAccount::select('id', 'account_number', 'display_text')
-                ->get()
-                ->map(function ($account) {
-                    return [
-                        'id' => $account->id,
-                        'name' => $account->display_text . ' (' . $account->account_number . ')',
-                    ];
-                });
-    
+            $user = Auth::user();
+            $isSuperAdmin = $user->hasRole('superadmin');
+
+            // Firm Account Query: Unrestricted for Super Admin, restricted for others
+            $query = $isSuperAdmin
+                ? FirmAccount::select('id', 'account_number', 'display_text')
+                : FirmAccount::whereOrganisationId($user->organisation->id)
+                    ->select('id', 'account_number', 'display_text');
+
+            // Fetch the accounts and map to a custom structure
+            $accounts = $query->get()->map(function ($account) {
+                return [
+                    'id' => $account->id,
+                    'name' => $account->display_text . ' (' . $account->account_number . ')',
+                ];
+            });
+
             // Return the accounts as JSON
             return response()->json([
                 'success' => true,
                 'accounts' => $accounts,
             ], 200);
-    
+
         } catch (\Exception $e) {
             // Handle any unexpected errors
             return response()->json([
@@ -1124,7 +1124,7 @@ class FirmAccountController extends Controller
             ], 500);
         }
     }
-    
+
     /**
      * Show the form for editing the specified resource.
      */

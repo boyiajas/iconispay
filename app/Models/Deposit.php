@@ -17,7 +17,13 @@ class Deposit extends Model
         'funded',
         'deposit_date',
         'user_id',
+        'organisation_id',
     ];
+
+    public function organisation()
+    {
+        return $this->belongsTo(Organisation::class);
+    }
 
     /**
      * Relationship with the FirmAccount model.

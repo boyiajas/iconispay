@@ -46,8 +46,13 @@ class FirmAccount extends Model
         'user_id',
         'aggregated',
         'mandated',
+        'organisation_id',
     ];
 
+    public function organisation()
+    {
+        return $this->belongsTo(Organisation::class);
+    }
     /**
      * Relationship with the Institution model.
      * A Firm Account belongs to an Institution.

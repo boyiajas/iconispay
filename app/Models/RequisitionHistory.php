@@ -14,7 +14,13 @@ class RequisitionHistory extends Model
         'user_id',
         'action',
         'details',
+        'organisation_id',
     ];
+
+    public function organisation()
+    {
+        return $this->belongsTo(Organisation::class);
+    }
 
     /**
      * The history log belongs to a requisition.

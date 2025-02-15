@@ -28,7 +28,13 @@ class User extends Authenticatable
         'last_login',
         'google2fa_secret',
         'user_roles',
+        'organisation_id',
     ];
+
+    public function organisation()
+    {
+        return $this->belongsTo(Organisation::class);
+    }
 
     /**
      * The attributes that should be hidden for serialization.

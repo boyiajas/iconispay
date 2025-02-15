@@ -26,14 +26,18 @@ class RequisitionController extends Controller
     {
         $user = Auth::user();
         
+        if ($user->hasRole('superadmin')) {
+            // If the user is an admin or authorizer, get all incomplete requisitions
+            $query = Requisition::with('user','lockedBy','payments','payments.beneficiaryAccount')->get();
 
-        // Check if the user has an 'admin' or 'authorizer' role
-       if ($user->hasRole('admin') || $user->hasRole('authoriser') || $user->hasRole('bookkeeper')) {
+        }else if ($user->hasRole('admin') || $user->hasRole('authoriser') || $user->hasRole('bookkeeper')) {
            // If the user is an admin or authorizer, get all incomplete requisitions
-           $query = Requisition::with('user','lockedBy','payments','payments.beneficiaryAccount');
+           $query = Requisition::with('user','lockedBy','payments','payments.beneficiaryAccount')->whereOrganisationId($user->organisation->id)->get();
        } else {
            // Otherwise, get incomplete requisitions created by the user
-           $query = Requisition::with('user','lockedBy','payments','payments.beneficiaryAccount')->where('created_by', $user->id)->get();
+           $query = Requisition::with('user','lockedBy','payments','payments.beneficiaryAccount')
+                                ->where('created_by', $user->id)
+                                ->whereOrganisationId($user->organisation->id)->get();
            //$matters = Matter::with('status', 'user')::where('created_by', $user->id)->get();
        }
         /* $matters = Requisition::with('user')->get();
@@ -104,6 +108,7 @@ class RequisitionController extends Controller
 
     public function getRequisitionHistory(Requisition $requisition)
     {
+        $user = Auth::user();
         // Retrieve the history related to the requisition
         /* $histories = $requisition->histories()
             ->with('user:id,email,name') // Eager load user details
@@ -112,9 +117,13 @@ class RequisitionController extends Controller
 
         // Return the history as JSON
         return response()->json($histories); */
-        $histories = $requisition->histories()
-        ->with('user:id,email') // Load user details
-        ->orderBy('created_at', 'desc');
+        
+        $histories = $user->hasRole('superadmin') 
+                    ? $requisition->histories()->with('user:id,email') // Load user details
+                        ->orderBy('created_at', 'desc')
+                    : $requisition->histories()->whereOrganisationId($user->organisation->id)
+                        ->with('user:id,email') // Load user details
+                        ->orderBy('created_at', 'desc');
 
         return datatables()->eloquent($histories)->toJson();
     }
@@ -129,19 +138,24 @@ class RequisitionController extends Controller
 
         $user = Auth::user();
         $requisitions = [];
-        
 
+        if ($user->hasRole('superadmin')) {
+            
+            $requisitions = Requisition::whereRaw("LOWER(file_reference) LIKE ?", ["%{$searchTerm}%"])
+            ->with('user')
+            ->latest('created_at')
+            ->get();
         // Check if the user has an 'admin' or 'authorizer' role
-        if ($user->hasRole('admin') || $user->hasRole('authoriser') || $user->hasRole('bookkeeper')) {
+        }else if ($user->hasRole('admin') || $user->hasRole('authoriser') || $user->hasRole('bookkeeper')) {
             // If the user is an admin or authorizer, get all incomplete requisitions
             //$query = Requisition::with('user','lockedBy','payments','payments.beneficiaryAccount');
-            $requisitions = Requisition::whereRaw("LOWER(file_reference) LIKE ?", ["%{$searchTerm}%"])
+            $requisitions = Requisition::whereRaw("LOWER(file_reference) LIKE ?", ["%{$searchTerm}%"])->whereOrganisationId($user->organisation->id)
             ->with('user')
             ->latest('created_at')
             ->get();
         } else {
             // Otherwise, get incomplete requisitions created by the user
-            $requisitions = Requisition::whereRaw("LOWER(file_reference) LIKE ?", ["%{$searchTerm}%"])
+            $requisitions = Requisition::whereRaw("LOWER(file_reference) LIKE ?", ["%{$searchTerm}%"])->whereOrganisationId($user->organisation->id)
             ->where('created_by', $user->id)
             ->with('user')
             ->latest('created_at')
@@ -186,6 +200,7 @@ class RequisitionController extends Controller
             'matter_id' => $request->input('matter_id'), // assuming 'matter_id' is part of the request
             'created_by' => auth()->user()->id,
             'status_id' => 1, //1 is open by default
+            'organisation_id' => Auth::user()->organisation->id,
         ]);
 
         logHistory($requisition->id, 'Create Requisition', 'Requisition was created.');
@@ -616,13 +631,18 @@ class RequisitionController extends Controller
         $defaultStatusId = 1;
         
 
-         // Check if the user has an 'admin' or 'authorizer' role
-        if ($user->hasRole('admin') || $user->hasRole('authoriser') || $user->hasRole('bookkeeper')) {
+        if ($user->hasRole('superadmin')) {
             // If the user is an admin or authorizer, get all incomplete requisitions
             $incompleteCount = Requisition::whereIn('status_id', [$incompleteStatusId, $defaultStatusId])->count();
+         // Check if the user has an 'admin' or 'authorizer' role
+        }else if ($user->hasRole('admin') || $user->hasRole('authoriser') || $user->hasRole('bookkeeper')) {
+            // If the user is an admin or authorizer, get all incomplete requisitions
+            $incompleteCount = Requisition::whereOrganisationId($user->organisation->id)
+                                            ->whereIn('status_id', [$incompleteStatusId, $defaultStatusId])->count();
         } else {
             // Otherwise, get incomplete requisitions created by the user
-            $incompleteCount = Requisition::where('created_by', $user->id)
+            $incompleteCount = Requisition::whereCreatedBy($user->id)
+                                        ->whereOrganisationId($user->organisation->id)
                                         ->whereIn('status_id', [$incompleteStatusId, $defaultStatusId])
                                         ->count();
         }
@@ -638,16 +658,20 @@ class RequisitionController extends Controller
         // Get the currently authenticated user ID
         $user = Auth::user();
 
+        if ($user->hasRole('superadmin')) {
          // Check if the user has an 'admin' or 'authorizer' role
-         if ($user->hasRole('admin') || $user->hasRole('authoriser') || $user->hasRole('bookkeeper')) {
-            // If the user is an admin or authorizer, get all incomplete requisitions
             $count = Requisition::whereHas('deposits', function ($query) {
-                $query->where('funded', false);
+                $query->whereFunded(false);
+        })->count();
+        }else if ($user->hasRole('admin') || $user->hasRole('authoriser') || $user->hasRole('bookkeeper')) {
+            // If the user is an admin or authorizer, get all incomplete requisitions
+            $count = Requisition::whereOrganisationId($user->organisation->id)->whereHas('deposits', function ($query) {
+                $query->whereFunded(false);
             })->count();
 
         } else {
-            $count = Requisition::whereHas('deposits', function ($query) use ($user) {
-                $query->where('funded', false)->where('created_by', $user->id);
+            $count = Requisition::whereOrganisationId($user->organisation->id)->whereHas('deposits', function ($query) use ($user) {
+                $query->whereFunded(false)->whereCreatedBy($user->id);
             })->count();
         }
 
@@ -663,15 +687,22 @@ class RequisitionController extends Controller
         $awaitingAuthorizationCount = 0;
       
 
-         // Check if the user has an 'admin' or 'authorizer' role
-        if ($user->hasRole('admin') || $user->hasRole('authoriser') || $user->hasRole('bookkeeper')) {
-            // If the user is an admin or authorizer, get all incomplete requisitions
+        if ($user->hasRole('superadmin')) {
+            // Check if the user has an 'admin' or 'authorizer' role
             $awaitingAuthorizationCount = Requisition::whereIn('status_id', [$awaitingAuthorizationStatusId, $awaitingFundingStatusId])
+                ->whereNull('authorization_status')
+                ->count();
+          
+         // Check if the user has an 'admin' or 'authorizer' role
+        }else if ($user->hasRole('admin') || $user->hasRole('authoriser') || $user->hasRole('bookkeeper')) {
+            // If the user is an admin or authorizer, get all incomplete requisitions
+            $awaitingAuthorizationCount = Requisition::whereOrganisationId($user->organisation->id)
+                                          ->whereIn('status_id', [$awaitingAuthorizationStatusId, $awaitingFundingStatusId])
                                           ->whereNull('authorization_status')
                                           ->count();
         } else {
             // Otherwise, get incomplete requisitions created by the user
-            $awaitingAuthorizationCount = Requisition::where('created_by', $user->id)
+            $awaitingAuthorizationCount = Requisition::whereCreatedBy($user->id)->whereOrganisationId($user->organisation->id)
                                         ->whereIn('status_id', [$awaitingAuthorizationStatusId, $awaitingFundingStatusId])
                                         ->count();
         }
@@ -692,16 +723,20 @@ class RequisitionController extends Controller
         // Count of requisitions settled today
         $settledTodayCount = 0;
 
+        if ($user->hasRole('superadmin')) {
         // Check if the user has an 'admin' or 'authorizer' role
-        if ($user->hasRole('admin') || $user->hasRole('authoriser') || $user->hasRole('bookkeeper')) {
+            $settledTodayCount = Requisition::whereStatusId($statusId)
+            ->whereDate('updated_at', $today)
+            ->count();
+        }else if ($user->hasRole('admin') || $user->hasRole('authoriser') || $user->hasRole('bookkeeper')) {
             // If the user is an admin or authorizer, get all settled requisitions for today
-            $settledTodayCount = Requisition::where('status_id', $statusId)
+            $settledTodayCount = Requisition::whereOrganisationId($user->organisation->id)->whereStatusId($statusId)
                 ->whereDate('updated_at', $today)
                 ->count();
         } else {
             // Otherwise, get settled requisitions created by the user for today
-            $settledTodayCount = Requisition::where('created_by', $user->id)
-                ->where('status_id', $statusId)
+            $settledTodayCount = Requisition::whereOrganisationId($user->organisation->id)->whereCreatedBy($user->id)
+                ->whereStatusId($statusId)
                 ->whereDate('updated_at', $today)
                 ->count();
         }
@@ -719,15 +754,16 @@ class RequisitionController extends Controller
         $readyForPaymentStatusId = 5;
         $readyForPaymentCount = 0;
         
-
+        if ($user->hasRole('superadmin')) {
          // Check if the user has an 'admin' or 'authorizer' role
-        if ($user->hasRole('admin') || $user->hasRole('authoriser') || $user->hasRole('bookkeeper')) {
+            $readyForPaymentCount = Requisition::whereStatusId($readyForPaymentStatusId)->count();
+        }else if ($user->hasRole('admin') || $user->hasRole('authoriser') || $user->hasRole('bookkeeper')) {
             // If the user is an admin or authorizer, get all incomplete requisitions
-            $readyForPaymentCount = Requisition::where('status_id', $readyForPaymentStatusId)->count();
+            $readyForPaymentCount = Requisition::whereOrganisationId($user->organisation->id)->whereStatusId($readyForPaymentStatusId)->count();
         } else {
             // Otherwise, get incomplete requisitions created by the user
-            $readyForPaymentCount = Requisition::where('created_by', $user->id)
-                                        ->where('status_id', $readyForPaymentStatusId)
+            $readyForPaymentCount = Requisition::whereOrganisationId($user->organisation->id)->whereCreatedBy($user->id)
+                                        ->whereStatusId($readyForPaymentStatusId)
                                         ->count();
         }
        
@@ -744,15 +780,16 @@ class RequisitionController extends Controller
         $pendingPaymentConfirmationStatusId = 6;
         $pendingPaymentConfirmationCount = 0;
         
-
+        if ($user->hasRole('superadmin')) {
          // Check if the user has an 'admin' or 'authorizer' role
-        if ($user->hasRole('admin') || $user->hasRole('authoriser') || $user->hasRole('bookkeeper')) {
+            $pendingPaymentConfirmationCount = Requisition::whereStatusId($pendingPaymentConfirmationStatusId)->count();
+        }else if ($user->hasRole('admin') || $user->hasRole('authoriser') || $user->hasRole('bookkeeper')) {
             // If the user is an admin or authorizer, get all incomplete requisitions
-            $pendingPaymentConfirmationCount = Requisition::where('status_id', $pendingPaymentConfirmationStatusId)->count();
+            $pendingPaymentConfirmationCount = Requisition::whereOrganisationId($user->organisation->id)->whereStatusId($pendingPaymentConfirmationStatusId)->count();
         } else {
             // Otherwise, get incomplete requisitions created by the user
-            $pendingPaymentConfirmationCount = Requisition::where('created_by', $user->id)
-                                        ->where('status_id', $pendingPaymentConfirmationStatusId)
+            $pendingPaymentConfirmationCount = Requisition::whereOrganisationId($user->organisation->id)->whereCreatedBy($user->id)
+                                        ->whereStatusId($pendingPaymentConfirmationStatusId)
                                         ->count();
         }
        
@@ -765,8 +802,11 @@ class RequisitionController extends Controller
 
     public function secureDownload($fileId)
     {
+        $user = Auth::user();
         // Find the file upload record and include the associated FirmAccount
-        $fileUpload = FileUpload::with('firmAccount.institution')->findOrFail($fileId);
+        $fileUpload = $user->hasRole('superadmin') 
+                        ? FileUpload::with('firmAccount.institution')->findOrFail($fileId)
+                        : FileUpload::whereOrganisationId($user->organisation->id)->with('firmAccount.institution')->findOrFail($fileId);
 
         // Use policy to authorize
         $this->authorize('download', $fileUpload);
@@ -821,13 +861,15 @@ class RequisitionController extends Controller
         $awaitingAuthorizationStatusId = 3;
         $incompleteCount = 0;
         
+        if ($user->hasRole('superadmin')) {
         // Check if the user has an 'admin' or 'authorizer' role
-        if ($user->hasRole('admin') || $user->hasRole('authoriser') || $user->hasRole('bookkeeper')) {
-            // Fetch the requisitions matching the status and created by the logged-in user
             $query = Requisition::with('user');
+        }else if ($user->hasRole('admin') || $user->hasRole('authoriser') || $user->hasRole('bookkeeper')) {
+            // Fetch the requisitions matching the status and created by the logged-in user
+            $query = Requisition::whereOrganisationId($user->organisation->id)->with('user');
         } else {
             // Fetch the requisitions matching the status and created by the logged-in user
-            $query = Requisition::with('user')->where('created_by', $user->id);
+            $query = Requisition::whereOrganisationId($user->organisation->id)->with('user')->where('created_by', $user->id);
         }
     
         
@@ -914,6 +956,8 @@ class RequisitionController extends Controller
      */
     public function destroy(Requisition $requisition)
     {
+        // Delete associated Notifications first
+        $requisition->notifications()->delete();
        // Retrieve and delete associated FileUpload records
         $fileUploads = $requisition->fileUploads;
 

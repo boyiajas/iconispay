@@ -6,18 +6,18 @@
           <div class="mr-3 navbar-row ml-3">
             <router-link to="/" class="navbar-brand">Iconis® Pay</router-link>
             <div>
-              <span>Logged in as: {{ user.name }} (Strauss Daly Incorporated)</span>
+              <span>Logged in as: {{ user.name }} ({{ user?.organisation?.name }})</span>
               <a :href="route('logout')" class="ml-3">Log out</a>
             </div>
           </div>
           <div class="navbar-links-row">
             <router-link to="/home" class="mr-3">Home</router-link>
             <router-link to="/matters" class="mr-3">Matters</router-link>
-            <PermissionControl :roles="['admin', 'authoriser', 'bookkeeper']">
+            <PermissionControl :roles="['superadmin', 'admin', 'authoriser', 'bookkeeper']">
               <router-link to="/accounts" class="mr-3">Accounts</router-link>
               <router-link to="/reports" class="mr-3">Reports</router-link>
             </PermissionControl>
-            <PermissionControl :roles="['admin', 'authoriser']">
+            <PermissionControl :roles="['superadmin', 'admin', 'authoriser']">
               <router-link to="/setup" class="mr-3">Setup</router-link>
             </PermissionControl>
             <!-- Use a regular link for Contact since it's a Laravel route -->

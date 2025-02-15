@@ -14,9 +14,21 @@ class RolePermissionSeeder extends Seeder
      */
     public function run(): void
     {
+
+        // Define permissions to exclude for the admin role
+        $excludedPermissions = [
+            'view organisation', 'create organisation', 'edit organisation', 'delete organisation',
+            'view certificate', 'create certificate', 'edit certificate', 'delete certificate'
+        ];
+
+        // Super Admin Role
+        $superadminRole = Role::findByName('superadmin');
+        $superadminRole->givePermissionTo(Permission::all());
+
         // Admin Role
         $adminRole = Role::findByName('admin');
-        $adminRole->givePermissionTo(Permission::all());
+        $adminPermissions = Permission::whereNotIn('name', $excludedPermissions)->get();
+        $adminRole->givePermissionTo($adminPermissions);
 
         // Role: Authoriser (can authorise payments, manage accounts, and authorise users)
         $authoriserRole = Role::findByName('authoriser');
@@ -44,6 +56,14 @@ class RolePermissionSeeder extends Seeder
         $user = \App\Models\User::factory()->create([
             'name' => 'Peter Ajakaiye',
             'email' => 'boyiajas@gmail.com',
+            'status' => 'active',
+            'password' => bcrypt('gospel123')
+        ]);
+        $user->assignRole($superadminRole);
+
+        $user = \App\Models\User::factory()->create([
+            'name' => 'Peter Ajakaiye',
+            'email' => 'boyiajas@yahoo.com',
             'status' => 'active',
             'password' => bcrypt('gospel123')
         ]);

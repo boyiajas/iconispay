@@ -13,19 +13,24 @@
                 <a class="nav-link" id="firm-accounts-tab" data-bs-toggle="tab" href="#firm-accounts" role="tab" aria-controls="firm-accounts" aria-selected="false" @click="initializeFirmAccounts">Firm Accounts</a>
             </li>
             
-            <PermissionControl :roles="['admin']">
+            <PermissionControl :roles="['superadmin', 'admin']">
                 <li class="nav-item" role="presentation">
                     <a class="nav-link" id="onceoff-accounts-tab" data-bs-toggle="tab" href="#onceoff-accounts" role="tab" aria-controls="onceoff-accounts" aria-selected="false" @click="initializeOnceOffAccounts">Once Off Accounts</a>
                 </li>
             </PermissionControl>
-            <PermissionControl :roles="['admin']">
+            <PermissionControl :roles="['superadmin', 'admin']">
                 <li class="nav-item" role="presentation">
                     <a class="nav-link" id="audit-trail-tab" data-bs-toggle="tab" href="#audit-trail" role="tab" aria-controls="audit-trail" aria-selected="false">Audit Trail</a>
                 </li>
             </PermissionControl>
-            <PermissionControl :roles="['admin']">
+            <PermissionControl :roles="['superadmin', 'admin']">
                 <li class="nav-item" role="presentation">
                     <a class="nav-link" id="deactivated-users-tab" data-bs-toggle="tab" href="#deactivated-users" role="tab" aria-controls="deactivated-users" aria-selected="false" @click="loadDeactivatedUsers">Deactivated Users</a>
+                </li>
+            </PermissionControl>
+            <PermissionControl :roles="['superadmin']">
+                <li class="nav-item" role="presentation">
+                    <a class="nav-link" id="organisation-tab" data-bs-toggle="tab" href="#organisation" role="tab" aria-controls="organisation" aria-selected="false" @click="loadOrganisations">Organisations</a>
                 </li>
             </PermissionControl>
             
@@ -33,6 +38,30 @@
 
         <!-- Tab Content -->
         <div class="tab-content mb-5" id="setupTabContent">
+
+            <!-- Organisation Tab -->
+            <div class="tab-pane fade" id="organisation" role="tabpanel">
+                <div class="card mb-4">
+                    <div class="card-header d-flex justify-content-between">
+                        <h5>Organisations</h5>
+                        <button class="btn btn-primary btn-sm" @click="openNewOrganisationModal">+ New Organisation</button>
+                    </div>
+                    <div class="card-body">
+                        <table id="organisation-table" class="table table-bordered table-striped display nowrap" style="width:100%">
+                            <thead>
+                                <tr>
+                                    <th>Name</th>
+                                    <th>Location</th>
+                                    <th>Contact</th>
+                                    <th>Email</th>
+                                    <th>Created By</th>
+                                    <th width="9%">Actions</th>
+                                </tr>
+                            </thead>
+                        </table>
+                    </div>
+                </div>
+            </div>
 
             <!-- Firm Accounts Tab -->
             <div class="tab-pane fade wrap" id="firm-accounts" role="tabpanel" aria-labelledby="firm-accounts-tab" width="100%">
@@ -53,6 +82,9 @@
                                     <th>Account Holder</th>
                                     <th width="10%">Account</th>
                                     <th>Institution</th>
+                                    <th v-if="user.roles.some(role => role.name.toLowerCase().includes('superadmin'))">
+                                        Organisation
+                                    </th>
                                     <!-- <th width="9%">Aggregated</th> -->
                                     <th width="9%">Authorised</th>
                                     <!-- <th width="9%">Mandated</th> -->
@@ -83,7 +115,10 @@
                                     <th>Full Name</th>
                                     <th>Email</th>
                                     <th>Role</th>
-                                    <th>Last Seen</th>
+                                    <th width="9%">Last Seen</th>
+                                    <th v-if="user.roles.some(role => role.name.toLowerCase().includes('superadmin'))">
+                                        Organisation
+                                    </th>
                                     <th>Actions</th>
                                 </tr>
                             </thead>
@@ -111,6 +146,9 @@
                                     <th>Account Holder</th>
                                     <th width="10%">Account</th>
                                     <th width="15%">Institution</th>
+                                    <th v-if="user.roles.some(role => role.name.toLowerCase().includes('superadmin'))">
+                                        Organisation
+                                    </th>
                                     <th width="10%">Authorised</th>
                                     <th width="12%">Actions</th>
                                 </tr>
@@ -139,6 +177,9 @@
                                     <th>Account Holder</th>
                                     <th width="10%">Account</th>
                                     <th width="15%">Institution</th>
+                                    <th v-if="user.roles.some(role => role.name.toLowerCase().includes('superadmin'))">
+                                        Organisation
+                                    </th>
                                     <th width="10%">Authorised</th>
                                     <th width="12%">Actions</th>
                                 </tr>
@@ -246,6 +287,46 @@
             </div>
         </div>
 
+        <!-- New/Edit Organisation Modal -->
+        <div class="modal fade" id="organisationModal" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">{{ isEditing ? 'Edit Organisation' : 'New Organisation' }}</h5>
+                        <button type="button" class="btn-close" data-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <form @submit.prevent="saveOrganisation">
+                            <div class="mb-3">
+                                <label for="orgName" class="form-label">Name</label>
+                                <input type="text" class="form-control" id="orgName" v-model="organisation.name" placeholder="Organisation name" required>
+                            </div>
+                            <div class="mb-3">
+                                <label for="orgContact" class="form-label">Contact</label>
+                                <input type="text" class="form-control" id="orgContact" placeholder="Organisation contact number" v-model="organisation.contact">
+                            </div>
+                            <div class="mb-3">
+                                <label for="orgEmail" class="form-label">Email</label>
+                                <input type="email" class="form-control" id="orgEmail" placeholder="Organisation email" v-model="organisation.email">
+                            </div>
+                            <div class="mb-3">
+                                <label for="orgCity" class="form-label">City</label>
+                                <input type="text" class="form-control" id="orgCity" placeholder="location e.g Durban" v-model="organisation.location">
+                            </div>
+                            <div class="mb-3">
+                                <label for="orgDescription" class="form-label">Description</label>
+                                <textarea class="form-control" id="orgDescription" placeholder="Organisaion Description" v-model="organisation.description"></textarea>
+                            </div>
+                            <div class="d-flex justify-content-end">
+                                <button type="submit" class="btn btn-primary btn-sm">{{ isEditing ? 'Update' : 'Create' }}</button>
+                                <button type="button" class="btn btn-secondary ms-2 btn-sm" data-dismiss="modal">Cancel</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- New User Modal -->
         <div class="modal fade" id="newUserModal" tabindex="-1" aria-labelledby="newUserModalLabel" aria-hidden="true">
             <div class="modal-dialog">
@@ -276,6 +357,25 @@
                                 <label for="cell_number">Cell Number:</label>
                                 <input type="text" v-model="newUser.cell_number" class="form-control" id="cell_number" placeholder="Enter cell phone number">
                             </div>
+                            <PermissionControl :roles="['superadmin']">
+                                <!-- Organisation Dropdown -->
+                                <div class="form-group mb-3">
+                                    <label>Organisation:</label>
+                                    <select v-model="newUser.organisation_id" class="form-control">
+                                        <option value="" disabled>Select an organisation</option>
+                                        <option v-for="org in organisations" :key="org.id" :value="org.id">
+                                            {{ org.name }} -- {{ org.location }}
+                                        </option>
+                                    </select>
+                                </div>
+                            </PermissionControl>
+                             <!-- Role Checkboxes -->
+                             <PermissionControl :roles="['superadmin']">
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input" type="checkbox" v-model="newUser.is_superadmin" id="IsSuperAdmin">
+                                    <label class="form-check-label" for="IsSuperAdmin">Is Super Administrator</label>
+                                </div>
+                            </PermissionControl>
                             <div class="form-check mb-2">
                                 <input class="form-check-input" type="checkbox" v-model="newUser.is_admin" id="is_admin">
                                 <label class="form-check-label" for="is_admin">Is Administrator</label>
@@ -353,7 +453,26 @@
                                 <input type="text" v-model="editUser.cell_number" class="form-control" id="editNumber" placeholder="Enter cell phone number">
                             </div>
 
+                            <PermissionControl :roles="['superadmin']">
+                                <!-- Organisation Dropdown -->
+                                <div class="form-group mb-3">
+                                    <label>Organisation:</label>
+                                    <select v-model="editUser.organisation_id" class="form-control">
+                                        <option value="" disabled>Select an organisation</option>
+                                        <option v-for="org in organisations" :key="org.id" :value="org.id">
+                                            {{ org.name }} -- {{ org.location }}
+                                        </option>
+                                    </select>
+                                </div>
+                            </PermissionControl>
+
                             <!-- Role Checkboxes -->
+                            <PermissionControl :roles="['superadmin']">
+                                <div class="form-check mb-2">
+                                    <input class="form-check-input" type="checkbox" v-model="editUser.is_superadmin" id="editIsSuperAdmin">
+                                    <label class="form-check-label" for="editIsSuperAdmin">Is Super Administrator</label>
+                                </div>
+                            </PermissionControl>
                             <div class="form-check mb-2">
                                 <input class="form-check-input" type="checkbox" v-model="editUser.is_admin" id="editIsAdmin">
                                 <label class="form-check-label" for="editIsAdmin">Is Administrator</label>
@@ -564,6 +683,21 @@
                                     <input type="text" v-model="accountData.branch_code" class="form-control" id="branchCode" placeholder="Enter the branch code" required>
                                 </div>
                             </div>
+
+                            <PermissionControl :roles="['superadmin']">
+                                <!-- Organisation Dropdown -->
+                                <div class="form-group mb-3 row">
+                                    <label  class="form-label col-sm-3" for="organisation">Organisation: </label>
+                                    <div class="col-sm-9">
+                                        <select v-model="accountData.organisation_id" class="form-control" required>
+                                            <option value="" disabled>Select an organisation</option>
+                                            <option v-for="org in organisations" :key="org.id" :value="org.id">
+                                                {{ org.name }} -- {{ org.location }}
+                                            </option>
+                                        </select>
+                                    </div>
+                                </div>
+                            </PermissionControl>
 
                             <!-- Verification Section -->
                             <div>Verification</div>
@@ -1061,6 +1195,10 @@ export default {
             importType: "", // 'beneficiary' or 'firm'
             sampleFileUrl: "/sample-files/sample-import-template.xlsx",
 
+            organisationTable: null,
+            organisation: { id: null, name: '', description: '' },
+            isEditing: false,
+
             activeTab: 0,
             usersTable: [],
             users: [], // Users list
@@ -1071,12 +1209,15 @@ export default {
                 email_verify: "",
                 password: "",
                 password_confirmation: "",
+                organisation_id: '',
+                is_superadmin: false,
                 is_admin: false,
                 authoriser_role: false,
                 bookkeeper_role: false, 
                 latest_certificate: false,
                 active: false,
             }, // Object to hold user data for editing
+            organisations: [],
             sourceAccountsTable: [],
             
             auditTrails: [],
@@ -1089,6 +1230,8 @@ export default {
                 cell_number: '',
                 password: '',
                 password_confirmation: '',
+                organisation_id: '',
+                is_superadmin: false,
                 is_admin: false,
                 authoriser_role: false,
                 bookkeeper_role: false
@@ -1100,6 +1243,7 @@ export default {
             modalInstance: null, // Store the modal instance
             editModalInstance: null,
             editAccountModalInstance: null,
+            editOrganisationModalInstance: null,
             importModalInstance: null,
             showAvsModelInstance: null,
             firmAccount: {}, // Store the selected firm account data for editing
@@ -1116,6 +1260,8 @@ export default {
         this.loadCategories();
         this.loadInstitutions();
         this.loadAccountTypes();
+        this.loadOrganisations();
+        this.getAllOrganisations();
     },
     setup() {
         // Initialize toast
@@ -1123,6 +1269,141 @@ export default {
         return { toast };
     },
     methods: {
+
+        getAllOrganisations() {
+            axios.get('/api/organisation/all-organisations')
+                .then(response => {
+                    this.organisations = response.data;
+                })
+                .catch(error => {
+                    this.toast.error('Error fetching organisations.');
+                });
+        },
+        loadOrganisations() {
+            if ($.fn.dataTable.isDataTable('#organisation-table')) {
+                $('#organisation-table').DataTable().destroy(); // Destroy existing instance
+            }
+
+            this.organisationTable = $('#organisation-table').DataTable({
+                processing: true,
+                serverSide: true,
+                ajax: {
+                    url: '/api/organisations',
+                    type: 'GET',
+                },
+                columns: [
+                    { data: 'name', name: 'name' },
+                    { data: 'location', name: 'location'},
+                    { data: 'contact', name: 'contact' },
+                    { data: 'email', name: 'email' },
+                    { data: 'created_by', name: 'created_by' },
+                    {
+                        data: 'id',
+                        render: (data, type, row) => {
+                            return `
+                                <button class="btn btn-sm btn-outline-secondary me-2 edit-org" data-toggle="tooltip" title="Edit this organisation Account" data-id="${data}"><i class="fas fa-edit"></i></button>
+                                <button class="btn btn-sm btn-outline-danger delete-org" data-toggle="tooltip" title="Delete this organisation Account" data-id="${data}"><i class="fas fa-trash"></i></button>
+                            `;
+                        },
+                        orderable: false
+                    }
+                ],
+                drawCallback: () => {
+                    $('.edit-org').on('click', (e) => {
+                        const id = $(e.currentTarget).data('id');
+                        this.openEditOrganisationModal(id);
+                    });
+
+                    $('.delete-org').on('click', (e) => {
+                        const id = $(e.currentTarget).data('id');
+                        this.deleteOrganisation(id);
+                    });
+                },
+                createdRow: (row, data, dataIndex) => {
+                    // Apply style to all <td> elements
+                    $('td', row).css('word-wrap', 'break-word').css('white-space', 'normal');
+
+                },
+                rowCallback: (row, data) => {
+                    
+                    $(row).on('click', (event) => {
+                        if ($(event.target).closest('button').length === 0) {
+                            //this.openBeneficiaryAccountModal(data);
+                        }
+                    });
+                    
+                },
+                responsive: true,
+                paging: true,
+                pageLength: 10,
+                lengthMenu: [ [10, 25, 50, 100], [10, 25, 50, 100] ],
+                searching: true,
+                autoWidth: true,
+                wrap: true,
+            });
+        },
+        openNewOrganisationModal() {
+            this.isEditing = false;
+            this.organisation = { id: null, name: '', description: '' };
+
+            if (!this.editOrganisationModalInstance) {
+                this.editOrganisationModalInstance = new bootstrap.Modal(document.getElementById("organisationModal"));
+            }
+            this.editOrganisationModalInstance.show();
+        },
+        openEditOrganisationModal(id) {
+            axios.get(`/api/organisations/${id}`)
+                .then(response => {
+                    this.isEditing = true;
+                    this.organisation = response.data;
+                    // Ensure the modal is properly initialized
+                    if (!this.editOrganisationModalInstance) {
+                        this.editOrganisationModalInstance = new bootstrap.Modal(document.getElementById("organisationModal"));
+                    }
+
+                    this.editOrganisationModalInstance.show();
+                })
+                .catch(error => {
+                    this.toast.error('Error loading organisation data');
+                });
+        },
+        saveOrganisation() {
+            if (this.isEditing) {
+                axios.put(`/api/organisations/${this.organisation.id}`, this.organisation)
+                    .then(response => {
+                        this.toast.success(response.data.message);
+                        this.loadOrganisations();
+                        this.closeModal();
+                       // bootstrap.Modal.getInstance(document.getElementById('organisationModal')).hide();
+                    })
+                    .catch(error => {
+                        this.toast.error('Error updating organisation');
+                    });
+            } else {
+                axios.post('/api/organisations', this.organisation)
+                    .then(response => {
+                        this.toast.success(response.data.message);
+                        this.loadOrganisations();
+                        this.closeModal();
+                        //bootstrap.Modal.getInstance(document.getElementById('organisationModal')).hide();
+                    })
+                    .catch(error => {
+                        this.toast.error('Error creating organisation');
+                    });
+            }
+        },
+        deleteOrganisation(id) {
+            if (confirm('Are you sure you want to delete this organisation?')) {
+                axios.delete(`/api/organisations/${id}`)
+                    .then(response => {
+                        this.toast.success(response.data.message);
+                        this.loadOrganisations();
+                    })
+                    .catch(error => {
+                        this.toast.error('Error deleting organisation');
+                    });
+            }
+        },
         // Show full data in a modal
         showFullData(data) {
             this.modalData = typeof data === 'string' ? data : JSON.stringify(data, null, 2);
@@ -1243,7 +1524,10 @@ export default {
                 //console.log("edit data");
                 //console.log(this.accountData);
                 this.closeModal();
-                this.editAccountModalInstance = new bootstrap.Modal(document.getElementById("editAccountModal"));
+                 // Ensure the modal is properly initialized
+                 if (!this.editAccountModalInstance) {
+                    this.editAccountModalInstance = new bootstrap.Modal(document.getElementById("editAccountModal"));
+                }
                 this.editAccountModalInstance.show();
             });
         },
@@ -1381,6 +1665,7 @@ export default {
                         email_verify: user.email_verified_at || "",
                         password: "", // Reset password fields
                         password_confirmation: "",
+                        is_superadmin: roles.includes("superadmin"),
                         is_admin: roles.includes("admin"),
                         authoriser_role: roles.includes("authoriser"),
                         bookkeeper_role: roles.includes("bookkeeper"),
@@ -1402,6 +1687,7 @@ export default {
         updateUser() {
             // Map roles from checkboxes
             const roles = [];
+            if (this.editUser.is_superadmin) roles.push("superadmin");
             if (this.editUser.is_admin) roles.push("admin");
             if (this.editUser.authoriser_role) roles.push("authoriser");
             if (this.editUser.bookkeeper_role) roles.push("bookkeeper");
@@ -1471,10 +1757,52 @@ export default {
             });
         },
         loadUsers() {
-            
+            const self = this; // Store reference to Vue instance
+
             if ($.fn.dataTable.isDataTable('#users-list-table')) {
                 $('#users-list-table').DataTable().destroy(); // Destroy existing instance if already initialized
             }
+
+            // Check if user has superadmin role
+            const isSuperAdmin = self.user.roles.some(role => role.name.toLowerCase().includes('superadmin'));
+
+            let columns = [
+                { data: 'email' },
+                { data: 'name' },
+                { data: 'email' },
+                { data: 'role' },
+                { data: 'last_login' }
+            ];
+
+            // Add Organisation column only if user is superadmin
+            if (isSuperAdmin) {
+                columns.push({ data: 'organisation.name' });
+            }
+
+            // Add action buttons column
+            columns.push({
+                data: null,
+                render: function (data) {
+                    const hasOnlyUserRole = data.roles.length === 1 && data.roles[0].name === "user";
+                    const certificateId = data.latest_certificate?.id ?? null;
+                    const isSuperAdmin = self.user.roles.some(role => role.name.toLowerCase().includes('superadmin'));
+
+                    if (!certificateId) {
+                        return `
+                            <button class="btn btn-outline-info btn-sm me-2 edit-user-btn" data-user-id="${data.id}" data-toggle="tooltip" data-certificate-id="${certificateId}" title="Edit User"><i class="fas fa-user-edit"></i></button>
+                            ${isSuperAdmin ? `<button class="btn btn-outline-info btn-sm me-2 generate-certificate-btn" data-toggle="tooltip" data-user-id="${data.id}" title="Generate Certificate"><i class="fas fa-certificate"></i></button>` : ''}
+                            <button class="btn btn-outline-danger btn-sm delete-user-btn" data-user-id="${data.id}" data-toggle="tooltip" title="Delete user"><i class="fas fa-trash"></i></button>
+                        `;
+                    } else {
+                        return `
+                            <button class="btn btn-outline-info btn-sm me-2 edit-user-btn" data-user-id="${data.id}" data-toggle="tooltip" data-certificate-id="${certificateId}" title="Edit User"><i class="fas fa-user-edit"></i></button>
+                            <button class="btn btn-outline-success btn-sm me-2 download-certificate-btn" data-certificate-id="${certificateId}" title="Download Certificate"><i class="fas fa-download"></i></button>
+                            ${isSuperAdmin ? `<button class="btn btn-outline-danger btn-sm delete-user-cert-btn" data-user-id="${data.id}" data-toggle="tooltip" title="Delete user certificate"><i class="fas fa-user-times"></i></button>` : ''}
+                            <button class="btn btn-outline-danger btn-sm delete-user-btn" data-user-id="${data.id}" data-toggle="tooltip" title="Delete user"><i class="fas fa-trash"></i></button>
+                        `;
+                    }
+                }
+            });
 
             this.usersTable = $('#users-list-table').DataTable({
                 processing: true,
@@ -1482,54 +1810,17 @@ export default {
                 ajax: {
                     url: '/api/users',
                     type: 'GET',
-                    dataSrc: 'data', // Assumes the API response has a `data` field
+                    dataSrc: 'data',
                     error: (xhr, error, thrown) => {
-                        // Check if the error status is 401 (Unauthorized)
                         if (error.response && error.response.status === 401) {
-                            // Emit the 'show-login-modal' event to show the login modal
-                            //this.$eventBus.emit('show-login-modal');
-                            //alert('handle the connection error successful');
-                        } else{
+                            console.error('Unauthorized access detected');
+                        } else {
                             console.error('Error fetching data:', error, thrown);
                         }
-                        //alert('An error occurred while fetching the data. Please try again later.');
                     }
                 },
-                columns: [
-                    { data: 'email' },
-                    { data: 'name' },
-                    { data: 'email' },
-                    { data: 'role' },
-                    { data: 'last_login' },
-                    {
-                        data: null,
-                        render: function (data) { 
-                            
-                             // Check if the user has only the 'user' role
-                            const hasOnlyUserRole = data.roles.length === 1 && data.roles[0].name === "user";
-                            const certificateId = data.latest_certificate?.id ?? null;
-
-                           
-                            
-                            if (!certificateId) {
-                                
-                                return `
-                                    <button class="btn btn-outline-info btn-sm me-2 edit-user-btn" data-user-id="${data.id}" data-certificate-id="${certificateId}" title="Edit User"><i class="fas fa-user-edit"></i></button>
-                                    ${!hasOnlyUserRole ? `
-                                    <button class="btn btn-outline-info btn-sm me-2 generate-certificate-btn" data-user-id="${data.id}" title="Generate Certificate"><i class="fas fa-certificate"></i></button>` : ''}
-                                    <button class="btn btn-outline-danger btn-sm delete-user-btn" data-user-id="${data.id}" title="Delete user"><i class="fas fa-trash" ></i></button>
-                                `;
-                            } else {
-                                return `
-                                    <button class="btn btn-outline-info btn-sm me-2 edit-user-btn" data-user-id="${data.id}" data-certificate-id="${certificateId}" title="Edit User"><i class="fas fa-user-edit" ></i></button>
-                                    <button class="btn btn-outline-success btn-sm me-2 download-certificate-btn" data-certificate-id="${certificateId}" title="Download Certificate"><i class="fas fa-download"></i></button>
-                                    <button class="btn btn-outline-danger btn-sm delete-user-cert-btn" data-user-id="${data.id}" title="Delete user certificate"><i class="fas fa-user-times" ></i></button>
-                                    <button class="btn btn-outline-danger btn-sm delete-user-btn" data-user-id="${data.id}" title="Delete user"><i class="fas fa-trash" ></i></button>
-                                `;
-                            }
-                        }
-                    }
-                ],
+                columns: columns, // Use the dynamically created columns arra
+                
                 rowCallback: (row, data) => {
                     const certificateId = data.latest_certificate?.id ?? null;
                     $(row).on('click', (event) => {
@@ -1612,6 +1903,7 @@ export default {
                     email_verify: user.email_verified_at || "",
                     password: "", // Reset password fields
                     password_confirmation: "",
+                    is_superadmin: roles.includes("superadmin"),
                     is_admin: roles.includes("admin"),
                     authoriser_role: roles.includes("authoriser"),
                     bookkeeper_role: roles.includes("bookkeeper"),
@@ -2098,6 +2390,10 @@ export default {
             if(this.showAvsModelInstance){
                 this.showAvsModelInstance.hide();
             }
+
+            if(this.editOrganisationModalInstance){
+                this.editOrganisationModalInstance.hide();
+            }
         },
         // Reset new user form fields
         resetNewUser() {
@@ -2106,6 +2402,7 @@ export default {
                 username: '',
                 full_name: '',
                 cell_number: '',
+                is_superadmin: false,
                 is_admin: false,
                 authoriser_role: false,
                 bookkeeper_role: false
@@ -2116,11 +2413,55 @@ export default {
         },
          // Initialize the Source Accounts DataTable
          initializeFirmAccounts() {
+            const self = this; // Store reference to Vue instance
             if ($.fn.dataTable.isDataTable('#source-accounts-table')) {
                 $('#source-accounts-table').DataTable().destroy(); // Destroy existing instance if already initialized
             }
 
-            const isAdmin = this.user.roles.some(role => role.name.toLowerCase().includes('admin'));
+            const isAdmin = self.user.roles.some(role => role.name.toLowerCase().includes('admin'));
+            // Check if user has superadmin role
+            const isSuperAdmin = self.user.roles.some(role => role.name.toLowerCase().includes('superadmin'));
+
+            let columns = [
+                { data: 'display_text' },
+                { data: 'category.name' },
+                { data: 'company_name' },
+                { data: 'account_number' },
+                { data: 'institution.name' },                
+            ];
+
+            // Add Organisation column only if user is superadmin
+            if (isSuperAdmin) {
+                columns.push(
+                    { data: 'organisation.name' },
+                    { 
+                        data: 'authorizer_progress',
+                        render: (data, type, row) => {
+                            if (row.authorised && row.authorised > 0) { //console.log("data is ");console.log(data); console.log("row data"); console.log(row);
+                                return '<span class="custom-badge-success form-control"><i class="fas fa-check text-success"></i></span>';
+                            }
+                            return `<i class="custom-badge-primary form-control">${data}</i>`;
+                        }
+                    },
+                );
+            }
+
+             // Add action buttons column
+             columns.push({
+                data: null,
+                render: function (data, type, row) {
+                    // Conditionally display the fa-check icon
+                    const showCheckIcon = (row.authorised === null || row.authorised === 0) && row.number_of_authorizer > 0;
+
+                    //const isAdmin = this.user.roles.some(role => role.name.toLowerCase().includes('admin'));
+                    return `
+                            ${showCheckIcon ? `<button class='btn btn-outline-info btn-sm authorize-firmaccount-btn' data-toggle='tooltip' title='Authorise this firm Account' data-id='${data.id}'><i class='fas fa-check text-success'></i></button>` : ''}
+                                 ${isAdmin ? `<button class="btn btn-outline-secondary btn-sm edit-firmaccount-btn" data-toggle="tooltip" title="Edit this firm Account" data-id="${row.id}"><i class="fas fa-edit"></i></button>` : ''}
+                                  ${!showCheckIcon ? `<button class="btn btn-outline-info btn-sm view-firmaccount-btn" data-toggle="tooltip" title="View this firm Account" data-id="${row.id}"><i class="fas fa-search"></i></button>` : ''}
+                            ${isSuperAdmin ? `<button class="btn btn-outline-danger btn-sm delete-firmaccount-btn" data-toggle="tooltip" title="Delete this firm Account" data-id="${data.id}"><i class="fas fa-trash"></i></button>` : ''}
+                    `;
+                }
+            });
 
             this.sourceAccountsTable = $('#source-accounts-table').DataTable({
                 processing: true,
@@ -2141,40 +2482,8 @@ export default {
                         //alert('An error occurred while fetching the data. Please try again later.');
                     }
                 },
-                columns: [
-                    { data: 'display_text' },
-                    { data: 'category.name' },
-                    { data: 'company_name' },
-                    { data: 'account_number' },
-                    { data: 'institution.name' },
-                   /*  { data: 'aggregated', render: data => data ? '<i class="fas fa-check text-success"></i>' : '' }, */
-                    { 
-                        data: 'authorizer_progress',
-                        render: (data, type, row) => {
-                            if (row.authorised && row.authorised > 0) { //console.log("data is ");console.log(data); console.log("row data"); console.log(row);
-                                return '<span class="custom-badge-success form-control"><i class="fas fa-check text-success"></i></span>';
-                            }
-                            return `<i class="custom-badge-primary form-control">${data}</i>`;
-                        }
-                    },
-                    /* { data: 'mandated', render: data => data ? '<i class="fas fa-check text-success"></i>' : '' }, */
-                    {
-                        data: null,
-                        render: function (data, type, row) {
-                            // Conditionally display the fa-check icon
-                            const showCheckIcon = (row.authorised === null || row.authorised === 0) && row.number_of_authorizer > 0;
-                            
-                            //const isAdmin = this.user.roles.some(role => role.name.toLowerCase().includes('admin'));
-                            return `
-                                 ${showCheckIcon ? `<button class='btn btn-outline-info btn-sm authorize-firmaccount-btn' data-toggle='tooltip' title='Authorise this firm Account' data-id='${data.id}'><i class='fas fa-check text-success'></i></button>` : ''}
-                                 ${isAdmin ? `<button class="btn btn-outline-secondary btn-sm edit-firmaccount-btn" data-toggle="tooltip" title="Edit this firm Account" data-id="${row.id}"><i class="fas fa-edit"></i></button>` : ''}
-                                  ${!showCheckIcon ? `<button class="btn btn-outline-info btn-sm view-firmaccount-btn" data-toggle="tooltip" title="View this firm Account" data-id="${row.id}"><i class="fas fa-search"></i></button>` : ''}
-                                
-                                <button class="btn btn-outline-danger btn-sm delete-firmaccount-btn" data-toggle="tooltip" title="Delete this firm Account" data-id="${data.id}"><i class="fas fa-trash"></i></button>
-                            `;
-                        }
-                    }
-                ],
+
+                columns: columns, // Use the dynamically created columns arra
                 
                 createdRow: function(row, data, dataIndex) {
                     // Apply style to all <td> elements
@@ -2248,11 +2557,57 @@ export default {
         },
        // Initialize the Beneficiary Accounts DataTable
        initializeBeneficiaryAccounts() {
+            const self = this; // Store reference to Vue instance
             if ($.fn.dataTable.isDataTable('#beneficiary-accounts-table')) {
                 $('#beneficiary-accounts-table').DataTable().destroy(); // Destroy existing instance if already initialized
             }
+            // Check if user has superadmin role
+            const isSuperAdmin = self.user.roles.some(role => role.name.toLowerCase().includes('superadmin'));
+            const isAdmin = self.user.roles.some(role => role.name.toLowerCase().includes('admin'));
 
-            const isAdmin = this.user.roles.some(role => role.name.toLowerCase().includes('admin'));
+            let columns = [
+                { data: 'display_text' },
+                { data: 'category.name' },
+                { data: 'company_name' },
+                { data: 'account_number' },
+                { data: 'institution.name' },
+               
+            ];
+
+            // Add Organisation column only if user is superadmin
+            if (isSuperAdmin) {
+                columns.push(
+                    { data: 'organisation.name' },
+                    { 
+                        data: 'authorizer_progress',
+                        render: (data, type, row) => {
+                            if (row.authorised && row.authorised > 0) { //console.log("data is ");console.log(data); console.log("row data"); console.log(row);
+                                return '<span class="custom-badge-success form-control"><i class="fas fa-check text-success"></i></span>';
+                            }
+                            return `<i class="custom-badge-primary form-control">${data}</i>`;
+                        }
+                    },
+                );
+            }
+
+             // Add action buttons column
+             columns.push({
+                data: null,
+                render: function (data, type, row) {
+                    // Conditionally display the fa-check icon
+                    const showCheckIcon = (row.authorised === null || row.authorised === 0) && row.number_of_authorizer > 0;
+                    
+
+
+                    //const isAdmin = this.user.roles.some(role => role.name.toLowerCase().includes('admin'));
+                    return `
+                            ${showCheckIcon ? `<button class='btn btn-outline-info btn-sm authorize-beneficiary-btn' data-toggle='tooltip' title='Authorise this beneficiary Account' data-id='${data.id}'><i class='fas fa-check text-success'></i></button>` : ''}
+                            ${isAdmin ? `<button class="btn btn-outline-secondary btn-sm edit-beneficiary-btn" data-toggle="tooltip" title="Edit this beneficiary Account" data-id="${data.id}"><i class="fas fa-edit"></i></button>` : ''}
+                            <button class="btn btn-outline-info btn-sm view-beneficiary-btn" data-toggle="tooltip" title="View this beneficiary Account" data-id="${data.id}"><i class="fas fa-search"></i></button>
+                            ${isSuperAdmin ? `<button class="btn btn-outline-danger btn-sm delete-beneficiary-btn" data-toggle="tooltip" title="Delete this beneficiary Account" data-id="${data.id}"><i class="fas fa-trash"></i></button>` : ''}
+                    `;
+                }
+            });
 
             this.beneficiaryAccountsTable = $('#beneficiary-accounts-table').DataTable({
                 processing: true,
@@ -2273,40 +2628,9 @@ export default {
                         //alert('An error occurred while fetching the data. Please try again later.');
                     }
                 },
-                columns: [
-                    { data: 'display_text' },
-                    { data: 'category.name' },
-                    { data: 'company_name' },
-                    { data: 'account_number' },
-                    { data: 'institution.name' },
-                    { 
-                        data: 'authorizer_progress',
-                        render: (data, type, row) => {
-                            if (row.authorised && row.authorised > 0) { //console.log("data is ");console.log(data); console.log("row data"); console.log(row);
-                                return '<span class="custom-badge-success form-control"><i class="fas fa-check text-success"></i></span>';
-                            }
-                            return `<i class="custom-badge-primary form-control">${data}</i>`;
-                        }
-                    },
-                    {
-                        data: null,
-                        render: function (data, type, row) {
-                            // Conditionally display the fa-check icon
-                            const showCheckIcon = (row.authorised === null || row.authorised === 0) && row.number_of_authorizer > 0;
-                            
 
+                columns: columns, // Use the dynamically created columns arra
 
-                            //const isAdmin = this.user.roles.some(role => role.name.toLowerCase().includes('admin'));
-                            return `
-                                 ${showCheckIcon ? `<button class='btn btn-outline-info btn-sm authorize-beneficiary-btn' data-toggle='tooltip' title='Authorise this beneficiary Account' data-id='${data.id}'><i class='fas fa-check text-success'></i></button>` : ''}
-                                 ${isAdmin ? `<button class="btn btn-outline-secondary btn-sm edit-beneficiary-btn" data-toggle="tooltip" title="Edit this beneficiary Account" data-id="${data.id}"><i class="fas fa-edit"></i></button>` : ''}
-                                    <button class="btn btn-outline-info btn-sm view-beneficiary-btn" data-toggle="tooltip" title="View this beneficiary Account" data-id="${data.id}"><i class="fas fa-search"></i></button>
-                                
-                                <button class="btn btn-outline-danger btn-sm delete-beneficiary-btn" data-toggle="tooltip" title="Delete this beneficiary Account" data-id="${data.id}"><i class="fas fa-trash"></i></button>
-                            `;
-                        }
-                    }
-                ],
                 createdRow: (row, data, dataIndex) => {
                     // Apply style to all <td> elements
                     $('td', row).css('word-wrap', 'break-word').css('white-space', 'normal');
@@ -2383,11 +2707,60 @@ export default {
         },
         // Initialize the Beneficiary Accounts DataTable
        initializeOnceOffAccounts() {
+            const self = this; // Store reference to Vue instance
+            
             if ($.fn.dataTable.isDataTable('#onceoff-accounts-table')) {
                 $('#onceoff-accounts-table').DataTable().destroy(); // Destroy existing instance if already initialized
             }
 
-            const isAdmin = this.user.roles.some(role => role.name.toLowerCase().includes('admin'));
+            // Check if user has superadmin role
+            const isSuperAdmin = self.user.roles.some(role => role.name.toLowerCase().includes('superadmin'));
+            const isAdmin = self.user.roles.some(role => role.name.toLowerCase().includes('admin'));
+
+            let columns = [
+                { data: 'display_text' },
+                { data: 'category.name' },
+                { data: 'company_name' },
+                { data: 'account_number' },
+                { data: 'institution.name' },
+               
+            ];
+
+            // Add Organisation column only if user is superadmin
+            if (isSuperAdmin) {
+                columns.push(
+                    { data: 'organisation.name' },
+                    { 
+                        data: 'authorizer_progress',
+                        render: (data, type, row) => {
+                            if (row.authorised && row.authorised > 0) { //console.log("data is ");console.log(data); console.log("row data"); console.log(row);
+                                return '<span class="custom-badge-success form-control"><i class="fas fa-check text-success"></i></span>';
+                            }
+                            return `<i class="custom-badge-primary form-control">${data}</i>`;
+                        }
+                    },
+                );
+            }
+
+              // Add action buttons column
+            columns.push({
+                data: null,
+                render: function (data, type, row) {
+                    // Conditionally display the fa-check icon
+                    const showCheckIcon = (row.authorised === null || row.authorised === 0) && row.number_of_authorizer > 0;
+                    
+
+
+                    //const isAdmin = this.user.roles.some(role => role.name.toLowerCase().includes('admin'));
+                    return `
+                            ${showCheckIcon ? `<button class='btn btn-outline-info btn-sm authorize-onceoff-btn' data-toggle='tooltip' title='Authorise this onceoff Account' data-id='${data.id}'><i class='fas fa-check text-success'></i></button>` : ''}
+                            ${isAdmin ? `<button class="btn btn-outline-secondary btn-sm edit-onceoff-btn" data-toggle="tooltip" title="Edit this onceoff Account" data-id="${data.id}"><i class="fas fa-edit"></i></button>` : ''}
+                            <button class="btn btn-outline-info btn-sm view-onceoff-btn" data-toggle="tooltip" title="View this onceoff Account" data-id="${data.id}"><i class="fas fa-search"></i></button>
+                        
+                            ${isSuperAdmin ? `<button class="btn btn-outline-danger btn-sm delete-onceoff-btn" data-toggle="tooltip" title="Delete this onceoff Account" data-id="${data.id}"><i class="fas fa-trash"></i></button>` : ''}
+                    `;
+                }
+            });
 
             this.onceoffAccountsTable = $('#onceoff-accounts-table').DataTable({
                 processing: true,
@@ -2408,40 +2781,9 @@ export default {
                         //alert('An error occurred while fetching the data. Please try again later.');
                     }
                 },
-                columns: [
-                    { data: 'display_text' },
-                    { data: 'category.name' },
-                    { data: 'company_name' },
-                    { data: 'account_number' },
-                    { data: 'institution.name' },
-                    { 
-                        data: 'authorizer_progress',
-                        render: (data, type, row) => {
-                            if (row.authorised && row.authorised > 0) { //console.log("data is ");console.log(data); console.log("row data"); console.log(row);
-                                return '<span class="custom-badge-success form-control"><i class="fas fa-check text-success"></i></span>';
-                            }
-                            return `<i class="custom-badge-primary form-control">${data}</i>`;
-                        }
-                    },
-                    {
-                        data: null,
-                        render: function (data, type, row) {
-                            // Conditionally display the fa-check icon
-                            const showCheckIcon = (row.authorised === null || row.authorised === 0) && row.number_of_authorizer > 0;
-                            
-
-
-                            //const isAdmin = this.user.roles.some(role => role.name.toLowerCase().includes('admin'));
-                            return `
-                                 ${showCheckIcon ? `<button class='btn btn-outline-info btn-sm authorize-onceoff-btn' data-toggle='tooltip' title='Authorise this onceoff Account' data-id='${data.id}'><i class='fas fa-check text-success'></i></button>` : ''}
-                                 ${isAdmin ? `<button class="btn btn-outline-secondary btn-sm edit-onceoff-btn" data-toggle="tooltip" title="Edit this onceoff Account" data-id="${data.id}"><i class="fas fa-edit"></i></button>` : ''}
-                                  ${!showCheckIcon ? `<button class="btn btn-outline-info btn-sm view-onceoff-btn" data-toggle="tooltip" title="View this onceoff Account" data-id="${data.id}"><i class="fas fa-search"></i></button>` : ''}
-                                
-                                <button class="btn btn-outline-danger btn-sm delete-onceoff-btn" data-toggle="tooltip" title="Delete this onceoff Account" data-id="${data.id}"><i class="fas fa-trash"></i></button>
-                            `;
-                        }
-                    }
-                ],
+                
+                columns: columns, // Use the dynamically created columns arra
+                
                 rowCallback: (row, data) => {
                     
                     $(row).on('click', (event) => {

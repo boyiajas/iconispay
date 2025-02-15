@@ -26,7 +26,7 @@ class DocumentController extends Controller
         $user = Auth::user();
          
         // Check if the user has an 'admin' or 'authorizer' role
-        if ($user->hasRole('admin') || $user->hasRole('authoriser')) {
+        if ($user->hasRole('admin') || $user->hasRole('authoriser') || $user->hasRole('superadmin')) {
         
             $documents = Document::where('requisition_id', $id)->get();
         } else {
@@ -80,15 +80,17 @@ class DocumentController extends Controller
     
             // Store the file securely in the specified directory
             $filePath = $file->storeAs($directory, $newFileName);
+            $user = Auth::user();
     
             // Save the document in the database
             $document = Document::create([
                 'requisition_id' => $request->input('requisition_id'),
-                'created_by' => auth()->id(),  // Assuming the user is authenticated
+                'created_by' => $user->id,  // Assuming the user is authenticated
                 'description' => $request->input('description'),
                 'file_name' => $newFileName,
                 'file_path' => $filePath,
                 'file_type' => $file->getClientMimeType(),
+                'organisation_id' => $user->organisation->id
             ]);
             
             logHistory($request->input('requisition_id'), 'Document Added to Requisition', "document # {$newFileName} was added to this requisition.");
@@ -113,7 +115,7 @@ class DocumentController extends Controller
         $user = Auth::user();
          
         // Check if the user has an 'admin' or 'authorizer' role
-        if ($user->hasRole('admin') || $user->hasRole('authoriser')) {
+        if ($user->hasRole('admin') || $user->hasRole('authoriser') || $user->hasRole('superadmin')) {
             // Serve the file using Storage, making sure it's only accessible to the authenticated user
             return Storage::download($document->file_path, $document->file_name);
 
@@ -134,7 +136,7 @@ class DocumentController extends Controller
         $user = Auth::user();
          
         // Check if the user has an 'admin' or 'authorizer' role
-        if ($user->hasRole('admin') || $user->hasRole('authoriser')) {
+        if ($user->hasRole('admin') || $user->hasRole('authoriser') || $user->hasRole('superadmin')) {
              // Get the file's full path from storage
             $filePath = Storage::path($document->file_path);
 

@@ -16,8 +16,13 @@ class Document extends Model
         'description',
         'requisition_id',
         'created_by',
+        'organisation_id',
     ];
 
+    public function organisation()
+    {
+        return $this->belongsTo(Organisation::class);
+    }
     // Relation to Requisition
     public function requisition()
     {

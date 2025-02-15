@@ -20,6 +20,7 @@ if (!function_exists('logHistory')) {
             'action' => $action,
             'details' => $details,
             'created_at' => now(),
+            'organisation_id' => Auth::user()->organisation->id,
         ]);
     }
 }

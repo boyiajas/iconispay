@@ -13,7 +13,13 @@ class Authorizer extends Model
         'firm_account_id',
         'beneficiary_account_id',
         'user_id',
+        'organisation_id',
     ];
+
+    public function organisation()
+    {
+        return $this->belongsTo(Organisation::class);
+    }
 
     /**
      * Relationship with the FirmAccount model.

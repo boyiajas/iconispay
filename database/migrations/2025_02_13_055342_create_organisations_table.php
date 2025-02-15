@@ -11,16 +11,11 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('documents', function (Blueprint $table) {
+        Schema::create('organisations', function (Blueprint $table) {
             $table->id();
-            $table->foreignId('created_by');
-            $table->foreignId('requisition_id')->constrained()->onDelete('cascade');
+            $table->string('name');
             $table->string('description');
-            $table->string('file_name');
-            $table->string('file_path');
-            $table->string('file_type');
-            $table->foreignId('organisation_id')->constrained()->onDelete('cascade');
-
+            $table->foreignId(('user_id'));
             $table->timestamps();
         });
     }
@@ -30,6 +25,6 @@ return new class extends Migration
      */
     public function down(): void
     {
-        Schema::dropIfExists('documents');
+        Schema::dropIfExists('organisations');
     }
 };

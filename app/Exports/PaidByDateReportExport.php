@@ -5,6 +5,7 @@ namespace App\Exports;
 use App\Models\Payment;
 use Carbon\Carbon;
 use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\Auth;
 use Maatwebsite\Excel\Concerns\FromCollection;
 use Maatwebsite\Excel\Concerns\WithHeadings;
 
@@ -12,11 +13,15 @@ class PaidByDateReportExport implements FromCollection, WithHeadings
 {
     protected $fromDate;
     protected $toDate;
+    protected $user;
+    protected $isSuperAdmin;
 
     public function __construct($fromDate, $toDate)
     {
         $this->fromDate = Carbon::parse($fromDate)->startOfDay();
         $this->toDate = Carbon::parse($toDate)->endOfDay();
+        $this->user = Auth::user();
+        $this->isSuperAdmin = $this->user->hasRole('superadmin');
     }
 
     /**
@@ -61,8 +66,8 @@ class PaidByDateReportExport implements FromCollection, WithHeadings
      */
     public function collection(): Collection
     {
-        // Load payments within the date range, with relationships
-        $payments = Payment::with([
+        // Query payments with relationships
+        $paymentQuery = Payment::with([
             'sourceFirmAccount.institution',
             'sourceFirmAccount.accountType',
             'beneficiaryAccount.institution',
@@ -72,13 +77,20 @@ class PaidByDateReportExport implements FromCollection, WithHeadings
             'requisition.matter',
             'requisition.user', // User who created the requisition
             'requisition.authorizedBy', // User who approved the requisition
-            'requisition.fileUploads', // Get fill uploads assosciated with the requisition
+            'requisition.fileUploads', // Associated file uploads
         ])
-        //->whereBetween('created_at', [$this->fromDate, $this->toDate])
-        ->whereHas('requisition', function ($query){
+        ->whereHas('requisition', function ($query) {
             $query->whereBetween('completed_at', [$this->fromDate, $this->toDate]);
-        })
-        ->get();
+        });
+
+        // Apply organization restriction if NOT Super Admin
+        if (!$this->isSuperAdmin) {
+            $paymentQuery->whereHas('sourceFirmAccount', function ($q) {
+                $q->where('organisation_id', $this->user->organisation->id);
+            });
+        }
+
+        $payments = $paymentQuery->get();
 
         // Prepare data for the report
         $data = $payments->map(function ($payment) {
@@ -92,7 +104,6 @@ class PaidByDateReportExport implements FromCollection, WithHeadings
             return [
                 $payment->requisition->file_reference ?? 'N/A',
                 number_format($payment->amount, 2),
-                //$payment->exported_at ? Carbon::parse($payment->exported_at)->format('Y/m/d') : 'N/A',
                 optional($dateExported)->format('Y/m/d') ?? 'N/A', // Mapped `date_exported`
                 $payment->date_paid ? Carbon::parse($payment->mark_processed_at)->format('Y/m/d') : 'N/A',
                 optional($payment->requisition->user)->name ?? 'N/A',         // Requisition Created By

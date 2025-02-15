@@ -40,9 +40,14 @@ class BeneficiaryAccount extends Model
         'holder_name_match',
         'holder_initials_match',
         'registration_number_match',
-        'user_id'
+        'user_id',
+        'organisation_id',
     ];
 
+    public function organisation()
+    {
+        return $this->belongsTo(Organisation::class);
+    }
     /**
      * Relationship with the Institution model.
      * A Beneficiary Account belongs to an Institution.

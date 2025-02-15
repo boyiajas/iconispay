@@ -19,7 +19,13 @@ class FileUpload extends Model
         'file_hash',
         'generated_at',
         'user_id',
+        'organisation_id',
     ];
+
+    public function organisation()
+    {
+        return $this->belongsTo(Organisation::class);
+    }
 
     protected $casts = [
         'generated_at' => 'datetime', // Cast to datetime
