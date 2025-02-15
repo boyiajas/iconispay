@@ -1790,7 +1790,7 @@ export default {
                     if (!certificateId) {
                         return `
                             <button class="btn btn-outline-info btn-sm me-2 edit-user-btn" data-user-id="${data.id}" data-toggle="tooltip" data-certificate-id="${certificateId}" title="Edit User"><i class="fas fa-user-edit"></i></button>
-                            ${isSuperAdmin ? `<button class="btn btn-outline-info btn-sm me-2 generate-certificate-btn" data-toggle="tooltip" data-user-id="${data.id}" title="Generate Certificate"><i class="fas fa-certificate"></i></button>` : ''}
+                            ${(isSuperAdmin && !hasOnlyUserRole) ? `<button class="btn btn-outline-info btn-sm me-2 generate-certificate-btn" data-toggle="tooltip" data-user-id="${data.id}" title="Generate Certificate"><i class="fas fa-certificate"></i></button>` : ''}
                             <button class="btn btn-outline-danger btn-sm delete-user-btn" data-user-id="${data.id}" data-toggle="tooltip" title="Delete user"><i class="fas fa-trash"></i></button>
                         `;
                     } else {
