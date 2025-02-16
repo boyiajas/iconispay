@@ -734,7 +734,9 @@
                             <div class="form-group mb-3 row">
                                 <div class="col-sm-10 offset-sm-2" style="text-align: end;">
                                     <button type="submit" class="btn btn-primary btn-sm">Save Changes</button>
-                                    <button type="button" class="btn btn-danger ml-1 btn-sm" @click="confirmDelete">Delete</button>
+                                    <PermissionControl :roles="['superadmin']">
+                                        <button type="button" class="btn btn-danger ml-1 btn-sm" @click="confirmDelete">Delete</button>
+                                    </PermissionControl>
                                     <button type="button" class="btn btn-secondary ml-1 btn-sm" data-dismiss="modal">Cancel</button>
                                 </div>
                             </div>
