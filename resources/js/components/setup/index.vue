@@ -1785,19 +1785,19 @@ export default {
                 render: function (data) {
                     const hasOnlyUserRole = data.roles.length === 1 && data.roles[0].name === "user";
                     const certificateId = data.latest_certificate?.id ?? null;
-                    
+                    const isSuperAdmin = self.user.roles.some(role => role.name.toLowerCase().includes('superadmin'));
 
                     if (!certificateId) {
                         return `
                             <button class="btn btn-outline-info btn-sm me-2 edit-user-btn" data-user-id="${data.id}" data-toggle="tooltip" data-certificate-id="${certificateId}" title="Edit User"><i class="fas fa-user-edit"></i></button>
-                            ${(self.isSuperAdmin && !hasOnlyUserRole) ? `<button class="btn btn-outline-info btn-sm me-2 generate-certificate-btn" data-toggle="tooltip" data-user-id="${data.id}" title="Generate Certificate"><i class="fas fa-certificate"></i></button>` : ''}
+                            ${(isSuperAdmin && !hasOnlyUserRole) ? `<button class="btn btn-outline-info btn-sm me-2 generate-certificate-btn" data-toggle="tooltip" data-user-id="${data.id}" title="Generate Certificate"><i class="fas fa-certificate"></i></button>` : ''}
                             <button class="btn btn-outline-danger btn-sm delete-user-btn" data-user-id="${data.id}" data-toggle="tooltip" title="Delete user"><i class="fas fa-trash"></i></button>
                         `;
                     } else {
                         return `
                             <button class="btn btn-outline-info btn-sm me-2 edit-user-btn" data-user-id="${data.id}" data-toggle="tooltip" data-certificate-id="${certificateId}" title="Edit User"><i class="fas fa-user-edit"></i></button>
                             <button class="btn btn-outline-success btn-sm me-2 download-certificate-btn" data-certificate-id="${certificateId}" title="Download Certificate"><i class="fas fa-download"></i></button>
-                            ${self.isSuperAdmin ? `<button class="btn btn-outline-danger btn-sm delete-user-cert-btn" data-user-id="${data.id}" data-toggle="tooltip" title="Delete user certificate"><i class="fas fa-user-times"></i></button>` : ''}
+                            ${isSuperAdmin ? `<button class="btn btn-outline-danger btn-sm delete-user-cert-btn" data-user-id="${data.id}" data-toggle="tooltip" title="Delete user certificate"><i class="fas fa-user-times"></i></button>` : ''}
                             <button class="btn btn-outline-danger btn-sm delete-user-btn" data-user-id="${data.id}" data-toggle="tooltip" title="Delete user"><i class="fas fa-trash"></i></button>
                         `;
                     }
@@ -2434,17 +2434,20 @@ export default {
             if (isSuperAdmin) {
                 columns.push(
                     { data: 'organisation.name' },
-                    { 
-                        data: 'authorizer_progress',
-                        render: (data, type, row) => {
-                            if (row.authorised && row.authorised > 0) { //console.log("data is ");console.log(data); console.log("row data"); console.log(row);
-                                return '<span class="custom-badge-success form-control"><i class="fas fa-check text-success"></i></span>';
-                            }
-                            return `<i class="custom-badge-primary form-control">${data}</i>`;
-                        }
-                    },
                 );
             }
+
+            columns.push(
+                { 
+                    data: 'authorizer_progress',
+                    render: (data, type, row) => {
+                        if (row.authorised && row.authorised > 0) { //console.log("data is ");console.log(data); console.log("row data"); console.log(row);
+                            return '<span class="custom-badge-success form-control"><i class="fas fa-check text-success"></i></span>';
+                        }
+                        return `<i class="custom-badge-primary form-control">${data}</i>`;
+                    }
+                },
+            );
 
              // Add action buttons column
              columns.push({
@@ -2452,15 +2455,15 @@ export default {
                 render: function (data, type, row) {
                     // Conditionally display the fa-check icon
                     const showCheckIcon = (row.authorised === null || row.authorised === 0) && row.number_of_authorizer > 0;
-                    //const isSuperAdmin = self.user.roles.some(role => role.name.toLowerCase().includes('superadmin'));
+                    const isSuperAdmin = self.user.roles.some(role => role.name.toLowerCase().includes('superadmin'));
                     const isAdmin = self.user.roles.some(role => role.name.toLowerCase().includes('admin'));
 
                     //const isAdmin = this.user.roles.some(role => role.name.toLowerCase().includes('admin'));
                     return `
                             ${showCheckIcon ? `<button class='btn btn-outline-info btn-sm authorize-firmaccount-btn' data-toggle='tooltip' title='Authorise this firm Account' data-id='${data.id}'><i class='fas fa-check text-success'></i></button>` : ''}
-                                 ${isAdmin ? `<button class="btn btn-outline-secondary btn-sm edit-firmaccount-btn" data-toggle="tooltip" title="Edit this firm Account" data-id="${row.id}"><i class="fas fa-edit"></i></button>` : ''}
+                                 ${(isAdmin || isSuperAdmin) ? `<button class="btn btn-outline-secondary btn-sm edit-firmaccount-btn" data-toggle="tooltip" title="Edit this firm Account" data-id="${row.id}"><i class="fas fa-edit"></i></button>` : ''}
                                   ${!showCheckIcon ? `<button class="btn btn-outline-info btn-sm view-firmaccount-btn" data-toggle="tooltip" title="View this firm Account" data-id="${row.id}"><i class="fas fa-search"></i></button>` : ''}
-                            ${self.isSuperAdmin ? `<button class="btn btn-outline-danger btn-sm delete-firmaccount-btn" data-toggle="tooltip" title="Delete this firm Account" data-id="${data.id}"><i class="fas fa-trash"></i></button>` : ''}
+                            ${isSuperAdmin ? `<button class="btn btn-outline-danger btn-sm delete-firmaccount-btn" data-toggle="tooltip" title="Delete this firm Account" data-id="${data.id}"><i class="fas fa-trash"></i></button>` : ''}
                     `;
                 }
             });
@@ -2580,17 +2583,20 @@ export default {
             if (isSuperAdmin) {
                 columns.push(
                     { data: 'organisation.name' },
-                    { 
-                        data: 'authorizer_progress',
-                        render: (data, type, row) => {
-                            if (row.authorised && row.authorised > 0) { //console.log("data is ");console.log(data); console.log("row data"); console.log(row);
-                                return '<span class="custom-badge-success form-control"><i class="fas fa-check text-success"></i></span>';
-                            }
-                            return `<i class="custom-badge-primary form-control">${data}</i>`;
-                        }
-                    },
                 );
             }
+
+            columns.push(
+                { 
+                    data: 'authorizer_progress',
+                    render: (data, type, row) => {
+                        if (row.authorised && row.authorised > 0) { //console.log("data is ");console.log(data); console.log("row data"); console.log(row);
+                            return '<span class="custom-badge-success form-control"><i class="fas fa-check text-success"></i></span>';
+                        }
+                        return `<i class="custom-badge-primary form-control">${data}</i>`;
+                    }
+                },
+            );
 
              // Add action buttons column
              columns.push({
@@ -2599,16 +2605,16 @@ export default {
                     // Conditionally display the fa-check icon
                     const showCheckIcon = (row.authorised === null || row.authorised === 0) && row.number_of_authorizer > 0;
                     
-                    //const isSuperAdmin = self.user.roles.some(role => role.name.toLowerCase().includes('superadmin'));
+                    const isSuperAdmin = self.user.roles.some(role => role.name.toLowerCase().includes('superadmin'));
                     const isAdmin = self.user.roles.some(role => role.name.toLowerCase().includes('admin'));
 
 
                     //const isAdmin = this.user.roles.some(role => role.name.toLowerCase().includes('admin'));
                     return `
                             ${showCheckIcon ? `<button class='btn btn-outline-info btn-sm authorize-beneficiary-btn' data-toggle='tooltip' title='Authorise this beneficiary Account' data-id='${data.id}'><i class='fas fa-check text-success'></i></button>` : ''}
-                            ${isAdmin ? `<button class="btn btn-outline-secondary btn-sm edit-beneficiary-btn" data-toggle="tooltip" title="Edit this beneficiary Account" data-id="${data.id}"><i class="fas fa-edit"></i></button>` : ''}
+                            ${(isAdmin || isSuperAdmin) ? `<button class="btn btn-outline-secondary btn-sm edit-beneficiary-btn" data-toggle="tooltip" title="Edit this beneficiary Account" data-id="${data.id}"><i class="fas fa-edit"></i></button>` : ''}
                             <button class="btn btn-outline-info btn-sm view-beneficiary-btn" data-toggle="tooltip" title="View this beneficiary Account" data-id="${data.id}"><i class="fas fa-search"></i></button>
-                            ${self.isSuperAdmin ? `<button class="btn btn-outline-danger btn-sm delete-beneficiary-btn" data-toggle="tooltip" title="Delete this beneficiary Account" data-id="${data.id}"><i class="fas fa-trash"></i></button>` : ''}
+                            ${isSuperAdmin ? `<button class="btn btn-outline-danger btn-sm delete-beneficiary-btn" data-toggle="tooltip" title="Delete this beneficiary Account" data-id="${data.id}"><i class="fas fa-trash"></i></button>` : ''}
                     `;
                 }
             });
@@ -2730,21 +2736,24 @@ export default {
                
             ];
 
-            // Add Organisation column only if user is superadmin
+             // Add Organisation column only if user is superadmin
             if (isSuperAdmin) {
                 columns.push(
                     { data: 'organisation.name' },
-                    { 
-                        data: 'authorizer_progress',
-                        render: (data, type, row) => {
-                            if (row.authorised && row.authorised > 0) { //console.log("data is ");console.log(data); console.log("row data"); console.log(row);
-                                return '<span class="custom-badge-success form-control"><i class="fas fa-check text-success"></i></span>';
-                            }
-                            return `<i class="custom-badge-primary form-control">${data}</i>`;
-                        }
-                    },
                 );
             }
+
+            columns.push(
+                { 
+                    data: 'authorizer_progress',
+                    render: (data, type, row) => {
+                        if (row.authorised && row.authorised > 0) { //console.log("data is ");console.log(data); console.log("row data"); console.log(row);
+                            return '<span class="custom-badge-success form-control"><i class="fas fa-check text-success"></i></span>';
+                        }
+                        return `<i class="custom-badge-primary form-control">${data}</i>`;
+                    }
+                },
+            );
 
               // Add action buttons column
             columns.push({
@@ -2753,16 +2762,16 @@ export default {
                     // Conditionally display the fa-check icon
                     const showCheckIcon = (row.authorised === null || row.authorised === 0) && row.number_of_authorizer > 0;
                     
-                    //const isSuperAdmin = self.user.roles.some(role => role.name.toLowerCase().includes('superadmin'));
+                    const isSuperAdmin = self.user.roles.some(role => role.name.toLowerCase().includes('superadmin'));
                     const isAdmin = self.user.roles.some(role => role.name.toLowerCase().includes('admin'));
 
                     //const isAdmin = this.user.roles.some(role => role.name.toLowerCase().includes('admin'));
                     return `
                             ${showCheckIcon ? `<button class='btn btn-outline-info btn-sm authorize-onceoff-btn' data-toggle='tooltip' title='Authorise this onceoff Account' data-id='${data.id}'><i class='fas fa-check text-success'></i></button>` : ''}
-                            ${isAdmin ? `<button class="btn btn-outline-secondary btn-sm edit-onceoff-btn" data-toggle="tooltip" title="Edit this onceoff Account" data-id="${data.id}"><i class="fas fa-edit"></i></button>` : ''}
+                            ${(isAdmin || isSuperAdmin) ? `<button class="btn btn-outline-secondary btn-sm edit-onceoff-btn" data-toggle="tooltip" title="Edit this onceoff Account" data-id="${data.id}"><i class="fas fa-edit"></i></button>` : ''}
                             <button class="btn btn-outline-info btn-sm view-onceoff-btn" data-toggle="tooltip" title="View this onceoff Account" data-id="${data.id}"><i class="fas fa-search"></i></button>
                         
-                            ${self.isSuperAdmin ? `<button class="btn btn-outline-danger btn-sm delete-onceoff-btn" data-toggle="tooltip" title="Delete this onceoff Account" data-id="${data.id}"><i class="fas fa-trash"></i></button>` : ''}
+                            ${isSuperAdmin ? `<button class="btn btn-outline-danger btn-sm delete-onceoff-btn" data-toggle="tooltip" title="Delete this onceoff Account" data-id="${data.id}"><i class="fas fa-trash"></i></button>` : ''}
                     `;
                 }
             });
