@@ -1764,7 +1764,7 @@ export default {
             }
 
             // Check if user has superadmin role
-            const isSuperAdmin = self.user.roles.some(role => role.name.toLowerCase().includes('superadmin'));
+            //const isSuperAdmin = self.user.roles.some(role => role.name.toLowerCase().includes('superadmin'));
 
             let columns = [
                 { data: 'email' },
@@ -2418,9 +2418,9 @@ export default {
                 $('#source-accounts-table').DataTable().destroy(); // Destroy existing instance if already initialized
             }
 
-            const isAdmin = self.user.roles.some(role => role.name.toLowerCase().includes('admin'));
+            
             // Check if user has superadmin role
-            const isSuperAdmin = self.user.roles.some(role => role.name.toLowerCase().includes('superadmin'));
+            //const isSuperAdmin = self.user.roles.some(role => role.name.toLowerCase().includes('superadmin'));
 
             let columns = [
                 { data: 'display_text' },
@@ -2452,6 +2452,8 @@ export default {
                 render: function (data, type, row) {
                     // Conditionally display the fa-check icon
                     const showCheckIcon = (row.authorised === null || row.authorised === 0) && row.number_of_authorizer > 0;
+                    const isSuperAdmin = self.user.roles.some(role => role.name.toLowerCase().includes('superadmin'));
+                    const isAdmin = self.user.roles.some(role => role.name.toLowerCase().includes('admin'));
 
                     //const isAdmin = this.user.roles.some(role => role.name.toLowerCase().includes('admin'));
                     return `
@@ -2562,8 +2564,8 @@ export default {
                 $('#beneficiary-accounts-table').DataTable().destroy(); // Destroy existing instance if already initialized
             }
             // Check if user has superadmin role
-            const isSuperAdmin = self.user.roles.some(role => role.name.toLowerCase().includes('superadmin'));
-            const isAdmin = self.user.roles.some(role => role.name.toLowerCase().includes('admin'));
+            //const isSuperAdmin = self.user.roles.some(role => role.name.toLowerCase().includes('superadmin'));
+            //const isAdmin = self.user.roles.some(role => role.name.toLowerCase().includes('admin'));
 
             let columns = [
                 { data: 'display_text' },
@@ -2597,6 +2599,8 @@ export default {
                     // Conditionally display the fa-check icon
                     const showCheckIcon = (row.authorised === null || row.authorised === 0) && row.number_of_authorizer > 0;
                     
+                    const isSuperAdmin = self.user.roles.some(role => role.name.toLowerCase().includes('superadmin'));
+                    const isAdmin = self.user.roles.some(role => role.name.toLowerCase().includes('admin'));
 
 
                     //const isAdmin = this.user.roles.some(role => role.name.toLowerCase().includes('admin'));
@@ -2714,8 +2718,8 @@ export default {
             }
 
             // Check if user has superadmin role
-            const isSuperAdmin = self.user.roles.some(role => role.name.toLowerCase().includes('superadmin'));
-            const isAdmin = self.user.roles.some(role => role.name.toLowerCase().includes('admin'));
+            //const isSuperAdmin = self.user.roles.some(role => role.name.toLowerCase().includes('superadmin'));
+            //const isAdmin = self.user.roles.some(role => role.name.toLowerCase().includes('admin'));
 
             let columns = [
                 { data: 'display_text' },
@@ -2749,7 +2753,8 @@ export default {
                     // Conditionally display the fa-check icon
                     const showCheckIcon = (row.authorised === null || row.authorised === 0) && row.number_of_authorizer > 0;
                     
-
+                    const isSuperAdmin = self.user.roles.some(role => role.name.toLowerCase().includes('superadmin'));
+                    const isAdmin = self.user.roles.some(role => role.name.toLowerCase().includes('admin'));
 
                     //const isAdmin = this.user.roles.some(role => role.name.toLowerCase().includes('admin'));
                     return `
