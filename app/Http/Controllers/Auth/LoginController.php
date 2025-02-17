@@ -78,13 +78,16 @@ class LoginController extends Controller
                     // Verify the formatting
                     if (!preg_match('/-----BEGIN CERTIFICATE-----.*-----END CERTIFICATE-----/s', $clientCert)) {
                         //dd("Invalid certificate format still ....God");
+                        Log::info("Invalid certificate format");
                         return response()->json(['error' => 'Invalid certificate format'], 400);
+
                     }
                     
                     // Parse the certificate to extract details
                     $certInfo = openssl_x509_parse($clientCert);
                     if (!$certInfo) {
                        // dd("Invalid certificate unable to read ---> clientCert output ", $clientCert);
+                       Log::info("Invalid certificate unable to read ---> clientCert output");
                         return response()->json(['error' => 'Invalid certificate'], 400);
                     }
                     
@@ -94,6 +97,7 @@ class LoginController extends Controller
                     $rawFingerprint = openssl_x509_fingerprint($clientCert, 'sha1'); 
                   
                     if (!$rawFingerprint) {
+                        Log::info("Invalid certificate fingerprint");
                         throw new Exception('Invalid certificate fingerprint');
                     }
 

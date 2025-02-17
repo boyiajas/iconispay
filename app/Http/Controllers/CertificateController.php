@@ -273,7 +273,7 @@ class CertificateController extends Controller
             'user_id' => $user->id,
             'certificate_hash' => $formattedFingerprint, // Ensure colon-separated uppercase hash
             'expires_at' => $expiresAt,
-            'file_path' => "certificates/{$timestamp}/user_{$user->id}.p12", // Relative path for download
+            'file_path' => "certificates/{$user->organisation->id}/{$timestamp}/user_{$user->id}.p12", // Relative path for download
             'organisation_id' => $user->organisation->id
         ]);
 
