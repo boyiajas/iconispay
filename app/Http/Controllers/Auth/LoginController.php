@@ -119,6 +119,7 @@ class LoginController extends Controller
                             $user->update(['user_roles' => json_encode($roles)]);
                             $user->syncRoles(['user']);
                         }
+                        Log::info($certificate);
                         
                         
                     }else if (!empty($user->user_roles)) { //dd("2"); 
