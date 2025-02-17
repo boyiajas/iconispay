@@ -11,6 +11,7 @@ use Carbon\Carbon;
 use Exception;
 use Illuminate\Foundation\Auth\AuthenticatesUsers;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Session;
 
 class LoginController extends Controller
@@ -112,7 +113,7 @@ class LoginController extends Controller
 
                         //dd("1", $user->hasRole('admin'), $certificate, $fingerprint);
                     if ((!$certificate || ($certificate->expires_at < now())) && !$user->hasRole('superadmin')) {// dd("1", $user->hasRole('admin'), $certificate, $fingerprint);
-                        // Save roles, downgrade to 'user', and redirect
+                        Log::info("Save roles, downgrade to 'user', and redirect");
                         if(empty($user->user_roles)){ //this is to avoid overwriting the roles already saved again
                             $roles = $user->roles->pluck('name')->toArray();
                             $user->update(['user_roles' => json_encode($roles)]);
@@ -120,7 +121,8 @@ class LoginController extends Controller
                         }
                         
                         
-                    }else if (!empty($user->user_roles)) { //dd("2"); // If user_roles is not null, assign the roles back to the user
+                    }else if (!empty($user->user_roles)) { //dd("2"); 
+                        Log::info('If user_roles is not null, assign the roles back to the user');
                         $roles = json_decode($user->user_roles, true);
                         //$user->syncRoles(['authoriser','bookkeeper']); //dd($user->roles->pluck('name')->toArray());
                         $user->syncRoles($roles);
@@ -135,9 +137,9 @@ class LoginController extends Controller
                 }
 
             }else if($user->hasRole('superadmin')){
-               //dd('we are here admin');
+               Log::info('we are here admin');
             }else{ //dd("we are here no certificate ");
-                // No client certificate, save current roles to user_roles and assign 'user' role
+                Log::info("No client certificate, save current roles to user_roles and assign 'user' role");
                 if(empty($user->user_roles)){ //this is to avoid overwriting the roles already saved again
                     $roles = $user->roles->pluck('name')->toArray();
                     $user->update(['user_roles' => json_encode($roles)]);
@@ -165,6 +167,7 @@ class LoginController extends Controller
             Session::put('avatar', $user->avatar);
             Session::put('position', $user->position);
             Session::put('department', $user->department);
+            Session::put('organisation_id', $user->organisation_id);
 
             //Toastr::success('Login successfully :)','Success');
 
