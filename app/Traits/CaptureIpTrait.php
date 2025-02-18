@@ -9,7 +9,20 @@ trait CaptureIpTrait
 {
     public function getClientIp()
     {
-        return request()->ip();
+        $request = request();
+
+        // ✅ Trust the correct headers for real IP detection
+        $ipAddress = $request->header('X-Forwarded-For') 
+            ?? $request->header('CF-Connecting-IP') 
+            ?? $request->header('X-Real-IP') 
+            ?? $request->server('REMOTE_ADDR');
+
+        // If multiple IPs are detected in X-Forwarded-For, get the first one (real IP)
+        if (strpos($ipAddress, ',') !== false) {
+            $ipAddress = explode(',', $ipAddress)[0];
+        }
+
+        return trim($ipAddress);
     }
 
     public function getUserAgent()
