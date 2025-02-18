@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
 use App\Models\User;
+use App\Observers\AuditTrailObserver;
 use Brian2694\Toastr\Facades\Toastr;
 use Illuminate\Foundation\Auth\RegistersUsers;
 use Illuminate\Http\Request;
@@ -109,11 +110,11 @@ class RegisterController extends Controller
             // Merge the registration data into the request
             $request->merge($registration_data);
         } else {
+            AuditTrailObserver::logCustomAction('Error, Registration failed data is missing.', User::getModel(), null, $registration_data->toArray());
             // Handle the case where the registration data is missing
             return redirect()->route('register')->withErrors([
                 'error' => 'Registration data is missing. Please try registering again.',
             ]);
-
             Toastr::error('Registration data is missing. Please try registering again.','Error');
         }
 

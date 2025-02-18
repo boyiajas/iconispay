@@ -3,11 +3,12 @@
 namespace App\Http\Controllers\Auth;
 
 use App\Http\Controllers\Controller;
+use App\Observers\AuditTrailObserver;
+use Brian2694\Toastr\Facades\Toastr;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
-use PragmaRX\Google2FA\Google2FA;
-use Brian2694\Toastr\Facades\Toastr;
 use PragmaRX\Google2FA\Exceptions\SecretKeyTooShortException;
+use PragmaRX\Google2FA\Google2FA;
 
 class TwoFactorAuthController extends Controller
 {
@@ -45,16 +46,19 @@ class TwoFactorAuthController extends Controller
                 // Mark the user as having passed 2FA
                 $request->session()->put('2fa_passed', true);
                 Toastr::success('2FA verification successful!', 'Success');
+                AuditTrailObserver::logCustomAction('2FA verification successful', $user, null, null);
                 //dd('we suppose to go home');
                 // Redirect to the intended page or home
                 return redirect()->intended('home');
             } else {
                 Toastr::error('Invalid 2FA code. Please try again.', 'Error');
+                AuditTrailObserver::logCustomAction('Error, Invalid 2FA code', $user, null, null);
                 return redirect()->route('2fa.verify');
             }
         } catch (SecretKeyTooShortException $e) { //dd($e);
             // Handle the SecretKeyTooShortException and display the error
             Toastr::error('Secret key is too short. Must be at least 16 base32 characters.', 'Error');
+            AuditTrailObserver::logCustomAction('Error, Secret key is too short', $user, null, null);
             return redirect()->route('2fa.verify');
         } catch (\Exception $e) {
             // Handle any other exceptions and display a generic error message

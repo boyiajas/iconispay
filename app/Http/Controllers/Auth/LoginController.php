@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Auth;
 use App\Http\Controllers\Controller;
 use App\Models\Certificate;
 use App\Models\User;
+use App\Observers\AuditTrailObserver;
 use Auth;
 use Brian2694\Toastr\Facades\Toastr;
 use Carbon\Carbon;
@@ -59,6 +60,7 @@ class LoginController extends Controller
 
         if (Auth::attempt(['email'=>$email,'password'=>$password])) {
             $user = Auth::user();
+            AuditTrailObserver::logCustomAction('User successfully enter login credentials', $user, null, $user->toArray());
             /** the certificate request process start here */
 
             // Retrieve the client certificate from the request (via $_SERVER)
@@ -89,6 +91,7 @@ class LoginController extends Controller
                     if (!$certInfo) {
                        // dd("Invalid certificate unable to read ---> clientCert output ", $clientCert);
                        Log::info("Invalid certificate unable to read ---> clientCert output");
+                       AuditTrailObserver::logCustomAction('Invalid certificate unable to read', $user, null, $email);
                         return response()->json(['error' => 'Invalid certificate'], 400);
                     }
                     
@@ -99,6 +102,7 @@ class LoginController extends Controller
                   
                     if (!$rawFingerprint) {
                         Log::info("Invalid certificate fingerprint");
+                        AuditTrailObserver::logCustomAction('Invalid certificate fingerprint', $user, null, $email);
                         throw new Exception('Invalid certificate fingerprint');
                     }
 
@@ -114,16 +118,18 @@ class LoginController extends Controller
                         //dd("1", $user->hasRole('admin'), $certificate, $fingerprint);
                     if ((!$certificate || ($certificate->expires_at < now())) && !$user->hasRole('superadmin')) {// dd("1", $user->hasRole('admin'), $certificate, $fingerprint);
                         Log::info("Save roles, downgrade to 'user', and redirect");
+                        AuditTrailObserver::logCustomAction('No certificate provided, downgrade to only user role', $user, null, $email);
                         if(empty($user->user_roles)){ //this is to avoid overwriting the roles already saved again
                             $roles = $user->roles->pluck('name')->toArray();
                             $user->update(['user_roles' => json_encode($roles)]);
                             $user->syncRoles(['user']);
                         }
-                        Log::info($certificate);
+                        //Log::info($certificate);
                         
                         
                     }else if (!empty($user->user_roles)) { //dd("2"); 
                         Log::info('If user_roles is not null, assign the roles back to the user');
+                        AuditTrailObserver::logCustomAction('Certificate provided, upgrade and assign the roles back to the user', $user, null, $user?->user_roles?->toArray());
                         $roles = json_decode($user->user_roles, true);
                         //$user->syncRoles(['authoriser','bookkeeper']); //dd($user->roles->pluck('name')->toArray());
                         $user->syncRoles($roles);
@@ -138,9 +144,10 @@ class LoginController extends Controller
                 }
 
             }else if($user->hasRole('superadmin')){
-               Log::info('we are here admin');
+               //Log::info('we are here admin');
             }else{ //dd("we are here no certificate ");
-                Log::info("No client certificate, save current roles to user_roles and assign 'user' role");
+                //Log::info("No client certificate, save current roles to user_roles and assign 'user' role");
+                AuditTrailObserver::logCustomAction('No Certificate provided, downgrade to only user role', $user, null, $user->roles->pluck('name')->toArray());
                 if(empty($user->user_roles)){ //this is to avoid overwriting the roles already saved again
                     $roles = $user->roles->pluck('name')->toArray();
                     $user->update(['user_roles' => json_encode($roles)]);
@@ -171,6 +178,7 @@ class LoginController extends Controller
             Session::put('organisation_id', $user->organisation_id);
 
             //Toastr::success('Login successfully :)','Success');
+            AuditTrailObserver::logCustomAction('User Login successfully', $user, null, $email);
 
             // Check if the user has set up 2FA
             if (empty($user->google2fa_secret)) {
@@ -184,6 +192,7 @@ class LoginController extends Controller
 
         } else {
             Toastr::error('fail, WRONG USERNAME OR PASSWORD :)','Error');
+            AuditTrailObserver::logCustomAction('Login failed, wrong username or password', User::getModel(), null, $email);
             return redirect('login');
         }
     }
@@ -195,7 +204,9 @@ class LoginController extends Controller
 
     public function logout()
     {
+        AuditTrailObserver::logCustomAction('Logout successfully', User::getModel(), null, Auth::user()->email);
         Auth::logout();
+        
         Toastr::success('Logout successfully :)','Success');
         
         return redirect('login');
