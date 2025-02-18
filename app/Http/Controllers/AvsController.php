@@ -6,6 +6,7 @@ use \AvsHelper;
 use App\Models\Avs;
 use App\Models\BeneficiaryAccount;
 use App\Models\FirmAccount;
+use App\Observers\AuditTrailObserver;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\Hash;
@@ -300,11 +301,12 @@ class AvsController extends Controller
                 Cache::put("locked_out_{$ip}", true, $this->lockoutTime);
                 Cache::forget($cacheKey);
                 Log::warning("IP $ip has been locked out due to multiple failed callback authentication attempts.");
+                AuditTrailObserver::logCustomAction("IP ${$ip} has been locked out due to multiple failed callback authentication attempts.", null, null, $ip);
                 return response()->json(['error' => 'Too many failed attempts. You are locked out.'], 429);
             }
 
             Log::warning('AVS Callback Unauthorized Access Attempt', ['IP' => $ip, 'username' => $request->header('PHP_AUTH_USER'), 'password' => $request->header('PHP_AUTH_PW')]);
-
+            AuditTrailObserver::logCustomAction("AVS Callback Unauthorized Access Attempt", null, null, $ip);
             /* Log::warning('AVS Callback Unauthorized Access Attempt', [
                 'username' => $request->header('PHP_AUTH_USER')
             ]); */
@@ -313,6 +315,7 @@ class AvsController extends Controller
 
         // Reset failed attempts on successful authentication
         Cache::forget($cacheKey);
+        AuditTrailObserver::logCustomAction("AVS Callback Successful authentication", null, null, $ip);
 
         // Process AVS Response Data
         $data = $request->all();

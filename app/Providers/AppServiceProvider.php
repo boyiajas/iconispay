@@ -3,6 +3,7 @@
 namespace App\Providers;
 
 use App\Models\BeneficiaryAccount;
+use App\Models\Certificate;
 use App\Models\Deposit;
 use App\Models\Document;
 use App\Models\FileUpload;
@@ -36,5 +37,6 @@ class AppServiceProvider extends ServiceProvider
         FirmAccount::observe(AuditTrailObserver::class);
         FileUpload::observe(AuditTrailObserver::class);
         Document::observe(AuditTrailObserver::class);
+        Certificate::observe(AuditTrailObserver::class);
     }
 }

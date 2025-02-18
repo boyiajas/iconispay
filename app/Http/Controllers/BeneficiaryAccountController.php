@@ -9,6 +9,7 @@ use App\Models\Category;
 use App\Models\FirmAccount;
 use App\Models\Institution;
 use App\Models\Payment;
+use App\Observers\AuditTrailObserver;
 use Exception;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -482,6 +483,7 @@ class BeneficiaryAccountController extends Controller
             ->first();
 
         if ($existingAuthorizer) {
+            AuditTrailObserver::logCustomAction("Authorize failed, You have already authorized this beneficiary account", $beneficiaryAccount, $beneficiaryAccount->toArray(), null);
             return response()->json([
                 'message' => 'You have already authorized this beneficiary account.'
             ], 201);
