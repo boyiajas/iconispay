@@ -233,7 +233,7 @@ class AvsController extends Controller
             } elseif ($pid === 0) {
                 // Child process: handle callback
                 sleep(10);
-                Http::withBasicAuth($this->dev_username, $this->dev_password)->post($callbackUrl, $callbackData);
+                Http::withBasicAuth($this->prod_username, $this->prod_password)->post($callbackUrl, $callbackData);
                 exit(0);
             }
             // Parent process continues
@@ -241,7 +241,7 @@ class AvsController extends Controller
             // Fallback: non-blocking sleep and execution
             register_shutdown_function(function () use ($callbackUrl, $callbackData) {
                 sleep(10);
-                Http::withBasicAuth($this->dev_username, $this->dev_password)->post($callbackUrl, $callbackData);
+                Http::withBasicAuth($this->prod_username, $this->prod_password)->post($callbackUrl, $callbackData);
             });
         }
 
@@ -271,7 +271,7 @@ class AvsController extends Controller
         $username = trim($request->header('PHP_AUTH_USER'));
         $password = trim($request->header('PHP_AUTH_PW'));
 
-        $hashedPassword = Hash::make($this->dev_password);
+        $hashedPassword = Hash::make($this->prod_password);
        
         return $username === 'iconis' && Hash::check($password, $hashedPassword);;
     }
