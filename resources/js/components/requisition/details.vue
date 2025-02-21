@@ -2266,7 +2266,7 @@ export default {
                             title: 'Success'
                         });
                     }else{
-                        this.toast.error(error.response ? error.response.data : 'No response data', {
+                        this.toast.error(error.response ? error.response?.data?.error : 'No response data', {
                             title: 'Error'
                         });
                     }
@@ -2282,9 +2282,10 @@ export default {
                     }
                 })
                 .catch(error => {
-                    if (error.response && error.response.data.errors) {
+
+                    if (error.response && error.response.data.error) {
                         //this.errors = error.response.data.errors;
-                        this.toast.error(error.response ? error.response.data : 'No response data', {
+                        this.toast.error(error.response ? error.response.data.error : 'No response data', {
                             title: 'Error'
                         });
                     }
@@ -3475,9 +3476,9 @@ export default {
                 })
                 .catch(error => {
                     //console.error('Error creating payment:', error);
-                    //console.error('Response data:', error.response ? error.response.data : 'No response data');
+                    console.error('Response data:', error.response ? error.response.data : 'No response data');
                     // Show error toast
-                    this.toast.error(error.response ? error.response.data : 'No response data', {
+                    this.toast.error(error.response ? error.response?.data?.error : 'No response data', {
                         title: 'Error'
                     });
                     
