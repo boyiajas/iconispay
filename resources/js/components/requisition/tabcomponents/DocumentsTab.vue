@@ -85,6 +85,7 @@ export default {
             this.documentsTable = $('#documents-table').DataTable({
                 processing: true,
                 serverSide: true,
+                pageLength: 25,
                 ajax: {
                     url: `/api/requisitions/${this.requisitionId}/documents`,  // Your API endpoint to fetch documents
                     type: 'GET',

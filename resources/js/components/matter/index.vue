@@ -35,7 +35,7 @@
                             <th>File Reference</th>
                             <th>Reason</th>
                             <th>Properties</th>
-                            <th>Parties</th>
+                            <th>Dates</th>
                             <!-- <th>Status</th> -->
                             <th>Progress</th>
                             <th v-if="canAction">Action</th>
@@ -118,6 +118,7 @@ export default {
             this.mattersTable = $('#matters-table').DataTable({
                 processing: true,
                 serverSide: true,
+                pageLength: 25,
                 ajax: {
                     url: '/api/requisitions',
                     type: 'GET',

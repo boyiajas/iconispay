@@ -10,7 +10,7 @@
         <form @submit.prevent="sendEmail">
             <div class="mb-3">
                 <label for="recipient" class="form-label">Recipient:</label>
-                <select v-model="emailForm.recipient" class="form-select" required>
+                <select v-model="emailForm.recipient" class="form-select" required @change="updateGreeting">
                     <option value="" disabled>--Please Select a Recipient--</option>
                     <option v-for="recipient in recipientsWithAuthoriser" :key="recipient.id" :value="recipient.id">
                         {{ recipient.name }}
@@ -122,6 +122,13 @@ export default {
             const requisitionId = 3;  // Example requisition ID, replace with dynamic value
             /*testing env*///return `http://127.0.0.1:8000/matters/requisitions/${requisitionId}/details`;
             /*live env*/return `https://pay.iconis.co.za/matters/requisitions/${requisitionId}/details`;
+        },
+
+        updateGreeting() {
+            const selectedRecipient = this.recipientsWithAuthoriser.find(recipient => recipient.id === this.emailForm.recipient);
+            if (selectedRecipient) {
+                this.emailForm.greeting = `Dear ${selectedRecipient.name}`;
+            }
         },
 
         // Send email via Axios
