@@ -242,6 +242,7 @@ export default {
             this.accountsTable = $('#accounts-table').DataTable({
                 processing: true,
                 serverSide: false,
+                pageLength: 25,
                 ajax: {
                     url: '/api/accounts',
                     type: 'GET',
@@ -320,7 +321,6 @@ export default {
                 }, */
                 responsive: true,
                 paging: true,
-                pageLength: 10,
                 lengthMenu: [ [10, 25, 50, 100], [10, 25, 50, 100] ],
                 searching: true,
                 autoWidth: true,
@@ -382,6 +382,7 @@ export default {
             this.pendingConfirmationFilesTable = $('#pending-confirmation-files-table').DataTable({
                 processing: true,
                 serverSide: false,
+                pageLength: 25,
                 ajax: {
                     url: '/api/pending-confirmation-files',
                     type: 'GET',
@@ -448,6 +449,7 @@ export default {
             this.recentlyClosedFilesTable = $('#recently-closed-files-table').DataTable({
                 processing: true,
                 serverSide: false,
+                pageLength: 25,
                 ajax: {
                     url: '/api/recently-closed-files',
                     type: 'GET',

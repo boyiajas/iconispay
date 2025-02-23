@@ -5,7 +5,9 @@
         <h4 class="section-title mb-2">
             Requisition: <span style="color:#999;font-weight: normal;font-size: 20px;">{{ requisition.file_reference }} - {{ requisition.reason }}</span>
             <span class="pull-right">
-                <router-link :to="{ name: 'emailrequestor', params: { requisitionId: requisitionId } }" class="btn btn-white btn-default-default btn-sm ml-1">Email Requestor</router-link>
+                <PermissionControl :roles="['admin', 'authoriser','bookkeeper','superadmin']">
+                    <router-link :to="{ name: 'emailrequestor', params: { requisitionId: requisitionId } }" class="btn btn-white btn-default-default btn-sm ml-1">Email Requestor</router-link>
+                </PermissionControl>
                 <router-link :to="{ name: 'emailsignatory', params: { requisitionId: requisitionId } }" class="btn btn-white btn-default-default btn-sm ml-1">Email Signatory</router-link>
                 <button class="btn btn-white btn-default-default btn-sm ml-1" @click="navigateToAllTransactionsForAFile(requisition?.file_upload_id ?? 0)">File History</button>
                 <button class="btn btn-light btn-default-default btn-sm ml-1" @click="printPage"><i class="fas fa-print"></i> Print</button>
@@ -68,7 +70,7 @@
                         <h6 class="fw-bold">Authorization</h6>
                         <div v-if="requisition.status_id == 3">
                             <p class="status-value mb-0 mt-3">&nbsp;</p>
-                            <PermissionControl :roles="['admin', 'authoriser']">
+                            <PermissionControl :roles="['admin', 'authoriser','superadmin']">
                                 <div class="mb-2"><a class="btn btn-sm btn-white btn-default-default" @click="approveRequisition(requisition.id)"><span id="approveBtnSpinner1" class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span> Approve</a></div>
                             </PermissionControl>
                             <!-- <PermissionControl :roles="['user']">
@@ -159,7 +161,7 @@
                 <span v-if="requisition.status_id < 7"> It is pending payment</span>
                 <span v-else-if="requisition.status_id == 7"> Payment was made successfully and no further changes may be made.</span>
             </span>
-            <PermissionControl :roles="['admin','authoriser']">
+            <PermissionControl :roles="['admin','authoriser','superadmin']">
                 <a v-if="requisition.status_id < 7" class="pull-right btn btn-white btn-primary btn-sm" @click="unlockRequisition(requisition.id)"> <span id="unlockBtnSpinner" class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span> <i class="fa fa-lock-open"></i> Unlock</a>
             </PermissionControl>
             
@@ -487,7 +489,7 @@
                         </div>
                         <div class="card-body">
                             <div v-if="requisition.status_id == 3 && !requisition.authorization_status">
-                                <PermissionControl :roles="['admin', 'authoriser']">
+                                <PermissionControl :roles="['admin', 'authoriser','superadmin']">
                                     <div class="approve-box p-2 pull-right" style="border: solid 1px #40b1c5;background: #eafcff;">
                                         <div class="pl-0 pr-0">
                                             <div class="txt-xs">Click here to approve as </div>
@@ -1980,6 +1982,8 @@ export default {
                     this.toast.success(response.data.message, {
                         title: 'Success'
                     });
+
+                    this.openPaymentsTab();
                 })
                 .catch(error => {
                     if (error.response && error.response.data.errors) {
@@ -1993,6 +1997,7 @@ export default {
                         buttonSpinner.classList.add('d-none');
                     }
                 });
+                
 
         },
         // Load requisition details based on matter ID and requisition ID
@@ -2514,6 +2519,7 @@ export default {
             this.documentsTable = $('#documents-table').DataTable({
                 processing: true,
                 serverSide: true,
+                pageLength: 25,
                 ajax: {
                     url: `/api/requisitions/${this.requisitionId}/documents`,  // Your API endpoint to fetch documents
                     type: 'GET',
@@ -2641,6 +2647,7 @@ export default {
             this.historyTable = $('#history-table').DataTable({
                 processing: true,
                 serverSide: true,
+                pageLength: 25,
                 ajax: {
                     url: `/api/requisitions/${this.requisitionId}/history`, // Endpoint for history data
                     type: 'GET', // HTTP method
@@ -2696,6 +2703,7 @@ export default {
             this.sourceAccountsTable = $('#source-accounts-table').DataTable({
                 processing: true,
                 serverSide: true,
+                pageLength: 25,
                 ajax: {
                     url: `/api/firm-accounts`,//`/api/requisitions/${this.requisitionId}/source-accounts`,
                     type: 'GET',
@@ -2841,6 +2849,19 @@ export default {
             });
         },
 
+        openPaymentsTab() {
+            // Get the Payments tab element
+            const paymentsTab = document.getElementById("payments-tab");
+
+            if (paymentsTab) {
+                setTimeout(() => {
+                    // Use Bootstrap's Tab API to activate the tab
+                    const tabInstance = new bootstrap.Tab(paymentsTab);
+                    tabInstance.show();
+                }, 100); // Adding a slight delay ensures the UI updates properly
+            }
+        },
+
         // Show Payments tab content based on source_account_id
         showPaymentsTabContent() {
             if (this.requisition.firm_account_id) {
@@ -2877,6 +2898,7 @@ export default {
             this.sourceAccountsTable2 = $('#source-accounts-table2').DataTable({
                 processing: true,
                 serverSide: true,
+                pageLength: 25,
                 ajax: {
                     url: `/api/firm-accounts`,//`/api/requisitions/${this.requisitionId}/source-accounts`,
                     type: 'GET',
@@ -2910,7 +2932,6 @@ export default {
                 destroy: true, // Reinitializes the table if needed
                 responsive: true,
                 paging: true,
-                pageLength: 10,
                 lengthMenu: [ [10, 25, 50, 100], [10, 25, 50, 100] ],
                 searching: true,
                 autoWidth: true,

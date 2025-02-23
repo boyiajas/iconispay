@@ -101,6 +101,7 @@ export default {
             this.pendingConfirmationFilesTable = $('#pending-confirmation-files-table').DataTable({
                 processing: true,
                 serverSide: false,
+                pageLength: 25,
                 ajax: {
                     url: `/api/firm-accounts/${this.$route.params.id}/pending-confirmation-files`,
                     type: 'GET',
@@ -139,6 +140,7 @@ export default {
             this.recentlyClosedFilesTable = $('#recently-closed-files-table').DataTable({
                 processing: true,
                 serverSide: false,
+                pageLength: 25,
                 ajax: {
                     url: `/api/firm-accounts/${this.$route.params.id}/recently-closed-files`,
                     type: 'GET',

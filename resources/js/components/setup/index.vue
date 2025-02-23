@@ -1289,6 +1289,7 @@ export default {
             this.organisationTable = $('#organisation-table').DataTable({
                 processing: true,
                 serverSide: true,
+                pageLength: 25,
                 ajax: {
                     url: '/api/organisations',
                     type: 'GET',
@@ -1337,7 +1338,6 @@ export default {
                 },
                 responsive: true,
                 paging: true,
-                pageLength: 10,
                 lengthMenu: [ [10, 25, 50, 100], [10, 25, 50, 100] ],
                 searching: true,
                 autoWidth: true,
@@ -1809,6 +1809,7 @@ export default {
             this.usersTable = $('#users-list-table').DataTable({
                 processing: true,
                 serverSide: true,
+                pageLength: 25,
                 ajax: {
                     url: '/api/users',
                     type: 'GET',
@@ -1876,7 +1877,6 @@ export default {
                 }, 
                 responsive: true,
                 paging: true,
-                pageLength: 10,
                 lengthMenu: [ [10, 25, 50, 100], [10, 25, 50, 100] ],
                 searching: true,
                 autoWidth: true
@@ -2029,6 +2029,7 @@ export default {
             this.auditTrailTable = $('#audit-trail-table').DataTable({
                 processing: true,
                 serverSide: true,
+                pageLength: 25,
                 ajax: {
                     url: '/api/audit-trails',
                     type: 'GET',
@@ -2070,7 +2071,6 @@ export default {
                 },
                 responsive: true,
                 paging: true,
-                pageLength: 10,
                 lengthMenu: [[10, 25, 50, 100], [10, 25, 50, 100]],
                 searching: true,
                 autoWidth: true
@@ -2111,6 +2111,7 @@ export default {
             this.deactivatedUsersTable = $('#deactivated-users-table').DataTable({
                 processing: true,
                 serverSide: true,
+                pageLength: 25,
                 ajax: {
                     url: '/api/deactivated-users',
                     type: 'GET',
@@ -2179,7 +2180,6 @@ export default {
                  
                 responsive: true,
                 paging: true,
-                pageLength: 10,
                 lengthMenu: [ [10, 25, 50, 100], [10, 25, 50, 100] ],
                 searching: true,
                 autoWidth: true
@@ -2473,6 +2473,7 @@ export default {
             this.sourceAccountsTable = $('#source-accounts-table').DataTable({
                 processing: true,
                 serverSide: true,
+                pageLength: 25,
                 ajax: {
                     url: '/api/firm-accounts',
                     type: 'GET',
@@ -2508,7 +2509,6 @@ export default {
                 },
                 responsive: true,
                 paging: true,
-                pageLength: 10,
                 lengthMenu: [ [10, 25, 50, 100], [10, 25, 50, 100] ],
                 searching: true,
                 autoWidth: true,
@@ -2624,6 +2624,7 @@ export default {
             this.beneficiaryAccountsTable = $('#beneficiary-accounts-table').DataTable({
                 processing: true,
                 serverSide: true,
+                pageLength: 25,
                 ajax: {
                     url: '/api/beneficiary-accounts',
                     type: 'GET',
@@ -2659,7 +2660,6 @@ export default {
                 },
                 responsive: true,
                 paging: true,
-                pageLength: 10,
                 lengthMenu: [ [10, 25, 50, 100], [10, 25, 50, 100] ],
                 searching: true,
                 autoWidth: true,
@@ -2781,6 +2781,7 @@ export default {
             this.onceoffAccountsTable = $('#onceoff-accounts-table').DataTable({
                 processing: true,
                 serverSide: true,
+                pageLength: 25,
                 ajax: {
                     url: '/api/onceoff-accounts',
                     type: 'GET',
@@ -2815,7 +2816,6 @@ export default {
                 },
                 responsive: true,
                 paging: true,
-                pageLength: 10,
                 lengthMenu: [ [10, 25, 50, 100], [10, 25, 50, 100] ],
                 searching: true,
                 autoWidth: true,

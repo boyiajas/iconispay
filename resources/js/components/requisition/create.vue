@@ -26,9 +26,9 @@
                                 </div>
                             </div>
                             <div class="form-group row">
-                                <label for="parties" class="form-label col-sm-2">Parties</label>
+                                <label for="parties" class="form-label col-sm-2">Date</label>
                                 <div class="col-sm-10">
-                                    <input type="text" v-model="form.parties" class="form-control" id="parties" placeholder="Enter Party description">
+                                    <input type="text" v-model="form.parties" class="form-control" id="parties" placeholder="Enter Date description">
                                 </div>
                             </div>
                             <div class="form-group row">

@@ -21,7 +21,7 @@
                                 <th>Created By</th>
                                 <th>File Reference</th>
                                 <th>Reason</th>
-                                <th>Parties</th>
+                                <th>Dates</th>
                                 <th>Progress</th>
                                 <th v-if="canAction">Action</th>
                             </tr>
@@ -129,7 +129,7 @@ export default {
                 ],
                 responsive: true,
                 paging: true,
-                pageLength: 10,
+                pageLength: 25,
                 searching: true,
                 autoWidth: false,
                 rowCallback: (row, data) => {
