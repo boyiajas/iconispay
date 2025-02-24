@@ -85,6 +85,10 @@ a{
     background-color: #f3f3f3 !important;
 }
 
+.text-bold{
+    font-weight: bold !important;
+}
+
 .custom-badge-success{
     border-radius: 5px;
     text-align: center;
