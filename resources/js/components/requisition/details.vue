@@ -756,10 +756,10 @@
                                 </div>
                             </div>
                         </div>
-                        <div class="modal-footer mb-0">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" data-dismiss="modal">Cancel</button>
-                            <button type="submit" class="btn btn-primary">Save</button>
-                            <button type="button" class="btn btn-primary" @click="createAndNewDeposit">Save & New</button>
+                        <div class="modal-footer mb-0 p-0">
+                            <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal" data-dismiss="modal">Cancel</button>
+                            <button type="submit" class="btn btn-primary btn-sm">Save</button>
+                            <button type="button" class="btn btn-primary btn-sm" @click="createAndNewDeposit">Save & New</button>
                         </div>
                     </form>
                 </div>
@@ -828,7 +828,7 @@
                     <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close" data-dismiss="modal"></button>
                 </div>
                 <div class="modal-body">
-                    <form @submit.prevent="createPayment">
+                    <form @submit.prevent="createPayment" @keydown.enter.prevent="createAndNewPayment">
                         <!-- Search -->
                         <div class="row mb-2 position-relative">    
                             <div class="input-group">
@@ -1041,7 +1041,7 @@
                             </div>
 
                             <div class="mb-3 row">
-                                <label for="branch_code" class="form-label col-sm-3">verification:</label>
+                                <label for="branch_code" class="form-label col-sm-3">Verification:</label>
                                 <div class="col-sm-9">
                                     <div class="pl-2" style="background-color:#eee;border-radius: 5px;">
                                         <div class="form-check pt-2 pb-2">
@@ -1091,10 +1091,10 @@
                             </div>
                         </div>
                         
-                        <div class="modal-footer">
-                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal" data-dismiss="modal">Cancel</button>
-                            <button type="button" class="btn btn-primary" @click="createAndNewPayment">Save</button>
-                            <button type="button" class="btn btn-primary" @click="createAndNewPayment">Save & New</button>
+                        <div class="modal-footer p-0 mt-1">
+                            <button type="button" class="btn btn-secondary btn-sm" data-bs-dismiss="modal" data-dismiss="modal">Cancel</button>
+                            <button type="button" class="btn btn-primary btn-sm" @click="createAndNewPayment">Save</button>
+                            <button type="button" class="btn btn-primary btn-sm" @click="createAndNewPayment">Save & New</button>
                         </div>
                     </form>
                 </div>

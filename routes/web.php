@@ -182,6 +182,7 @@ Route::group(['middleware' => 'no_cache'], function (){
         Route::get('/requisitions/{requisition}/history', [RequisitionController::class, 'getRequisitionHistory']);
         Route::put('/requisitions/{requisition}/update', [RequisitionController::class, 'updateRequisition'])->name('requisitions.update.requisition');
         Route::post('/requisitions/search', [RequisitionController::class, 'searchRequisition'])->name('requisitions.search');
+        Route::get('/requisitions/fetch-auto-fill-data', [RequisitionController::class, 'fetchAutoFillRequisition'])->name('requisitions.fetch.auto.fill');
         Route::get('/recipients', [UserController::class, 'getRecipients']);
         Route::get('/deactivated-users', [UserController::class, 'deactivatedUsers']);
         Route::resource('firm-accounts', FirmAccountController::class);

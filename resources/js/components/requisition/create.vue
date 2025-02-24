@@ -79,7 +79,7 @@ export default {
         fetchRequisitionData() {
             if (this.form.file_reference.trim()) {
                 axios
-                    .get(`/api/requisitions/search`, { params: { file_reference: this.form.file_reference } })
+                    .get(`/api/requisitions/fetch-auto-fill-data`, { params: { file_reference: this.form.file_reference } })
                     .then(response => {
                         if (response.data) {
                             const { reason, parties } = response.data;

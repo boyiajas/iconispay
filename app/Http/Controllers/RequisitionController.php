@@ -177,6 +177,43 @@ class RequisitionController extends Controller
         ]);
     }
 
+    public function fetchAutoFillRequisition(Request $request)
+    {
+        $request->validate([
+            'file_reference' => 'required|string|max:150',
+        ]);
+
+        $user = Auth::user();
+        $query = Requisition::where('file_reference', $request->file_reference);
+
+        // Apply filtering based on user role
+        if ($user->hasRole('superadmin')) {
+            // Superadmin can fetch any requisition
+            $requisition = $query->latest('created_at')->first();
+        } elseif ($user->hasRole('admin') || $user->hasRole('authoriser') || $user->hasRole('bookkeeper')) {
+            // Admins, Authorisers, and Bookkeepers can fetch requisitions within their organization
+            $requisition = $query->where('organisation_id', $user->organisation->id)
+                ->latest('created_at')
+                ->first();
+        } else {
+            // Regular users can only fetch their own requisitions within their organization
+            $requisition = $query->where('organisation_id', $user->organisation->id)
+                ->where('created_by', $user->id)
+                ->latest('created_at')
+                ->first();
+        }
+
+        if ($requisition) {
+            return response()->json([
+                'reason' => $requisition->reason,
+                'parties' => $requisition->parties,
+            ]);
+        }
+
+        return response()->json(null, 202);
+    }
+
+
 
     /**
      * Store a newly created resource in storage.
