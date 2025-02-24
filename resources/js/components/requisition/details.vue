@@ -463,7 +463,7 @@
                                                     
                                                 </div>
                                                 <hr class="mb-0 mt-1"/>
-                                                <span class="pull-right mr-4" v-if="requisition.payments  && requisition.payments.length > 0" :class="netBalance > 0 ? 'orange' : null">&nbsp; R {{ parseFloat(totalDepositAmount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</span>
+                                                <span class="pull-right mr-4" v-if="requisition.payments  && requisition.payments.length > 0" :class="netBalance > 0 ? 'orange' : null">&nbsp; R {{ parseFloat(netBalance).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</span>
                                                 <div v-if="requisition.payments  && requisition.payments.length > 0  && requisition.status_id === 2" class="btn btn-white btn-default-default btn-sm mt-1" data-toggle="tooltip" data-placement="bottom" title="Balance the matter by adding a default source / deposit entry" @click="balancePaymentAndFund"><i class="fas fa-balance-scale"></i> Balance and Fund</div>
                                             </div>
                                             
@@ -489,13 +489,18 @@
                         </div>
                         <div class="card-body">
                             <div v-if="requisition.status_id == 3 && !requisition.authorization_status">
-                                <PermissionControl :roles="['admin', 'authoriser','superadmin']">
-                                    <div class="approve-box p-2 pull-right" style="border: solid 1px #40b1c5;background: #eafcff;">
-                                        <div class="pl-0 pr-0">
-                                            <div class="txt-xs">Click here to approve as </div>
-                                            <h6>{{ user.name }}</h6>
+                                <PermissionControl :roles="['admin','authoriser','superadmin']" class="row">
+                                    <div class="col-md-9 txt-xs">
+                                       <span class="text-danger text-bold">Acknowledgement:</span><br/> I hereby warrant that I have reviewed the supporting documentation for the requested transfer and agree that it is a valid, accurate, and complete request. I acknowledge that it is my responsibility to ensure that the requisition is completed correctly and that failure to do so may result in me being held liable for any losses or damages that may occur as a result thereof.
+                                    </div>
+                                    <div class="col-md-3">
+                                        <div class="approve-box p-2 pull-right" style="border: solid 1px #40b1c5;background: #eafcff;">
+                                            <div class="pl-0 pr-0">
+                                                <div class="txt-xs">Click here to approve as </div>
+                                                <h6>{{ user.name }}</h6>
+                                            </div>
+                                            <div class=""><a class="btn btn-sm btn-primary" @click="approveRequisition(requisition.id)"><span id="approveBtnSpinner" class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span> Approve</a></div>
                                         </div>
-                                        <div class=""><a class="btn btn-sm btn-primary" @click="approveRequisition(requisition.id)"><span id="approveBtnSpinner" class="spinner-border spinner-border-sm d-none" role="status" aria-hidden="true"></span> Approve</a></div>
                                     </div>
                                 </PermissionControl>
                                 <PermissionControl :roles="['user']" v-if="requisition.locked">
@@ -504,6 +509,7 @@
                                         <div><a class="btn btn-sm btn-white btn-default-default disabled">Approve</a></div>
                                     </div>
                                 </PermissionControl>
+                                
                                 
                             </div>
                             <div v-else-if="requisition.status_id >= 5 || requisition.authorization_status">
@@ -2568,6 +2574,12 @@ export default {
                 ],
                 responsive: true,
                 destroy: true,  // Reinitialize the table if needed
+                rowCallback: (row, data) => {
+                    // Add click event listener to each row
+                    $(row).on('click', () => {
+                        this.viewDocument(data.id);  // Handle row click
+                    });
+                },
                 createdRow: (row, data, dataIndex) => {
                     // Attach click event to the View button
                     $(row).find('.view-document-btn').on('click', (event) => {
