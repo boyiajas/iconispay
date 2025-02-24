@@ -2568,6 +2568,12 @@ export default {
                 ],
                 responsive: true,
                 destroy: true,  // Reinitialize the table if needed
+                rowCallback: (row, data) => {
+                    // Add click event listener to each row
+                    $(row).on('click', () => {
+                        this.viewDocument(data.id);  // Handle row click
+                    });
+                },
                 createdRow: (row, data, dataIndex) => {
                     // Attach click event to the View button
                     $(row).find('.view-document-btn').on('click', (event) => {
