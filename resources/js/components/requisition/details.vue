@@ -463,7 +463,7 @@
                                                     
                                                 </div>
                                                 <hr class="mb-0 mt-1"/>
-                                                <span class="pull-right mr-4" v-if="requisition.payments  && requisition.payments.length > 0" :class="netBalance > 0 ? 'orange' : null">&nbsp; R {{ parseFloat(totalDepositAmount).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</span>
+                                                <span class="pull-right mr-4" v-if="requisition.payments  && requisition.payments.length > 0" :class="netBalance > 0 ? 'orange' : null">&nbsp; R {{ parseFloat(netBalance).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 }) }}</span>
                                                 <div v-if="requisition.payments  && requisition.payments.length > 0  && requisition.status_id === 2" class="btn btn-white btn-default-default btn-sm mt-1" data-toggle="tooltip" data-placement="bottom" title="Balance the matter by adding a default source / deposit entry" @click="balancePaymentAndFund"><i class="fas fa-balance-scale"></i> Balance and Fund</div>
                                             </div>
                                             
