@@ -3509,8 +3509,8 @@ export default {
                     
                 })
                 .catch(error => {
-                    console.error('Error creating payment:', error);
-                    console.error('Response data:', error.response ? error.response.data : 'No response data');
+                    //console.error('Error creating payment:', error);
+                    //console.error('Response data:', error.response ? error.response.data : 'No response data');
                     // Show error toast
                     this.toast.error(error.response ? error.response?.data?.error : 'No response data', {
                         title: 'Error'
@@ -3525,7 +3525,7 @@ export default {
 
         // Perform AVS Verification using Axios
         performAvsVerification(paymentForm) { 
-            console.log("starting AVS verification here");console.log(paymentForm);alert("testing passed");
+            //console.log("starting AVS verification here");console.log(paymentForm);alert("testing passed");
 
             axios.post('/api/avs/verify', {
                     account_number: paymentForm.account_number,
@@ -3536,7 +3536,7 @@ export default {
                     id_number: paymentForm?.idNumber,
                 })
                 .then(response => {
-                    this.avsResult = response.data; console.log("this is the value of avs result " , response.data);
+                    this.avsResult = response.data; //console.log("this is the value of avs result " , response.data);
                     if (response.success && response.data.errmsg) {
                         this.toast.error(response.data ? response.errmsg : 'No response data', {
                             title: 'Error'
