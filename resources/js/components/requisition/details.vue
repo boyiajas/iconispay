@@ -2325,7 +2325,7 @@ export default {
                 .catch(error => {
                     if (error.response && error.response.data.errors) {
                         //this.errors = error.response.data.errors;
-                        this.toast.error(error.response ? error.response.data : 'No response data', {
+                        this.toast.error(error.response ? error.response?.data?.error : 'No response data', {
                             title: 'Error'
                         });
                     }
@@ -2356,9 +2356,9 @@ export default {
                 })
                 .catch(error => {
                     console.error('Error deleting deposit:', error);
-                    this.toast.error(error.response ? error.response.data : 'No response data', {
-                        title: 'Error'
-                    });
+                    this.toast.error(error.response ? error.response?.data?.error : 'No response data', {
+                            title: 'Error'
+                        });
                 });
         },
 
@@ -3059,9 +3059,9 @@ export default {
                 })
                 .catch(error => {
                     console.error('Error deleting requisition:', error);
-                    this.toast.error(error.response ? error.response.data : 'No response data', {
-                        title: 'Error'
-                    });
+                    this.toast.error(error.response ? error.response?.data?.error : 'No response data', {
+                            title: 'Error'
+                        });
                 });
         },
         // Open the modal for creating a new deposit
@@ -3496,7 +3496,8 @@ export default {
                     }
                     this.closeModal();
                     
-                    if(verifiedStatus && !this.beneficiaryDetails.verification_status !== 'successful'){
+                    
+                   if((verifiedStatus && this.beneficiaryDetails?.verification_status !== 'successful') || (verifiedStatus && this.beneficiaryDetails == null)){
                         // Show the AVS Result Modal after verification
                         this.showAvsModelInstance = new bootstrap.Modal(document.getElementById('avsResultModal'));
                         this.showAvsModelInstance.show();
@@ -3508,7 +3509,7 @@ export default {
                     
                 })
                 .catch(error => {
-                    //console.error('Error creating payment:', error);
+                    console.error('Error creating payment:', error);
                     console.error('Response data:', error.response ? error.response.data : 'No response data');
                     // Show error toast
                     this.toast.error(error.response ? error.response?.data?.error : 'No response data', {
@@ -3524,6 +3525,8 @@ export default {
 
         // Perform AVS Verification using Axios
         performAvsVerification(paymentForm) { 
+            console.log("starting AVS verification here");console.log(paymentForm);alert("testing passed");
+
             axios.post('/api/avs/verify', {
                     account_number: paymentForm.account_number,
                     branch_code: paymentForm.branch_code,
@@ -3554,7 +3557,7 @@ export default {
                     if (error.response && error.response.data.errors) {
                         this.errors = error.response.data.errors;  // Show validation errors
                     }
-                });
+                }); 
         },
 
         navigateToAllTransactionsForAFile(fileId) {
