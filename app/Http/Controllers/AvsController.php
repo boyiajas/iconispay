@@ -273,7 +273,7 @@ class AvsController extends Controller
 
         $hashedPassword = Hash::make($this->prod_password);
        
-        return $username === 'iconis' && Hash::check($password, $hashedPassword);;
+        return $username === $this->prod_username && Hash::check($password, $hashedPassword);
     }
 
     /**
@@ -286,10 +286,13 @@ class AvsController extends Controller
     {
         $ip = $request->ip();
         $cacheKey = "avs_callback_attempts_{$ip}";
-
+        
+        
         // Check if IP is locked out
         if (Cache::has("locked_out_{$ip}")) {
-            return response()->json(['error' => 'Too many failed attempts. Try again later.'], 429);
+            Cache::forget($cacheKey);
+            Log::warning("IP $ip has been unlocked");
+            //return response()->json(['error' => 'Too many failed attempts. Try again later.'], 429);
         }
 
         // Authenticate the request
