@@ -2991,6 +2991,9 @@ export default {
 
             this.showAvsModelInstance = new bootstrap.Modal(document.getElementById('avsResultModal'));
             this.showAvsModelInstance.show();
+
+            // Start polling for AVS verification updates
+            this.startAvsVerificationPolling(accountData.account_number);
         },
         
         closeModal() {
@@ -3547,7 +3550,9 @@ export default {
                     }
                     //this.showAvsModal = true;
                     
-                    
+                    // Start polling for AVS verification updates
+                    this.startAvsVerificationPolling(paymentForm.account_number);
+
                     // Reset the form after submission
                     this.resetPaymentForm();
                 })
@@ -3558,7 +3563,69 @@ export default {
                         this.errors = error.response.data.errors;  // Show validation errors
                     }
                 }); 
+
+                
         },
+
+        startAvsVerificationPolling(accountNumber) {
+            // Ensure previous intervals are cleared before starting a new one
+            if (this.avsPollingInterval) {
+                clearInterval(this.avsPollingInterval);
+            }
+
+            this.avsPollingInterval = setInterval(async () => {
+                const modalElement = document.getElementById('avsResultModal');
+                const isModalVisible = modalElement && modalElement.classList.contains('show');
+
+                if (!isModalVisible) {
+                    console.log("Modal closed, stopping AVS polling...");
+                    clearInterval(this.avsPollingInterval);
+                    return;
+                }
+
+                try {
+                    const response = await axios.get(`/api/avs/status/${accountNumber}`);
+                    if (response.data && response?.data?.avs_verified_at) {
+                        this.avsResult = response.data;
+
+                        // Find the payment in `this.requisition.payments` that matches the account being verified
+                        if (this.requisition && this.requisition.payments) {
+                            let existingPayment = this.requisition.payments.find(payment => 
+                                payment.beneficiary_account && payment.beneficiary_account.account_number === accountNumber
+                            );
+
+                            if (existingPayment) {
+                                // Update the payment verification status
+                                existingPayment.verification_status = response.data.verification_status;
+                                existingPayment.verified = response.data.verified;
+
+                                if (existingPayment.beneficiary_account) {
+                                    existingPayment.beneficiary_account.verification_status = response.data.verification_status;
+                                    existingPayment.beneficiary_account.verified = response.data.verified;
+                                    existingPayment.beneficiary_account.avs_verified_at = response.data.avs_verified_at;
+                                }
+
+                                console.log("Updated payment verification status in requisition.");
+                            } else {
+                                console.warn("No matching payment found in requisition for account:", accountNumber);
+                            }
+                        } else {
+                            console.warn("No payments found in requisition.");
+                        }
+
+                        // Stop polling once verification is successful
+                        clearInterval(this.avsPollingInterval);
+                        console.log("AVS verification updated successfully, stopping polling.");
+                    } else {
+                        console.log("AVS verification still pending...");
+                    }
+                } catch (error) {
+                    console.error("Error fetching AVS status:", error);
+                    clearInterval(this.avsPollingInterval);
+                }
+            }, 10000); // Poll every 10 seconds
+        },
+
 
         navigateToAllTransactionsForAFile(fileId) {
             //console.log("requisition: ", this.requisition);

@@ -276,6 +276,8 @@ Route::group(['middleware' => 'no_cache'], function (){
         Route::get('/requisitions/{id}/documents', [DocumentController::class, 'getDocuments']);
 
         Route::post('/avs/verify', [AvsController::class, 'verify']);
+        Route::get('/avs/status/{accountNumber}', [AvsController::class, 'getAvsStatus']);
+
 
         Route::post('/register-certificate/{user}', [CertificateController::class, 'register']);
 

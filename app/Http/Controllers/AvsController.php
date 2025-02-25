@@ -128,6 +128,33 @@ class AvsController extends Controller
         }
     }
 
+    public function getAvsStatus($accountNumber)
+    {
+        $account = BeneficiaryAccount::where('account_number', $accountNumber)->first()
+            ?? FirmAccount::where('account_number', $accountNumber)->first();
+
+        if (!$account) {
+            return response()->json(['error' => 'Account not found'], 404);
+        }
+
+        return response()->json([
+            'verification_status' => $account->verification_status,
+            'avs_verified_at' => $account->avs_verified_at,
+            'account_number' => $account->account_number,
+            'account_found' => $account->account_found,
+            'account_open' => $account->account_open,
+            'account_open_gt_three_months' => $account->account_open_gt_three_months,
+            'branch_code_match' => $account->branch_code_match,
+            'holder_name_match' => $account->holder_name_match,
+            'holder_initials_match' => $account->holder_initials_match,
+            'company_name' => $account->company_name,
+            'surname' => $account->surname,
+            'initials' => $account->initials,
+            'account_type' => $account->account_type
+        ], 200);
+    }
+
+
     private function getBackendAccountType($accountNumber, array $accountTypeMapping)
     {
         
