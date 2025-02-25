@@ -37,8 +37,8 @@ class AuditTrailObserver
             'user_email' => $user?->email,
             'user_role' => $user?->roles->pluck('name')->implode(', '),
             'action' => $action,
-            'model_type' => get_class($model),
-            'model_id' => $model->id ?? null,
+            'model_type' => is_object($model) ? get_class($model) : 'CustomAction',
+            'model_id' => is_object($model) ? $model->id ?? null : null,
             'old_values' => $oldValues,
             'new_values' => $newValues,
             'user_agent' => request()->header('User-Agent'), // ✅ Only get user agent here
