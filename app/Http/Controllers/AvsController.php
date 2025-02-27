@@ -116,6 +116,7 @@ class AvsController extends Controller
         // Handle the response
         if ($avsResult['status_code'] === 200) {
             $response_body = json_decode($avsResult['body'], true);
+            Log::info('AVS Responses:', ['avs_responses' => $response_body]);
             return response()->json([
                 "success" => true,
                 "data" => $response_body,
