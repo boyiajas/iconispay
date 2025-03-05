@@ -923,9 +923,17 @@ class RequisitionController extends Controller
             'Awaiting Authorisation' => 3,    // Adjust these values as per your database
             'Awaiting Funding' => 4,
             'Ready for Payment' => 5,
+            'Pending Payment' => 5,
             'Pending Payment Confirmation' => 6,
+            'Pending Processed' => 5,
+            'Payment Processed' => 10,
+            'Payment Failed' => 11,
             'Settled Today' => 7,
-            'Settlement Failed' => 8,
+            'Settled Yesterday' => 8,
+            'Settled in the Last Week' => 9,
+            'Settlement Failed / Partially Failed' => 12,
+            'all' => 0,
+            'Open' => 0
         ];
 
         $awaitingFundingStatusId = 4;
@@ -934,7 +942,21 @@ class RequisitionController extends Controller
         $user = Auth::user();
         $awaitingAuthorizationStatusId = 3;
         $incompleteCount = 0;
+
+        //dd($statusMapping[$request->status]);
+
+         // Ensure status is valid
+        if (!isset($statusMapping[$request->status])) {
+            return response()->json(['error' => 'Requisition Status Not Found!'], 400);
+        }
+
+        $statusId = $statusMapping[$request->status];
+        $today = Carbon::today();
+        $yesterday = Carbon::yesterday();
+        $lastWeekStart = Carbon::now()->subDays(7)->startOfDay();
+        $lastWeekEnd = Carbon::now()->subDays(1)->endOfDay(); // Excluding today
         
+
         if ($user->hasRole('superadmin')) {
         // Check if the user has an 'admin' or 'authorizer' role
             $query = Requisition::with('user');
@@ -945,8 +967,41 @@ class RequisitionController extends Controller
             // Fetch the requisitions matching the status and created by the logged-in user
             $query = Requisition::whereOrganisationId($user->organisation->id)->with('user')->where('created_by', $user->id);
         }
-    
-        
+
+
+        // Apply status filtering
+        if ($statusId !== null) {
+            if ($statusId == 2) {
+                $query->whereIn('status_id', [$statusId, 1]);
+            } elseif ($statusId == 3) {
+                $query->whereIn('status_id', [$statusId, $awaitingFundingStatusId])->whereNull('authorization_status');
+            } elseif ($statusId == 4) {
+                $query->whereIn('status_id', [$statusId, $awaitingAuthorizationStatusId])->whereNull('funding_status');
+            } elseif ($statusId == 7) {
+                $query->where('status_id', $statusId)->whereDate('updated_at', $today);
+            } elseif ($statusId == 8) {
+                // ✅ Selected Yesterday
+                $query->where('status_id', $statusId)->whereDate('updated_at', $yesterday);
+            } elseif ($statusId == 9) {
+                // ✅ Settled in Last Week (excluding today)
+                $query->where('status_id', $statusId)
+                    ->whereBetween('updated_at', [$lastWeekStart, $lastWeekEnd]);
+            } elseif($statusId == 0){
+                //no where clause
+            } elseif ($statusId == 10) {
+                // ✅ "Payment Processed": Get requisitions where all payments are processed
+                $query->whereHas('payments', function ($q) {
+                    $q->where('status', 'processed');
+                });
+            }elseif ($statusId == 11) {
+                // ✅ "Payment Processed": Get requisitions where all payments are processed
+                $query->whereHas('payments', function ($q) {
+                    $q->where('status', 'failed');
+                });
+            } else {
+                $query->where('status_id', $statusId);
+            }
+        }
 
         // Apply text search filter if provided
         if ($request->filter_text) {
@@ -958,34 +1013,7 @@ class RequisitionController extends Controller
                     });
             });
         
-        }else{
-
-            // Ensure the status passed exists in the mapping
-            if (!isset($statusMapping[$request->status])) {
-                return response()->json(['error' => 'Invalid status'], 400);
-            }
-            
-            $today = Carbon::today();
-
-
-            // Get the status ID from the mapping
-            $statusId = $statusMapping[$request->status]; //dd($statusId);
-
-            if($statusId == 2){
-                $query->whereIn('status_id', [$statusId, 1]);
-            }else if($statusId == 3){
-                $query->whereIn('status_id', [$statusId, $awaitingFundingStatusId])->whereNull('authorization_status'); // Fixed
-            }else if($statusId == 4){
-                $query->whereIn('status_id', [$statusId, $awaitingAuthorizationStatusId])->whereNull('funding_status');
-            }else if($statusId == 7){
-                $query->where('status_id', $statusId)->whereDate('updated_at', $today);
-            }else{
-                $query->where('status_id', $statusId);
-            }
-
-            
-        }
-    
+        }    
 
         // Return data in DataTables format
         
