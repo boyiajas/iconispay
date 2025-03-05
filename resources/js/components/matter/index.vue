@@ -10,8 +10,8 @@
         <div class="d-flex align-items-center">
             <div class="form-group me-3">
                 <label for="status" class="me-2">Status:</label>
-                <select class="form-control d-inline w-auto" id="status" v-model="filterStatus" @change="reloadTable">
-                    <option value="">All</option>
+                <select class="form-control d-inline w-auto" id="status" v-model="filterStatus" @change="onStatusChange">
+                    <option value="0">All</option>
                     <option v-for="status in statuses" :key="status.id" :value="status.id">{{ status.name }}</option>
                 </select>
             </div>
@@ -66,7 +66,7 @@ export default {
     },
     data() {
         return {
-            filterStatus: '',
+            filterStatus: 'all',
             filterText: '',
             statuses: [],
             mattersTable: null,
@@ -78,6 +78,24 @@ export default {
         }
     },
     methods: {
+        onStatusChange() {
+
+            console.log("Status changed to ID:", this.filterStatus);
+            // Find the status name based on selected ID
+            // Find the status name based on the selected ID
+            const foundStatus = this.statuses.find(s => s.id === this.filterStatus);
+
+            if (foundStatus) {
+                this.filterStatus = foundStatus.name; // ✅ Update local variable, not `this.status`
+                console.log("Updated selectedStatus to:", this.filterStatus);
+            } else {
+                this.filterStatus = "all"; // Default to "All"
+                console.log("Updated selectedStatus to default (All)");
+            }
+
+            this.initializeDataTable(); // ✅ Reload table with new status
+            this.reloadTable();
+        },
         loadStatuses() {
             axios.get('/api/statuses').then(response => {
                 this.statuses = response.data;
@@ -120,10 +138,10 @@ export default {
                 serverSide: true,
                 pageLength: 25,
                 ajax: {
-                    url: '/api/requisitions',
+                    url: '/api/requisitions/bystatus',
                     type: 'GET',
                     data: (d) => {
-                        d.status_id = this.filterStatus;
+                        d.status = this.filterStatus;
                         d.filter_text = this.filterText;
                     },
                     error: (xhr, error, thrown) => {
