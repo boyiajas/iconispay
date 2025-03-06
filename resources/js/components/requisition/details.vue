@@ -2222,7 +2222,7 @@ export default {
             this.editPaymentForm.account_found = payment.beneficiary_account?.account_found;
             this.editPaymentForm.account_open = payment.beneficiary_account?.account_open;
             this.editPaymentForm.account_open_gt_three_months = payment.beneficiary_account?.account_open_gt_three_months;
-            this.editPaymentForm.my_reference = payment.my_reference;
+            this.editPaymentForm.my_reference = payment.my_reference ? payment.my_reference.substring(0, 20) : '';
             this.editPaymentForm.recipient_reference = payment.recipient_reference;
             this.editPaymentForm.account_number = payment.beneficiary_account?.account_number;
             this.editPaymentForm.account_holder_type = payment.beneficiary_account?.account_holder_type;
@@ -3308,7 +3308,7 @@ export default {
             this.resetPaymentForm();
             this.showAccountDetails = false;
             if(this.requisition){
-                this.paymentForm.my_reference = this.requisition.file_reference;
+                this.paymentForm.my_reference = this.requisition.file_reference ? this.requisition.file_reference.substring(0, 20) : '';
             } 
             
             this.createPaymentModalInstance = new bootstrap.Modal(document.getElementById('createPaymentModal'));
