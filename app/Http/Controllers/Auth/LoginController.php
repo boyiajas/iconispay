@@ -129,7 +129,7 @@ class LoginController extends Controller
                         
                     }else if (!empty($user->user_roles)) { //dd("2"); 
                         Log::info('If user_roles is not null, assign the roles back to the user');
-                        AuditTrailObserver::logCustomAction('Certificate provided, upgrade and assign the roles back to the user', $user, null, $user?->user_roles?->toArray());
+                        AuditTrailObserver::logCustomAction('Certificate provided, upgrade and assign the roles back to the user', $user, null, json_decode($user->user_roles, true));
                         $roles = json_decode($user->user_roles, true);
                         //$user->syncRoles(['authoriser','bookkeeper']); //dd($user->roles->pluck('name')->toArray());
                         $user->syncRoles($roles);
